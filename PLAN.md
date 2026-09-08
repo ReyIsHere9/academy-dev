@@ -9,7 +9,7 @@ in the private academy-live repo.
 - [x] **Module 1 — Home** (`index.html`) + shared `css/styles.css`
 - [ ] **Module 2 — Courses catalog** (`courses.html`) — grid of all courses
 - [ ] **Module 3 — Course detail** (`course.html`) — single course template
-- [ ] **Module 4 — About** (`about.html`)
+- [x] **Module 4 — About** (`about.html`) — writer's-note template (built on `Deltaone` branch)
 - [ ] **Module 5 — Contact** (`contact.html`) + form
 
 ## Later upgrades (v2+)
