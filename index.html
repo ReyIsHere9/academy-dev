@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 1: HOME PAGE  (academy-dev — generic test version)
+     ------------------------------------------------------------
+     WHAT THIS FILE IS:
+     The home page is usually the FIRST page of a website
+     (index.html). It is the "front door" — it must explain
+     what this site is and guide people to the other modules
+     (Courses, About, Contact).
+
+     LESSON — HTML PAGE ANATOMY (every page follows this):
+     1. <!DOCTYPE html>   -> tells the browser "this is HTML5"
+     2. <head>            -> invisible settings (title, styles)
+     3. <body>            -> EVERYTHING visible on the page
+     ============================================================ -->
+
+<html lang="en">
+<!-- lang="en" tells search engines + screen readers the
+     page is in English. Accessibility bonus! -->
+
+<head>
+    <!-- ============ INVISIBLE SETTINGS ============ -->
+
+    <meta charset="UTF-8">
+    <!-- charset: how text characters are stored.
+         UTF-8 = the standard, supports every language/symbol. -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- viewport: makes the page scale correctly on PHONES.
+         Without this line, mobile users see a tiny zoomed-out page.
+         You can copy these two meta lines into every future page
+         without thinking — they are mandatory boilerplate. -->
+
+    <title>The English Academy | Learn English Your Way</title>
+    <!-- <title> = text shown on the BROWSER TAB.
+         Also used by Google as the clickable headline. -->
+
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Link to our ONE shared style file (styles.css).
+         EVERY page of the site will link to this same file,
+         so all pages look consistent. That file lives in the
+         css/ folder next to this page. -->
+</head>
+
+<body>
+    <!-- ============ VISIBLE CONTENT ============ -->
+
+    <!-- ================= HEADER =================
+         The header is the SAME on every page: logo + menu.
+         For now we copy-paste it on each page (simple).
+         LATER we will learn smarter ways to share it. -->
+    <header class="site-header">
+        <div class="container header-inner">
+
+            <!-- The logo: a text link. Clicking it goes home.
+                 "./" means "the current folder" = index.html -->
+            <a href="./" class="logo">The English Academy</a>
+
+            <!-- The navigation menu. <nav> = a block of links.
+                 Links point to pages that don't exist YET —
+                 that's fine, we build them module by module.
+                 class="active" highlights the page you're on. -->
+            <nav class="main-nav">
+                <a href="./" class="active">Home</a>
+                <a href="courses.html">Courses</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- ================= HERO SECTION =================
+         The hero = the big first impression block.
+         Text + a button. Notice class names like "hero":
+         they have NO style by themselves — css/styles.css
+         is what gives them color, size and layout. -->
+    <section class="hero">
+        <div class="container">
+
+            <!-- h1 = the MOST important headline on the page.
+                 Only ONE h1 per page (Google likes that).
+                 Headline order: h1, then h2, h3... like a book. -->
+            <h1>Learn English.<br>Speak with Confidence.</h1>
+
+            <p class="hero-subtitle">
+                Bite-sized lessons, real conversation practice,
+                and a learning path that fits your life.
+            </p>
+
+            <!-- Two buttons. One leads to courses (main action),
+                 one to contact (second action). -->
+            <div class="hero-actions">
+                <a href="courses.html" class="btn btn-primary">Browse Courses</a>
+                <a href="contact.html" class="btn btn-outline">Contact Us</a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= FEATURES SECTION =================
+         "Why choose us" — 3 selling points in cards.
+         Grid layout handled in CSS (.features-grid). -->
+    <section class="section">
+        <div class="container">
+
+            <h2 class="section-title">Why learn with us?</h2>
+
+            <div class="features-grid">
+
+                <!-- Each card = one selling point.
+                     Repeated structure = same class names. -->
+                <div class="card feature-card">
+                    <h3>Practical Lessons</h3>
+                    <p>Learn the English you actually use — daily life,
+                       work, travel and conversations that matter.</p>
+                </div>
+
+                <div class="card feature-card">
+                    <h3>Your Own Pace</h3>
+                    <p>Study in short sessions whenever you have time.
+                       No pressure, no deadlines — just steady progress.</p>
+                </div>
+
+                <div class="card feature-card">
+                    <h3>Real Progress</h3>
+                    <p>Clear levels and goals, so you always know
+                       what you've learned and where you're heading.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= FEATURED COURSES =================
+         A sneak peek of 3 courses. The full list lives on
+         courses.html (Module 2). Prices are PLACEHOLDERS —
+         course selling comes in a later upgrade. -->
+    <section class="section section-alt">
+        <div class="container">
+
+            <h2 class="section-title">Featured Courses</h2>
+
+            <div class="courses-grid">
+
+                <!-- CARD 1 -->
+                <article class="card course-card">
+                    <span class="badge">Beginner</span>
+                    <!-- The level badge (styled pill in CSS). -->
+                    <h3>English for Beginners</h3>
+                    <p>Start from zero: alphabet, everyday words,
+                       and your first real sentences.</p>
+                    <!-- A price + a link to the course DETAIL page
+                         (Module 3: course.html). We use one template
+                         course.html with a #part name for now. -->
+                    <div class="course-footer">
+                        <span class="price">$29</span>
+                        <a href="course.html" class="btn btn-small">View Course</a>
+                    </div>
+                </article>
+
+                <!-- CARD 2 -->
+                <article class="card course-card">
+                    <span class="badge">Intermediate</span>
+                    <h3>Conversation Practice</h3>
+                    <p>Speak more naturally: idioms, small talk,
+                       and expressing opinions with ease.</p>
+                    <div class="course-footer">
+                        <span class="price">$39</span>
+                        <a href="course.html" class="btn btn-small">View Course</a>
+                    </div>
+                </article>
+
+                <!-- CARD 3 -->
+                <article class="card course-card">
+                    <span class="badge">Advanced</span>
+                    <h3>Business English</h3>
+                    <p>Emails, meetings and presentations —
+                       the English of the professional world.</p>
+                    <div class="course-footer">
+                        <span class="price">$49</span>
+                        <a href="course.html" class="btn btn-small">View Course</a>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= CALL TO ACTION =================
+         A little motivational band before the footer. -->
+    <section class="section cta-band">
+        <div class="container">
+            <h2>Ready to start speaking?</h2>
+            <p>Pick a course and take your first step today.</p>
+            <a href="courses.html" class="btn btn-primary">See All Courses</a>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER =================
+         Footer = the bottom info block, same on every page.
+         Contains copyright + quick links. -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <!-- &copy; = the © symbol written safely as HTML code -->
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+</body>
+</html>

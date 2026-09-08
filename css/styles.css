@@ -1,0 +1,403 @@
+/* ============================================================
+   SHARED STYLESHEET — used by EVERY page of the site
+   ------------------------------------------------------------
+   LESSON — CSS BASICS:
+   CSS = "Cascading Style Sheets". It changes how HTML LOOKS.
+   We write rules like:  selector { property: value; }
+
+   selector : WHO to style   (e.g. .hero = every element
+                              with class="hero")
+   property : WHAT to change (e.g. color, background)
+   value    : TO WHAT        (e.g. #1a56db, 20px)
+
+   Class selector:  .name    matches class="name"   (reusable)
+   Tag selector:    h1       matches every <h1>      (all of them)
+
+   We style classes, NOT page content — that way the SAME
+   styles.css works for every page, and the whole site
+   looks consistent with one file.
+   ============================================================ */
+
+
+/* ================= BRAND COLORS (VARIABLES) =================
+   LESSON — CSS VARIABLES:
+   --name: value  stores a value. Use it anywhere as
+   var(--name). Change it in ONE place, and the whole
+   site updates. THIS is how we rebrand for the custom
+   version later — only these lines change!
+   ------------------------------------------------------------
+   CLASSIC LOOK (generic dev version):
+   white background, deep blue accent. */
+:root {
+    --color-primary:   #1a56db;   /* main blue (buttons, links) */
+    --color-primary-dark: #1348b8; /* blue, slightly darker (hover) */
+    --color-accent:    #2563eb;   /* lighter blue for highlights */
+    --color-bg:        #ffffff;   /* main page background */
+    --color-bg-alt:    #f1f5f9;   /* alternate section background */
+    --color-text:      #1e293b;   /* main text (almost black) */
+    --color-text-muted:#64748b;   /* secondary/gray text */
+    --color-border:    #e2e8f0;   /* light gray borders */
+    --color-card-bg:   #ffffff;   /* card background */
+
+    /* spacing + radius + width helpers (explained below) */
+    --radius: 10px;               /* corner roundness of cards */
+    --container-max: 1100px;      /* max content width on big screens */
+}
+
+
+/* ================= GLOBAL RESET =================
+   LESSON: Browsers have built-in default styles (margins,
+   fonts...). We zero the annoying parts so our styles
+   start from a clean slate. */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* box-sizing: border-box = widths include padding+border.
+       Sounds nerdy, but it makes layout math MUCH easier. */
+}
+
+html {
+    scroll-behavior: smooth;
+    /* smooth scrolling when jumping to page anchors */
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    /* generic fonts available everywhere (classic look).
+       LATER we can swap in nicer web fonts. */
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    /* 1.6 = comfortable line spacing for reading */
+}
+
+img {
+    max-width: 100%;
+    /* images never overflow their container */
+    display: block;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    /* removes the default underline under links */
+}
+
+
+/* ================= LAYOUT CONTAINER =================
+   LESSON: Content on very wide monitors gets hard to read.
+   .container caps the width and centers the content.
+   Add class="container" to a wrapper div on every section. */
+.container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    /* margin: 0 auto = 0 top/bottom, auto left/right
+       -> auto centers the box horizontally! */
+    padding: 0 20px;
+    /* breathing room on small screens */
+}
+
+
+/* ================= HEADER / NAVIGATION ================= */
+.site-header {
+    background-color: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    /* a thin line under the header separates it from content.
+       (property = border-bottom, then width/style/color) */
+    position: sticky;
+    /* sticky = header stays visible at top while scrolling */
+    top: 0;
+    z-index: 10;
+}
+
+.header-inner {
+    display: flex;
+    /* LESSON — FLEXBOX: the modern way to lay things out.
+       display: flex makes children line up side by side. */
+    justify-content: space-between;
+    /* push logo to the left, menu to the right */
+    align-items: center;
+    /* vertically center logo and menu */
+    padding: 15px 20px;
+}
+
+.logo {
+    font-size: 1.3rem;
+    /* rem = relative size unit. 1rem = browser default
+       font size. Scaling rem = everything scales. */
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.main-nav a,
+.footer-nav a {
+    margin-left: 20px;
+    /* gap between menu links */
+    color: var(--color-text-muted);
+    padding: 6px 2px;
+    transition: color 0.2s;
+    /* smooth color change on hover (0.2 seconds) */
+}
+
+.main-nav a:hover,
+.footer-nav a:hover {
+    color: var(--color-primary);
+}
+
+.main-nav a.active {
+    color: var(--color-primary);
+    font-weight: bold;
+    /* .active = "you are HERE" — set in the HTML of
+       the page you're currently viewing */
+    border-bottom: 2px solid var(--color-primary);
+}
+
+
+/* ================= SECTIONS =================
+   .section = vertical spacing wrapper for big blocks.
+   .section-alt = a section with a slightly different
+   background, creating visual rhythm between blocks. */
+.section {
+    padding: 60px 0;
+}
+
+.section-alt {
+    background-color: var(--color-bg-alt);
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 1.8rem;
+}
+
+
+/* ================= HERO (big intro block) ================= */
+.hero {
+    background: linear-gradient(135deg, #1a56db, #3b82f6);
+    /* LESSON — gradient: smoothly blends two colors
+       diagonally. Classic blue academy hero. */
+    color: #ffffff;
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.hero h1 {
+    font-size: 2.6rem;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    max-width: 600px;
+    margin: 0 auto 30px;
+    opacity: 0.95;
+}
+
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    /* LESSON: gap = spacing between flex children.
+       Simpler than margins on every child. */
+}
+
+
+/* ================= BUTTONS =================
+   LESSON: we build our own buttons (no frameworks!).
+   .btn = base, .btn-primary = blue filled,
+   .btn-outline = transparent with border. */
+.btn {
+    display: inline-block;
+    /* inline-block = sits in text flow but accepts
+       padding and margins (unlike pure inline) */
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: bold;
+    font-size: 1rem;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.15s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    /* lifts the button 2px up on hover — nice feel */
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.btn-outline {
+    border-color: #ffffff;
+    color: #ffffff;
+    background-color: transparent;
+}
+
+.btn-outline:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    /* rgba = color + alpha (opacity). Here: white at 15% */
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+
+/* ================= CARDS =================
+   LESSON: a "card" = box with background, border, padding.
+   The universal building block of modern sites. */
+.card {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    /* soft shadow below the card = lifts it visually */
+}
+
+.card h3 {
+    margin-bottom: 10px;
+}
+
+.card p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+
+/* ================= GRIDS =================
+   LESSON: CSS GRID = two-dimensional layout tool.
+   It places cards in neat rows and columns automatically.
+   (Flexbox = one row/column. Grid = full table layout.) */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 equal columns (1fr = one fraction each) */
+    gap: 25px;
+}
+
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.course-card {
+    display: flex;
+    flex-direction: column;
+    /* children stack vertically inside the card */
+}
+
+.badge {
+    align-self: flex-start;
+    /* pill sits left instead of stretching full width */
+    background-color: var(--color-bg-alt);
+    color: var(--color-primary-dark);
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 999px;
+    /* 999px on a tiny pill = perfectly round ends */
+    margin-bottom: 12px;
+}
+
+.course-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    /* pushes footer to card bottom even if cards
+       in the row have different text lengths.
+       Makes all cards the same height. */
+    padding-top: 15px;
+}
+
+.price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+
+/* ================= CALL-TO-ACTION BAND ================= */
+.cta-band {
+    text-align: center;
+    background-color: var(--color-bg);
+}
+
+.cta-band p {
+    color: var(--color-text-muted);
+    margin: 10px 0 25px;
+}
+
+
+/* ================= FOOTER ================= */
+.site-footer {
+    background-color: var(--color-text);
+    /* dark footer — classic bottom band */
+    color: #cbd5e1;
+    padding: 30px 0;
+    text-align: center;
+}
+
+.footer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.site-footer .logo {
+    color: #ffffff;
+    /* override: logo text must be white on dark footer */
+}
+
+.footer-nav a {
+    color: #cbd5e1;
+}
+
+.footer-nav a:hover {
+    color: #ffffff;
+}
+
+
+/* ================= MOBILE RESPONSIVENESS =================
+   LESSON — MEDIA QUERY: "when the screen is small,
+   apply these overrides". Rule of thumb: stacks grids
+   into one column for phones.
+   media (max-width: 768px) = "up to 768px wide" */
+@media (max-width: 768px) {
+    .features-grid,
+    .courses-grid {
+        grid-template-columns: 1fr;
+        /* 3 columns -> 1 column (cards stack) */
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .header-inner {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .main-nav a {
+        margin-left: 0;
+        margin: 0 8px;
+    }
+
+    .section {
+        padding: 40px 0;
+    }
+}
