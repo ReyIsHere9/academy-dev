@@ -371,6 +371,76 @@ a {
 }
 
 
+/* ================= ABOUT PAGE (Module 4) =================
+   Classes used only by about.html
+   ------------------------------------------------
+   .hero-sm      = slimmer page banner for inner pages
+                  (reuses .hero, just less padding)
+   .draft-note   = "WRITER'S NOTE" text. Marks placeholder
+                  content that must be replaced with real
+                  copy in the final version. Styled as an
+                  obvious note so it never ships by accident.
+   .about-split  = 2-column grid (photo | text) */
+.hero-sm {
+    padding: 55px 20px;
+}
+
+.hero-sm h1 {
+    font-size: 2.2rem;
+}
+
+.draft-note {
+    color: var(--color-text-muted);
+    font-style: italic;
+    border-left: 3px solid var(--color-border);
+    padding-left: 14px;
+    margin: 14px 0;
+    font-size: 0.95rem;
+}
+
+.about-split {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    /* photo column fixed at 300px, text takes the rest */
+    gap: 35px;
+    align-items: start;
+}
+
+.photo-frame {
+    /* Placeholder for a real photo. The dashed border
+       screams "put a picture here". */
+    background-color: var(--color-bg-alt);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    padding: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.stat-label {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -381,6 +451,16 @@ a {
     .courses-grid {
         grid-template-columns: 1fr;
         /* 3 columns -> 1 column (cards stack) */
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* 4 stats -> 2x2 on phones */
+    }
+
+    .about-split {
+        grid-template-columns: 1fr;
+        /* photo sits above text on phones */
     }
 
     .hero h1 {
