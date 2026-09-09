@@ -76,11 +76,11 @@ const PRICING = {
             group: "Practice & feedback",
             rows: [
                 { name: "Speaking practice minutes / month",
-                  cells: ["30 min", "120 min", "300 min", "Unlimited"] },
+                  cells: ["30 min", "120 min", "300 min", "6 h / month"] },
                 { name: "AI conversation partner",
                   cells: ["no", "yes", "yes", "yes"] },
                 { name: "Written tasks with teacher feedback",
-                  cells: ["1 / month", "4 / month", "12 / month", "Unlimited"] },
+                  cells: ["1 / month", "4 / month", "12 / month", "20 / month"] },
                 { name: "Live group classes",
                   cells: ["no", "1 / week", "2 / week", "3 / week"] },
                 { name: "Private 1-on-1 coaching",

@@ -1567,6 +1567,14 @@ html[data-theme="dark"] .dd-tier.is-popular {
     padding: 0 4px;
 }
 
+/* BUGFIX #4 (part 2): the price line boxes differ in height
+   (chip rows wrap into an extra line on sale plans). A reserved
+   min-height keeps every tier header the same height, so the
+   taglines ("Dip a toe in...") line up across all columns. */
+.plan-price {
+    min-height: 2.4em;
+    align-items: baseline;
+}
 .price-old .scribble {
     position: absolute;
     left: 0;
@@ -1664,7 +1672,7 @@ html[data-theme="dark"] .discount-chip {
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
-    min-width: 660px;
+    min-width: 720px;
     font-size: 0.9rem;
 }
 
@@ -1674,6 +1682,14 @@ html[data-theme="dark"] .discount-chip {
     text-align: center;
     border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
+}
+
+.cmp-table thead th {
+    vertical-align: top;
+    /* BUGFIX #4 (part 1): cells with the discount chip are
+       TALLER, and vertical-align: middle shoves their tops
+       higher than neighbour columns. Top-aligned = every tier
+       name starts on the same line. */
 }
 
 .cmp-table thead th {
@@ -1709,7 +1725,7 @@ html[data-theme="dark"] .discount-chip {
     z-index: 2;
     background-color: var(--color-card-bg);
     text-align: left;
-    min-width: 200px;
+    min-width: 180px;
 }
 
 .cmp-table .feature-name {
@@ -1770,6 +1786,16 @@ html[data-theme="dark"] .tick {
 .cmp-table tfoot td {
     padding-top: 20px;
     padding-bottom: 20px;
+}
+
+/* BUGFIX #4 (part 3): CTA buttons wrapped onto different line
+   counts ("Choose Explorer" = 2 lines, "Choose Pro" = 1), so
+   buttons ended up visibly different sizes.
+   One-line buttons + wider min table = all four identical. */
+.cmp-table tfoot .btn {
+    white-space: nowrap;
+    font-size: 0.85rem;
+    padding: 12px 10px;
 }
 
 /* --- the sneaky lifetime hook (native <details>) --- */
