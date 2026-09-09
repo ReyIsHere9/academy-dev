@@ -70,6 +70,17 @@ Class naming rules (CRITICAL):
 - One class may be reused everywhere (`card` on any page).
 - A page marks itself in the menu: `class="active"` on its own nav link.
 - `h1` appears exactly ONCE per page. Sections use `h2`, cards use `h3`.
+- Level banners get `grad-a1` … `grad-c2` classes (never inline
+  `style="background:..."` — inline styles are unthemeable).
+
+Every-page mandatory bits (copy from an existing page):
+- In `<head>`: `css/styles.css` link, THEN the theme engine line:
+  `<script src="js/theme.js"></script>` (must run before paint).
+- In the header (inside `.header-inner`, after `</nav>`): the
+  `#theme-toggle` button (sun/moon SVGs) — identical markup on
+  every page.
+- If a page needs its own data/behavior JS, load those at the
+  bottom of `<body>` as usual (theme.js is the ONLY head script).
 
 Commenting style (keep it!):
 - Big banner comment at the top of every NEW page explaining
@@ -86,18 +97,31 @@ Commenting style (keep it!):
 
 Order inside the file — always top to bottom:
 1. Big banner comment (what this file does + CSS mini-lesson)
-2. `:root` variables — ALL colors, spacing, radius, container width
+2. `:root` variables — ALL colors (light theme) + dark theme block
+   right below it (`html[data-theme="dark"]`), + fade transitions
 3. Global reset (`*` margin/padding, box-sizing)
 4. Base tags (body, a, img, h1–h3)
 5. Layout (.container)
 6. Reusable components (.btn, .card, .badge — alphabetical-ish)
 7. Page sections (header, hero, footer, then page-specific)
-8. Media queries at the VERY bottom (mobile overrides)
+8. `.grad-a1`…`.grad-c2` banner gradients (light values)
+9. Dark overrides (`html[data-theme="dark"] .x { … }`)
+10. Media queries at the VERY bottom (mobile overrides)
 
 Style rules:
 - ALL colors via variables: `var(--color-primary)` — never type
   a hex code in page rules if a variable already exists.
-- Rebranding = editing ONLY the `:root` block. Design the
+- New colors → add a variable to BOTH `:root` (light) and
+  `html[data-theme="dark"]` (dark) blocks. That one step makes
+  every future use automatically theme-aware.
+- Fixed-color components (success boxes, status badges, "today"
+  highlights…) get a `html[data-theme="dark"]` override — don't
+  hardcode one theme's look forever.
+- NEVER put `filter: invert/brightness` on `<img>` tags — photos
+  stay untouched in both themes. Theme = backgrounds/colors only.
+- Banners/heroes: use the `.hero` gradient or `.grad-*` classes,
+  which already ship light + dark palettes.
+- Rebranding = editing ONLY the `:root` + dark blocks. Design the
   variables so `live` needs nothing but new values there.
 - Reuse components before writing new CSS. If `.btn` exists,
   don't invent `.button2` — extend with modifiers (`.btn-small`).
@@ -118,10 +142,12 @@ Style rules:
 3. New classes in HTML FIRST, then add their CSS rules.
 4. Fill with GENERIC content (dev repo).
 5. Test: open via Live Server, resize window to mobile width.
-6. Update PLAN.md: tick the checkbox.
-7. Commit with a clear message: `git add .` →
+6. Test BOTH themes: click the header sun/moon toggle on the new
+   page — every new component must look right in dark mode.
+7. Update PLAN.md: tick the checkbox.
+8. Commit with a clear message: `git add .` →
    `git commit -m "Add Module 4: about page"` → `git push origin main`
-8. Walk the user through the module afterward (they're learning!):
+9. Walk the user through the module afterward (they're learning!):
    what was added, what each new class does, what changed in CSS.
 
 ---

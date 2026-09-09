@@ -29,6 +29,10 @@
    CLASSIC LOOK (generic dev version):
    white background, deep blue accent. */
 :root {
+    color-scheme: light;
+    /* tells the browser: this theme uses light-style native
+       controls (scrollbars, <select> dropdowns, inputs) */
+
     --color-primary:   #1a56db;   /* main blue (buttons, links) */
     --color-primary-dark: #1348b8; /* blue, slightly darker (hover) */
     --color-accent:    #2563eb;   /* lighter blue for highlights */
@@ -39,9 +43,59 @@
     --color-border:    #e2e8f0;   /* light gray borders */
     --color-card-bg:   #ffffff;   /* card background */
 
+    /* footer colors (dark band on both themes, different depth) */
+    --color-footer-bg:  #1e293b;
+    --color-footer-text:#cbd5e1;
+    --color-footer-heading: #ffffff;
+    --color-footer-link:    #cbd5e1;
+    --color-footer-link-hover: #ffffff;
+
     /* spacing + radius + width helpers (explained below) */
     --radius: 10px;               /* corner roundness of cards */
     --container-max: 1100px;      /* max content width on big screens */
+}
+
+/* ================= DARK THEME (the whole site, one switch) =================
+   LESSON — HOW DARK MODE WORKS HERE:
+   The theme engine (js/theme.js) puts data-theme="dark" on the
+   <html> element. This block says: "when <html> has that
+   attribute, swap these variables." Every component that uses
+   variables updates AUTOMATICALLY — no per-component work.
+   ============================================================
+   NOT FULLY BLACK: the palette is a deep blue-navy with
+   near-white text and card surfaces one step lighter than the
+   page background ("white in the blacks"), so shapes stay
+   readable instead of melting into a void. */
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-primary:   #6ea8fe;   /* brighter blue pops on dark */
+    --color-primary-dark: #93c5fd; /* hover goes LIGHTER (glow) */
+    --color-accent:    #60a5fa;
+    --color-bg:        #141b2d;   /* page: deep navy, not #000 */
+    --color-bg-alt:    #0f1523;   /* alternate sections: darker */
+    --color-text:      #eef2fa;   /* near-white text */
+    --color-text-muted:#9aa7c2;   /* soft blue-gray for notes */
+    --color-border:    #273149;   /* visible but quiet borders */
+    --color-card-bg:   #1b2440;   /* cards LIGHTER than the page:
+                                     shapes keep their edge */
+
+    --color-footer-bg:  #0b101d;
+    --color-footer-text:#93a0ba;
+    --color-footer-heading: #f1f5fb;
+    --color-footer-link:    #aab7d1;
+    --color-footer-link-hover: #ffffff;
+}
+
+/* smooth color changes when flipping themes */
+body,
+.site-header,
+.site-footer,
+.card,
+.section-alt,
+.hero {
+    transition: background-color 0.35s ease, color 0.35s ease,
+                border-color 0.35s ease;
 }
 
 
@@ -115,12 +169,52 @@ a {
     display: flex;
     /* LESSON — FLEXBOX: the modern way to lay things out.
        display: flex makes children line up side by side. */
-    justify-content: space-between;
-    /* push logo to the left, menu to the right */
+    justify-content: flex-start;
+    /* children start left; the logo's auto margin (below)
+       absorbs the free space and pushes the menu group right */
     align-items: center;
     /* vertically center logo and menu */
     padding: 15px 20px;
 }
+
+.header-inner .logo {
+    margin-right: auto;
+    /* LESSON — AUTO MARGIN: eats all free space on its right,
+       shoving the nav + theme button to the far side. The
+       classic logo-left / menu-right trick. */
+}
+
+/* ============ THEME TOGGLE (in every header) ============
+   Round sun/moon button. Which icon is visible depends on
+   the current theme (see the two rules at the bottom). */
+.theme-toggle {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    margin-left: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s, transform 0.15s;
+}
+
+.theme-toggle:hover {
+    background-color: var(--color-bg-alt);
+    transform: rotate(15deg) scale(1.08);
+    /* a playful little tilt on hover */
+}
+
+.theme-toggle .icon-sun { display: none; }
+.theme-toggle .icon-moon { display: block; }
+
+/* In dark mode, swap which icon shows */
+html[data-theme="dark"] .theme-toggle .icon-sun  { display: block; }
+html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 
 .logo {
     font-size: 1.3rem;
@@ -342,11 +436,13 @@ a {
 }
 
 
-/* ================= FOOTER ================= */
+/* ================= FOOTER =================
+   The footer is a dark band on BOTH themes (light theme uses
+   the classic near-black; dark theme deepens it further).
+   All its colors flow from the --color-footer-* variables. */
 .site-footer {
-    background-color: var(--color-text);
-    /* dark footer — classic bottom band */
-    color: #cbd5e1;
+    background-color: var(--color-footer-bg);
+    color: var(--color-footer-text);
     padding: 30px 0;
     text-align: center;
 }
@@ -358,16 +454,15 @@ a {
 }
 
 .site-footer .logo {
-    color: #ffffff;
-    /* override: logo text must be white on dark footer */
+    color: var(--color-footer-heading);
 }
 
 .footer-nav a {
-    color: #cbd5e1;
+    color: var(--color-footer-link);
 }
 
 .footer-nav a:hover {
-    color: #ffffff;
+    color: var(--color-footer-link-hover);
 }
 
 
@@ -1172,6 +1267,80 @@ a {
     color: var(--color-text-muted);
 }
 
+/* ================= LEVEL BANNER GRADIENTS =================
+   .grad-a1 ... .grad-c2 = the six level banners (carousel
+   slides AND course detail heroes). JS only adds the class
+   (from the level's id) — ALL colors live here, so dark
+   mode can give every level its own deep-night palette.
+   LIGHT palettes (used by default): */
+.grad-a1 { background: linear-gradient(135deg, #38bdf8, #2563eb); }
+.grad-a2 { background: linear-gradient(135deg, #22c55e, #059669); }
+.grad-b1 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.grad-b2 { background: linear-gradient(135deg, #6366f1, #4338ca); }
+.grad-c1 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.grad-c2 { background: linear-gradient(135deg, #475569, #1e1b4b); }
+
+/* ================= DARK THEME OVERRIDES =================
+   Everything below ONLY applies when js/theme.js switched
+   <html> to data-theme="dark". Banners get a whole NEW color
+   template (deeper, moodier versions of their own colors)
+   instead of a crude invert — richer and never muddy. */
+
+/* The default blue hero (Home, About, Contact banners) */
+html[data-theme="dark"] .hero {
+    background: linear-gradient(135deg, #16326e, #1d4ed8);
+}
+
+/* Dark palettes per level */
+html[data-theme="dark"] .grad-a1 { background: linear-gradient(135deg, #0e7490, #1e40af); }
+html[data-theme="dark"] .grad-a2 { background: linear-gradient(135deg, #0f766e, #134e4a); }
+html[data-theme="dark"] .grad-b1 { background: linear-gradient(135deg, #1e40af, #172554); }
+html[data-theme="dark"] .grad-b2 { background: linear-gradient(135deg, #4338ca, #312e81); }
+html[data-theme="dark"] .grad-c1 { background: linear-gradient(135deg, #6d28d9, #4c1d95); }
+html[data-theme="dark"] .grad-c2 { background: linear-gradient(135deg, #293548, #0b0f24); }
+
+/* Contact page bits that use fixed light colors */
+html[data-theme="dark"] .badge-open {
+    background-color: #0e2f24;
+    color: #6ee7b7;
+    border-color: #166534;
+}
+
+html[data-theme="dark"] .badge-closed {
+    background-color: #331416;
+    color: #fca5a5;
+    border-color: #7f1d1d;
+}
+
+html[data-theme="dark"] .form-success {
+    background-color: #0c2b22;
+    border-color: #14532d;
+    color: #86efac;
+}
+
+html[data-theme="dark"] .hours-row.today {
+    background-color: rgba(110, 168, 254, 0.12);
+}
+
+html[data-theme="dark"] .hours-row.today .day-name::after {
+    color: var(--color-accent);
+}
+
+html[data-theme="dark"] .hours-row.today .day-hours {
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .map-frame {
+    background-color: var(--color-card-bg);
+    background-image:
+        repeating-linear-gradient(0deg, rgba(110, 168, 254, 0.1) 0 1px, transparent 1px 46px),
+        repeating-linear-gradient(90deg, rgba(110, 168, 254, 0.1) 0 1px, transparent 1px 46px);
+}
+
+html[data-theme="dark"] .map-tag {
+    background-color: rgba(27, 36, 64, 0.92);
+}
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -1250,12 +1419,28 @@ a {
 
     .header-inner {
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .header-inner .logo {
+        margin-right: 0;
+        /* undo the desktop auto-margin in the column layout */
+    }
+
+    .main-nav {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 4px 14px;
     }
 
     .main-nav a {
+        margin: 0;
+    }
+
+    .theme-toggle {
         margin-left: 0;
-        margin: 0 8px;
     }
 
     .section {

@@ -11,6 +11,7 @@ in the private academy-live repo.
 - [x] **Module 3 — Course detail** (`course.html`) — reads `?level=&skill=` from URL, 24 courses from one template (built on `Deltaone`)
 - [x] **Module 4 — About** (`about.html`) — writer's-note template (built on `Deltaone` branch)
 - [x] **Module 5 — Contact** (`contact.html`) — form (mailto engine), icon list, socials, live open/closed hours, map slot (built on `Deltaone`)
+- [x] **Theme system** — global light/dark via CSS variables + `js/theme.js` toggle, `.grad-*` banner classes, future pages auto-ready (built on `Deltaone`)
 
 ## Later upgrades (v2+)
 

@@ -48,10 +48,14 @@ let currentIndex = 0;
 function buildSlides() {
     for (let level of LEVELS) {
 
-        /* 1) make the slide <div> and give it its background */
+        /* 1) make the slide <div> and give it its banner colors */
         const slide = document.createElement("div");
-        slide.classList.add("slide");
-        slide.style.background = level.gradient;
+        slide.classList.add("slide", "grad-" + level.id.toLowerCase());
+        /* LESSON — why a CSS class, not an inline style?
+           The gradients live in styles.css as .grad-a1 ... .grad-c2,
+           each with a LIGHT and a DARK palette. Inline styles can't
+           be re-themed by CSS — classes can. One line of CSS can
+           now restyle every banner in dark mode. */
         /* .style.background = ... sets an INLINE style,
            exactly like style="..." in HTML. This is where
            each level's colors come from (the data file). */

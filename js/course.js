@@ -167,10 +167,11 @@ if (!level || !skill) {
 
     document.getElementById("course-root").innerHTML = details;
 
-    /* Give the banner its level gradient (see .style.background
-       trick in carousel.js — same idea, direct on the hero). */
+    /* Give the banner its level gradient. Same trick as the
+       carousel: classes (.grad-a1 ...) not inline styles, so
+       dark mode re-palettes every course banner automatically. */
     const hero = document.querySelector(".course-hero");
     if (hero) {
-        hero.style.background = level.gradient;
+        hero.classList.add("grad-" + level.id.toLowerCase());
     }
 }
