@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 2: COURSES PAGE  (academy-dev — generic test version)
+     ------------------------------------------------------------
+     WHAT THIS PAGE IS:
+     A cinematic showcase of all course levels (A1 to C2).
+     Arrows flip between level banners (smooth slide),
+     and the section below shows the chosen level's content:
+     4 courses = the four language skills (Speaking, Writing,
+     Reading, Listening).
+
+     HOW THE PAGE WORKS:
+     This HTML file holds only the EMPTY STRUCTURE (the "slots").
+     The content comes from two scripts loaded at the bottom:
+       1. js/levels-data.js  -> the DATA (all levels/skills)
+       2. js/carousel.js     -> the BEHAVIOUR (fills + animates)
+     That split = "data driven" pages. New course content = edit
+     the data file only, never this page.
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses | The English Academy</title>
+
+    <!-- Fancy display font for the big banner titles.
+         LESSON: @import inside <link> tags loads fonts from
+         Google's servers. The fallback (Georgia/serif) in CSS
+         keeps titles pretty even offline. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html" class="active">Courses</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ================= LEVEL SHOWCASE =================
+         THE SLOTS (everything the JS needs is here):
+         .showcase-track  -> empty strip; slides get injected
+         .showcase-counter-> "1 / 6" text (JS fills it)
+         two .arrow buttons -> prev / next
+         The fades (.edge-fade) are pure CSS, always on top. -->
+    <section class="section showcase-section">
+        <div class="container">
+
+            <div class="showcase-wrapper">
+
+                <div class="showcase-viewport">
+                    <!-- JS slides live inside this strip -->
+                    <div class="showcase-track"></div>
+
+                    <!-- semi-transparent fades over the edges -->
+                    <div class="edge-fade edge-left"></div>
+                    <div class="edge-fade edge-right"></div>
+                    <div class="edge-fade edge-bottom"></div>
+
+                    <!-- counter: bottom-right -->
+                    <div class="showcase-counter"></div>
+                </div>
+
+                <!-- arrows (‹ › are unicode characters) -->
+                <button class="arrow arrow-prev" aria-label="Previous level">&#8249;</button>
+                <button class="arrow arrow-next" aria-label="Next level">&#8250;</button>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= LEVEL DETAILS =================
+         This whole section is a SLOT too — JS rebuilds its
+         content on every flip (see #level-details in JS).
+         It starts empty on purpose: no data, no content. -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Course Details</h2>
+            <div id="level-details"></div>
+        </div>
+    </section>
+
+    <!-- ================= CTA ================= -->
+    <section class="section section-alt cta-band">
+        <div class="container">
+            <h2>Not sure which level fits you?</h2>
+            <p>Contact us — we'll help you find your starting point.</p>
+            <a href="contact.html" class="btn btn-primary">Talk to Us</a>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER (same on every page) ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS =================
+         ORDER MATTERS: levels-data.js first (it DEFINES the
+         data), carousel.js second (it USES the data). -->
+    <script src="js/levels-data.js"></script>
+    <script src="js/carousel.js"></script>
+
+</body>
+</html>
