@@ -666,6 +666,201 @@ a {
     }
 }
 
+/* ================= COURSE DETAIL PAGE (Module 3) =================
+   course.html — content is injected by JS, but every class
+   it creates is styled HERE. */
+.course-hero {
+    /* inherits .hero + .hero-sm; JS paints the level's
+       gradient inline via style.background */
+    padding-bottom: 70px;
+}
+
+.course-kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.8rem;
+    font-weight: bold;
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+
+.course-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    /* content | facts sidebar */
+    gap: 40px;
+    align-items: start;
+}
+
+.course-main {
+    max-width: 720px;
+}
+
+.block {
+    margin-bottom: 40px;
+}
+
+.block-title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.5rem;
+    margin-bottom: 14px;
+    color: var(--color-text);
+}
+
+.muted {
+    color: var(--color-text-muted);
+}
+
+/* ============ UNIT OUTLINE (numbered rows) ============ */
+.unit-list {
+    list-style: none;
+    /* remove default bullets — numbers do the job */
+}
+
+.unit-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.unit-num {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--color-bg-alt);
+    color: var(--color-primary-dark);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.unit-text {
+    color: var(--color-text);
+}
+
+/* ============ GRAMMAR TOPIC LIST ============ */
+.topic-list {
+    list-style: none;
+}
+
+.topic-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    color: var(--color-text);
+    border-bottom: 1px dashed var(--color-border);
+}
+
+.topic-list li::before {
+    /* a little tick mark painted by CSS, not an image */
+    content: "✓";
+    position: absolute;
+    left: 6px;
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+/* ============ SIDEBAR FACTS CARD ============ */
+.sidebar-card {
+    position: sticky;
+    top: 90px;
+    /* card stays visible while scrolling past the header —
+       nice on long course pages */
+}
+
+.sidebar-card h3 {
+    font-family: "Playfair Display", Georgia, serif;
+    margin-bottom: 8px;
+}
+
+.fact-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.92rem;
+}
+
+.fact-label {
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    font-weight: bold;
+    padding-top: 2px;
+}
+
+.fact-value {
+    text-align: right;
+}
+
+.other-skills {
+    margin: 16px 0 20px;
+    text-align: center;
+    font-size: 0.92rem;
+}
+
+.other-skills p {
+    margin-top: 6px;
+}
+
+.skill-switch-link {
+    display: inline-block;
+    margin: 4px;
+    padding: 4px 10px;
+    background-color: var(--color-bg-alt);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--color-primary-dark);
+}
+
+.skill-switch-link:hover {
+    background-color: var(--color-border);
+}
+
+/* ============ BUTTON VARIANTS (used here + anywhere) ============ */
+.btn-block {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.btn-ghost {
+    /* neutral button for light backgrounds:
+       bordered, transparent, blue text */
+    border-color: var(--color-border);
+    color: var(--color-primary);
+    background-color: transparent;
+}
+
+.btn-ghost:hover {
+    background-color: var(--color-bg-alt);
+    border-color: var(--color-primary);
+}
+
+/* ============ NOT-FOUND FALLBACK ============ */
+.not-found-card {
+    max-width: 480px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 40px;
+}
+
+.not-found-card h2 {
+    margin-bottom: 10px;
+}
+
+.not-found-card p {
+    margin-bottom: 20px;
+}
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -695,6 +890,16 @@ a {
 
     .skills-grid {
         grid-template-columns: 1fr;
+    }
+
+    .course-layout {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .sidebar-card {
+        position: static;
+        /* sticky stops being useful on phones — let it flow */
     }
 
     .edge-left,
