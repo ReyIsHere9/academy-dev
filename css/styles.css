@@ -861,6 +861,317 @@ a {
     margin-bottom: 20px;
 }
 
+/* ================= CONTACT PAGE (Module 5) =================
+   contact.html — form, info rows, socials, hours, map */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    /* form | side column */
+    gap: 30px;
+    align-items: start;
+}
+
+.contact-side {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.card-title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.35rem;
+    margin-bottom: 16px;
+}
+
+/* ============ FORM ============ */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 20px;
+}
+
+.field {
+    margin-bottom: 18px;
+}
+
+.field label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    padding: 11px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field textarea {
+    resize: vertical;
+    /* visitors may grow the box, but only vertically */
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    /* soft "glow ring" instead of the default focus outline —
+       sleek + accessible */
+}
+
+.is-invalid {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
+.field-error {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.form-hint {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-top: 14px;
+}
+
+.form-sent {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.form-success {
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: var(--radius);
+    color: #065f46;
+    padding: 18px 20px;
+    margin-top: 18px;
+}
+
+.form-success h3 {
+    margin-bottom: 6px;
+}
+
+/* ============ INFO ROWS (icon + label + value) ============ */
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+}
+
+.icon-circle {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-lg {
+    width: 34px;
+    height: 34px;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: bold;
+    color: var(--color-text-muted);
+}
+
+.info-value {
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+/* ============ SOCIAL BUTTONS ============ */
+.socials-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.social-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s, transform 0.15s;
+}
+
+.social-btn:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* ============ OPENING HOURS ============ */
+.hours-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.hours-head .card-title {
+    margin-bottom: 0;
+}
+
+.open-badge {
+    font-size: 0.78rem;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 999px;
+}
+
+.badge-open {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-closed {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.hours-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+}
+
+.hours-row + .hours-row {
+    border-top: 1px dashed var(--color-border);
+    border-radius: 0 0 8px 8px;
+}
+
+.day-name {
+    font-weight: bold;
+}
+
+.day-hours {
+    color: var(--color-text-muted);
+}
+
+.hours-row.today {
+    background-color: #eff6ff;
+    border-radius: 8px;
+    border-top-color: transparent;
+}
+
+.hours-row.today .day-name::after {
+    content: " · today";
+    color: var(--color-primary);
+    font-size: 0.8rem;
+}
+
+.hours-row.today .day-hours {
+    color: var(--color-primary-dark);
+    font-weight: bold;
+}
+
+/* ============ MAP SLOT ============ */
+.map-card {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 30px;
+    align-items: center;
+}
+
+.map-text {
+    padding: 10px 0;
+}
+
+.map-text .muted {
+    margin-bottom: 18px;
+}
+
+.map-note {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+    border-left: 3px solid var(--color-border);
+    padding-left: 12px;
+    margin-top: 18px;
+}
+
+.map-frame {
+    position: relative;
+    min-height: 300px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    background-color: #f8fafc;
+    background-image:
+        /* two repeating gradients = a street grid, all code */
+        repeating-linear-gradient(0deg, rgba(37, 99, 235, 0.07) 0 1px, transparent 1px 46px),
+        repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.07) 0 1px, transparent 1px 46px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-pin {
+    color: var(--color-primary);
+    text-align: center;
+    animation: pinDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    /* playful "dropped in" entrance: overshoot bounce */
+}
+
+@keyframes pinDrop {
+    from { transform: translateY(-30px); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+
+.map-tag {
+    position: absolute;
+    bottom: 14px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--color-border);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -900,6 +1211,18 @@ a {
     .sidebar-card {
         position: static;
         /* sticky stops being useful on phones — let it flow */
+    }
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .map-card {
+        grid-template-columns: 1fr;
     }
 
     .edge-left,
