@@ -1364,13 +1364,21 @@ html[data-theme="dark"] .map-tag {
    The "|" dividers between menu items come from ::before
    pseudos on every nav child after the first — painted by CSS,
    no markup needed. */
+/* ============================================================
+   [BUGFIX LOG #1] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:    the whole header stacked into a pile — logo,
+                  links and button on top of each other.
+   WHY:           a <nav> is BLOCK-level by default. The Pricing
+                  live in this menu as a <div class="dd">, and a
+                  block child forces its own line, breaking the
+                  #header-inner row flow (= "everything piled").
+   THE FIX:       give .main-nav display:flex — all items,
+                  links AND the .dd wrapper, flow side by side.
+   EXTRA:         same flex also fixed the Pricing trigger button
+                  painting like a stale "link-shaped" element.
+   ============================================================ */
 .main-nav {
     display: flex;
-    /* THE FIX: a <nav> is block-level by default. Once the
-       Pricing dropdown <div> joined the menu, that block box
-       forced its own line and stacked the whole header.
-       Flex keeps every menu item — links AND the .dd wrapper —
-       on one row. */
     align-items: center;
 }
 
@@ -1519,7 +1527,20 @@ html[data-theme="dark"] .dd-tier.is-popular {
    .price-old holds the "was" price. The cross-out X is a tiny
    SVG of two diagonal strokes stretched over the number
    (preserveAspectRatio="none" + non-scaling-stroke keep the
-   strokes crisp at any width). Red works on both themes. */
+   strokes crisp at any width). Red works on both themes.
+   ------------------------------------------------------------
+   [BUGFIX LOG #2] — READ ME
+   WHAT BROKE:    the strike looked like 3 random red lines
+                  stacked on the price, not a cross-out.
+   WHY:           original artwork was two WAVY horizontal
+                  strokes meant to look like "pencil scribble";
+                  squashed over tiny price widths they read as
+                  noise and the line-through made a third line.
+   THE FIX:       replaced with a proper X: two diagonal
+                  M3 3 L21 21 / M21 3 L3 21 strokes, and
+                  vector-effect="non-scaling-stroke" so strokes
+                  stay uniform at any text width.
+   ============================================================ */
 .plan-price {
     display: flex;
     align-items: baseline;

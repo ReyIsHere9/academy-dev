@@ -97,6 +97,27 @@ Commenting style (keep it!):
 - Explain WHAT a block does when the tag isn't obvious
   (`<nav>`, `<article>`, `<section>`), never explain plain text content.
 
+### BUGFIX LOGS — the "read me" banners (mandatory after every fix)
+
+Every mistake that gets fixed leaves a permanent, searchable
+comment at the crime scene. Format (keep the ==== box + title):
+
+```
+/* ============================================================
+   [BUGFIX LOG #N] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:  one sentence: what the user saw
+   WHY:         root cause in plain English
+   THE FIX:     exact change made
+   SYMPTOM:     how it looked when broken (helps future diagnosis)
+   ============================================================ */
+```
+
+- Number chronologically (`#1`, `#2`, `#3`...), place right at the
+  fixed code, in whichever file holds the fix (JS or CSS).
+- Search text: `BUGFIX LOG` (grep-able anywhere in the repo).
+- When the SAME class of bug appears again, reuse the number +
+  append a "ROUND 2" line before creating a new one.
+
 ---
 
 ## 4. CSS rules (styles.css stays the single source of truth)

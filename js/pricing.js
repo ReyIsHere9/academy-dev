@@ -144,6 +144,21 @@ if (matrixRoot && billingBar) {
             </th>
         `).join("");
 
+    /* ============================================================
+       [BUGFIX LOG #3] — READ ME (lesson learned, keep forever)
+       WHAT BROKE:    the matrix showed every cell mashed into one
+                      continuous text strip above/around the header,
+                      and the tier columns "climbed" diagonally.
+       WHY:           each feature cell was injected as bare <span>
+                      content with NO <td> wrapper. Browsers rip
+                      non-table tags out of <tr> surroundings and
+                      fall back to inline-block + baseline alignment —
+                      tall content sits HIGH, short content LOW,
+                      hence the climbing columns.
+       THE FIX:       wrap every cell:  <td>${cellHtml(cell)}</td>
+       SYMPTOM:       cellText / check marks laid out like prose,
+                      not like columns.
+       ============================================================ */
         /* body: group headings + feature rows */
         const bodyRows = PRICING.groups.map(group => `
             <tr class="group-row">
