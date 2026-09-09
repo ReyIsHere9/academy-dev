@@ -152,7 +152,7 @@ if (matrixRoot && billingBar) {
             ${group.rows.map(row => `
                 <tr>
                     <th scope="row" class="feature-name">${row.name}</th>
-                    ${row.cells.map(cellHtml).join("")}
+                    ${row.cells.map(cell => `<td>${cellHtml(cell)}</td>`).join("")}
                 </tr>
             `).join("")}
         `).join("");
