@@ -10,7 +10,7 @@ in the private academy-live repo.
 - [x] **Module 2 — Courses catalog** (`courses.html`) — A1–C2 showcase carousel + skills grid (built on `Deltaone`)
 - [x] **Module 3 — Course detail** (`course.html`) — reads `?level=&skill=` from URL, 24 courses from one template (built on `Deltaone`)
 - [x] **Module 4 — About** (`about.html`) — writer's-note template (built on `Deltaone` branch)
-- [ ] **Module 5 — Contact** (`contact.html`) + form
+- [x] **Module 5 — Contact** (`contact.html`) — form (mailto engine), icon list, socials, live open/closed hours, map slot (built on `Deltaone`)
 
 ## Later upgrades (v2+)
 
