@@ -441,6 +441,231 @@ a {
 }
 
 
+/* ================= COURSES PAGE (Module 2) =================
+   The level showcase + details section (courses.html)
+   ------------------------------------------------------------
+   How it works: .showcase-viewport is a "window" with
+   overflow:hidden. Inside it, .showcase-track is a long
+   strip of full-width slides that the JS slides sideways
+   with translateX(). The .edge-fade overlays paint the
+   semi-transparent fades over the banner edges. */
+.showcase-section {
+    padding: 50px 0 10px;
+}
+
+.showcase-wrapper {
+    position: relative;
+}
+
+.showcase-viewport {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+    position: relative;
+}
+
+.showcase-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    /* the SMOOTH part: every transform change is animated
+       over 0.6 seconds with a gentle ease curve */
+}
+
+.slide {
+    flex: 0 0 100%;
+    /* each slide = exactly 100% of the viewport width
+       (0 0 = don't grow, don't shrink) */
+    min-height: 430px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    padding: 30px 40px 35px;
+}
+
+.slide-top {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.chip {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(4px);
+    /* frosted-glass blur behind the pill */
+}
+
+.slide-bottom {
+    margin-top: auto;
+    text-align: center;
+}
+
+.slide-title {
+    font-family: "Playfair Display", Georgia, serif;
+    /* LESSON — FONT STACK: first try Playfair Display
+       (a fancy serif font loaded in courses.html head),
+       if unavailable fall back to Georgia, then any serif. */
+    font-size: clamp(2.2rem, 6vw, 4.2rem);
+    /* LESSON — clamp(min, preferred, max): title size
+       scales with the screen but stays inside limits.
+       No media query needed for the title itself! */
+    font-weight: 600;
+    line-height: 1.1;
+    text-shadow: 0 3px 20px rgba(0, 0, 0, 0.3);
+    /* soft shadow keeps the light text readable
+       on bright parts of the gradient */
+}
+
+.slide-tagline {
+    margin-top: 8px;
+    font-size: 1.05rem;
+    opacity: 0.92;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* ============ EDGE FADES (the semi-transparent edges) ============ */
+.edge-fade {
+    position: absolute;
+    pointer-events: none;
+    /* clicks pass THROUGH the fade to the arrows/slides */
+    z-index: 2;
+}
+
+.edge-left {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 90px;
+    background: linear-gradient(to right, rgba(15, 23, 42, 0.3), transparent);
+    /* starts dark at the very edge, fades to nothing */
+}
+
+.edge-right {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 90px;
+    background: linear-gradient(to left, rgba(15, 23, 42, 0.3), transparent);
+}
+
+.edge-bottom {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 140px;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.45), transparent);
+    /* darkens toward the bottom edge so the title
+       always sits on a readable band */
+}
+
+/* ============ ARROWS ============ */
+.arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--color-text);
+    font-size: 1.7rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.arrow:hover {
+    transform: translateY(-50%) scale(1.1);
+    background: #ffffff;
+}
+
+.arrow-prev { left: 16px; }
+.arrow-next { right: 16px; }
+
+/* ============ COUNTER ("2 / 6") ============ */
+.showcase-counter {
+    position: absolute;
+    right: 20px;
+    bottom: 18px;
+    z-index: 3;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ============ DETAILS SECTION (under the banner) ============ */
+.level-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 40px;
+}
+
+.level-title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 2rem;
+    color: var(--color-text);
+    margin-bottom: 10px;
+}
+
+.level-header p {
+    color: var(--color-text-muted);
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* 4 skills -> clean 2x2 grid on desktop */
+    gap: 24px;
+}
+
+.skill-card h4 {
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+    color: var(--color-primary);
+}
+
+.feature-list {
+    margin: 12px 0 18px;
+    padding-left: 18px;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+}
+
+.feature-list li {
+    margin: 6px 0;
+}
+
+.lessons {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+/* ============ DETAILS FADE-IN ANIMATION ============
+   .reveal is added by JS on every level change. */
+.reveal {
+    animation: fadeUp 0.45s ease both;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -461,6 +686,34 @@ a {
     .about-split {
         grid-template-columns: 1fr;
         /* photo sits above text on phones */
+    }
+
+    .slide {
+        min-height: 330px;
+        padding: 24px 18px;
+    }
+
+    .skills-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .edge-left,
+    .edge-right {
+        width: 40px;
+    }
+
+    .arrow {
+        width: 38px;
+        height: 38px;
+        font-size: 1.2rem;
+    }
+
+    .arrow-prev { left: 8px; }
+    .arrow-next { right: 8px; }
+
+    .chip {
+        font-size: 0.75rem;
+        padding: 5px 11px;
     }
 
     .hero h1 {

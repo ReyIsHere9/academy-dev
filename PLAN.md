@@ -7,7 +7,7 @@ in the private academy-live repo.
 ## Site modules (build order)
 
 - [x] **Module 1 — Home** (`index.html`) + shared `css/styles.css`
-- [ ] **Module 2 — Courses catalog** (`courses.html`) — grid of all courses
+- [x] **Module 2 — Courses catalog** (`courses.html`) — A1–C2 showcase carousel + skills grid (built on `Deltaone`)
 - [ ] **Module 3 — Course detail** (`course.html`) — single course template
 - [x] **Module 4 — About** (`about.html`) — writer's-note template (built on `Deltaone` branch)
 - [ ] **Module 5 — Contact** (`contact.html`) + form
