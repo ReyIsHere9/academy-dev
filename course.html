@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 3: COURSE DETAIL PAGE  (academy-dev — generic version)
+     ------------------------------------------------------------
+     WHAT THIS PAGE IS:
+     The detail page for ONE course. It is NOT a page per
+     course — it's ONE empty template that answers the URL:
+
+        course.html?level=A2&skill=Writing
+
+     ...and paints the matching course. 24 possible courses
+     (6 levels x 4 skills), ONE html file. That's the power
+     of data-driven pages: the "page" is really just a lens.
+
+     The whole visible page is a single slot (#course-root)
+     filled by js/course.js. This file only carries the
+     header, footer and the scripts (order matters again:
+     data first, logic second).
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course | The English Academy</title>
+
+    <!-- same display font as the courses page (titles) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- ================= HEADER (same on every page) =================
+         Courses stays highlighted: this page IS a course page,
+         but the menu only knows top-level pages. -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html" class="active">Courses</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ================= THE SLOT =================
+         js/course.js paints the whole course page here:
+         colored banner, main content, sidebar — all of it.
+         If the URL has no valid course, it paints a
+         friendly "not found" card instead. -->
+    <div id="course-root"></div>
+
+    <!-- ================= FOOTER (same on every page) ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/levels-data.js"></script>
+    <script src="js/course.js"></script>
+
+</body>
+</html>
