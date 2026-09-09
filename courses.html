@@ -50,6 +50,19 @@
             <nav class="main-nav">
                 <a href="./">Home</a>
                 <a href="courses.html" class="active">Courses</a>
+
+                <!-- PRICING DROPDOWN (rendered by js/pricing.js) -->
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
             </nav>
@@ -150,6 +163,9 @@
          data), carousel.js second (it USES the data). -->
     <script src="js/levels-data.js"></script>
     <script src="js/carousel.js"></script>
+    <!-- pricing scripts power the header Pricing dropdown -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
 
 </body>
 </html>

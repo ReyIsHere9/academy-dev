@@ -1341,6 +1341,482 @@ html[data-theme="dark"] .map-tag {
     background-color: rgba(27, 36, 64, 0.92);
 }
 
+/* ================= NAV SEPARATORS + PRICING DROPDOWN =================
+   The "|" dividers between menu items come from ::before
+   pseudos on every nav child after the first — painted by CSS,
+   no markup needed. */
+.main-nav {
+    align-items: center;
+}
+
+.main-nav a {
+    margin-left: 0;
+}
+
+.main-nav > * + *::before {
+    content: "|";
+    color: var(--color-border);
+    margin: 0 18px;
+    font-weight: normal;
+}
+
+/* the Pricing trigger button matches the link look */
+.dd-btn {
+    font-family: inherit;
+    font-size: inherit;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 6px 2px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+}
+
+.dd-btn:hover {
+    color: var(--color-primary);
+}
+
+.dd-caret {
+    font-size: 0.7em;
+}
+
+/* panel: fixed + centered so it floats over the page like a
+   proper mega-menu on every screen size */
+.dd-panel {
+    display: none;
+    position: fixed;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(920px, 92vw);
+    z-index: 100;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    box-shadow: 0 30px 70px rgba(2, 6, 23, 0.25);
+    padding: 14px;
+}
+
+.dd-panel.is-open {
+    display: block;
+    animation: menuPop 0.18s ease-out;
+}
+
+@keyframes menuPop {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* four mini tier columns inside the panel */
+.dd-tiers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.dd-tier {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 16px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
+}
+
+.dd-tier:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-bg-alt);
+    transform: translateY(-2px);
+}
+
+.dd-tier.is-popular {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
+html[data-theme="dark"] .dd-tier.is-popular {
+    background-color: rgba(110, 168, 254, 0.1);
+}
+
+.dd-tier-name {
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.popular-chip {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 3px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+}
+
+.dd-tier-cta {
+    margin-top: auto;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.dd-compare {
+    display: block;
+    text-align: center;
+    padding: 12px 10px 4px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 12px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* ============ PRICE LINE + PENCIL SCRIBBLE ============
+   .price-old holds the crossed-out "was" price; the scribble
+   is a tiny code-drawn SVG of two wavy strokes, positioned
+   right over the number — reads as hand-scratched, works on
+   both themes. */
+.plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.price-now {
+    font-size: 1.7rem;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.price-unit {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.price-old {
+    position: relative;
+    display: inline-block;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+    padding: 0 6px;
+}
+
+.price-old .scribble {
+    position: absolute;
+    left: 0;
+    top: 45%;
+    width: 100%;
+    height: 55%;
+    pointer-events: none;
+    transform: rotate(-3deg);
+    /* double-stroke handwritten scratch, red on both themes */
+    color: #ef4444;
+}
+
+.price-old .scribble path {
+    fill: none;
+    stroke: #ef4444;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    opacity: 0.9;
+}
+
+.discount-chip {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    font-size: 0.72rem;
+    font-weight: bold;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+html[data-theme="dark"] .discount-chip {
+    background-color: #3f1212;
+    color: #fca5a5;
+    border-color: #7f1d1d;
+}
+
+/* ================= PRICING PAGE (module) ================= */
+/* --- billing toggle pills --- */
+.billing-section {
+    padding-bottom: 10px;
+}
+
+.bill-toggle {
+    display: inline-flex;
+    gap: 4px;
+    padding: 5px;
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+}
+
+.bill-btn {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    padding: 9px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.bill-btn:hover {
+    color: var(--color-text);
+}
+
+.bill-btn.is-active {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.billing-hint {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-top: 14px;
+}
+
+/* --- the comparison matrix ---
+   A real <table>: features as rows, tiers as columns. The
+   first column sticks to the left while the table scrolls
+   horizontally on narrow screens. */
+.cmp-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background-color: var(--color-card-bg);
+}
+
+.cmp-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    min-width: 660px;
+    font-size: 0.9rem;
+}
+
+.cmp-table th,
+.cmp-table td {
+    padding: 13px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.cmp-table thead th {
+    border-bottom: 2px solid var(--color-border);
+}
+
+.cmp-table tbody tr:last-child th,
+.cmp-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* the tier name + price header cells */
+.tier-name {
+    font-weight: bold;
+    font-size: 1.05rem;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.tier-note {
+    display: block;
+    margin-top: 8px;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+/* sticky first column (the feature names) */
+.cmp-table th:first-child,
+.cmp-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--color-card-bg);
+    text-align: left;
+    min-width: 200px;
+}
+
+.cmp-table .feature-name {
+    color: var(--color-text);
+    font-weight: bold;
+}
+
+/* group band rows ("Lessons & library" etc) */
+.cmp-table tr.group-row th {
+    position: static;
+    background-color: var(--color-bg-alt);
+    color: var(--color-primary-dark);
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    padding: 9px 16px;
+    text-align: left;
+}
+
+/* Pro column = the 4th column (popular). A soft tint column. */
+.cmp-table thead th:nth-child(4),
+.cmp-table tbody tr:not(.group-row) > *:nth-child(4),
+.cmp-table tfoot td:nth-child(4) {
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
+html[data-theme="dark"] .cmp-table thead th:nth-child(4),
+html[data-theme="dark"] .cmp-table tbody tr:not(.group-row) > *:nth-child(4),
+html[data-theme="dark"] .cmp-table tfoot td:nth-child(4) {
+    background-color: rgba(110, 168, 254, 0.09);
+}
+
+/* cell symbols: ✓ / — / custom text */
+.tick {
+    color: #15803d;
+    font-weight: bold;
+}
+
+html[data-theme="dark"] .tick {
+    color: #4ade80;
+}
+
+.dash {
+    color: var(--color-text-muted);
+}
+
+.cell-text {
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+/* hover row feedback */
+.cmp-table tbody tr:not(.group-row):hover th,
+.cmp-table tbody tr:not(.group-row):hover td {
+    background-color: var(--color-bg-alt);
+}
+
+.cmp-table tfoot td {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+/* --- the sneaky lifetime hook (native <details>) --- */
+.hook-details {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+}
+
+.hook-summary {
+    list-style: none;
+    /* hide the native disclosure triangle */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px;
+    color: var(--color-text-muted);
+    transition: color 0.2s;
+}
+
+.hook-summary::-webkit-details-marker {
+    display: none;
+    /* Safari needs its own hiding rule */
+}
+
+.hook-summary:hover {
+    color: var(--color-primary);
+}
+
+.hook-pencil {
+    flex: none;
+    color: var(--color-primary);
+}
+
+.hook-text {
+    flex: 1;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.hook-caret {
+    font-size: 0.8em;
+    transition: transform 0.25s;
+}
+
+.hook-details[open] .hook-caret {
+    transform: rotate(180deg);
+}
+
+.hook-body {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 34px;
+    padding: 8px 24px 30px;
+    border-top: 1px solid var(--color-border);
+}
+
+.hook-copy h2 {
+    font-family: "Playfair Display", Georgia, serif;
+    margin-bottom: 10px;
+}
+
+.hook-copy .feature-list {
+    margin-left: 4px;
+}
+
+.hook-note {
+    font-style: italic;
+    font-size: 0.9rem;
+    border-left: 3px solid var(--color-border);
+    padding-left: 12px;
+}
+
+.hook-card {
+    align-self: start;
+    text-align: center;
+}
+
+.hook-card-label {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--color-text-muted);
+}
+
+.hook-price {
+    font-size: 2.6rem;
+    font-weight: bold;
+    color: var(--color-primary);
+    margin: 6px 0;
+}
+
+.hook-card-note {
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -1437,6 +1913,24 @@ html[data-theme="dark"] .map-tag {
 
     .main-nav a {
         margin: 0;
+    }
+
+    /* drop the "|" separators — wrapped chips look cleaner */
+    .main-nav > * + *::before {
+        display: none;
+    }
+
+    .dd-panel {
+        top: 150px;
+        /* sits below the taller stacked mobile header */
+    }
+
+    .dd-tiers {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .hook-body {
+        grid-template-columns: 1fr;
     }
 
     .theme-toggle {

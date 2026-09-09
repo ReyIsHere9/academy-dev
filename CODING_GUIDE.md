@@ -79,6 +79,12 @@ Every-page mandatory bits (copy from an existing page):
 - In the header (inside `.header-inner`, after `</nav>`): the
   `#theme-toggle` button (sun/moon SVGs) — identical markup on
   every page.
+- The nav includes the Pricing dropdown block (`.dd` markup,
+  `#dd-tiers` slot) — required for the mega-menu to render.
+- Just before `</body>`: the pricing scripts (data first):
+  `<script src="js/pricing-data.js"></script>` +
+  `<script src="js/pricing.js"></script>` (they guard themselves:
+  each page uses only the pricing parts it has markup for).
 - If a page needs its own data/behavior JS, load those at the
   bottom of `<body>` as usual (theme.js is the ONLY head script).
 

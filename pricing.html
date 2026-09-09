@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE: PRICING PAGE  (academy-dev — generic test version)
+     ------------------------------------------------------------
+     WHAT'S ON THIS PAGE:
+       1. BILLING TOGGLE   Monthly / 3-Monthly / Yearly — every
+                           price on the page recalculates live.
+       2. COMPARISON MATRIX  the "OpenAI style" table: features
+                           down the LEFT column, four tier
+                           columns filling with check marks to
+                           the right (Master collects the most).
+       3. THE SNEAKY HOOK   a quiet line at the bottom that
+                           opens the lifetime single-course
+                           offer (own one course, pay full price
+                           once, no subscription).
+
+     HOW THE PAGE WORKS:
+     The header dropdown on EVERY page + this matrix are both
+     rendered by js/pricing.js from js/pricing-data.js — one
+     data source, two views. This page is mostly empty slots.
+
+     LESSON — THE ACCORDION NEEDS NO JAVASCRIPT:
+     <details> is a native HTML widget: <summary> = the clickable
+     heading, everything after it = the collapsible content.
+     Browser handles opening/closing for free (and it's
+     keyboard-accessible out of the box).
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing | The English Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+</head>
+
+<body>
+
+    <!-- ================= HEADER (same on every page, now with
+         the Pricing dropdown — see js/pricing.js) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+
+                <!-- PRICING DROPDOWN: button + wide panel.
+                     The panel content (#dd-tiers) is rendered by
+                     js/pricing.js — the four tier mini-columns. -->
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= PAGE BANNER ================= -->
+    <section class="hero hero-sm">
+        <div class="container">
+            <h1>Simple Pricing That Grows With You</h1>
+            <p class="hero-subtitle">
+                Four plans, one library. Start small, upgrade when
+                your English does — or own a single course forever.
+            </p>
+        </div>
+    </section>
+
+    <!-- ================= BILLING TOGGLE =================
+         The three pills. js/pricing.js listens for clicks and
+         re-renders the whole matrix with the new prices. -->
+    <section class="section billing-section">
+        <div class="container">
+
+            <div class="bill-toggle" id="billing-toggle"
+                 role="group" aria-label="Billing period">
+                <button type="button" class="bill-btn is-active"
+                        data-interval="monthly">Monthly</button>
+                <button type="button" class="bill-btn"
+                        data-interval="quarterly">3-Monthly</button>
+                <button type="button" class="bill-btn"
+                        data-interval="yearly">Yearly</button>
+            </div>
+
+            <p class="billing-hint">
+                Every plan includes the level assessment.
+                3-Monthly saves 10% · Yearly saves 25% · cancel anytime.
+            </p>
+
+        </div>
+    </section>
+
+    <!-- ================= COMPARISON MATRIX =================
+         The whole table is ONE slot (#compare-root) filled by
+         js/pricing.js from PRICING.groups. Features down the
+         left, Explorer → Master to the right. -->
+    <section class="section section-alt cmp-section">
+        <div class="container">
+            <h2 class="section-title" id="compare">Compare Every Plan</h2>
+            <div id="compare-root"></div>
+        </div>
+    </section>
+
+    <!-- ================= THE SNEAKY HOOK =================
+         A quiet, curious line — not a sales banner. Clicking
+         it opens the full-width lifetime offer below.
+         LESSON: <details>/<summary> = native accordion (zero JS). -->
+    <section class="section">
+        <div class="container">
+
+            <details class="hook-details">
+                <summary class="hook-summary">
+                    <svg class="icon hook-pencil" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                        <path d="m15 5 4 4"></path>
+                    </svg>
+                    <span class="hook-text">
+                        Not here for another subscription?
+                        Maybe you just want one course, forever.
+                    </span>
+                    <span class="hook-caret">&#9662;</span>
+                </summary>
+
+                <!-- ===== the hidden full-width offer ===== -->
+                <div class="hook-body">
+                    <div class="hook-copy">
+                        <h2>Own One Course For Life</h2>
+                        <p class="muted">
+                            The honest alternative: no renewals, no
+                            calendar, no subscriptions. Pay the full
+                            price of one course, once — and it's
+                            yours for good.
+                        </p>
+                        <ul class="feature-list">
+                            <li>Choose any single course (any level, any skill)</li>
+                            <li>Full price, one payment — no renewals, no expiry</li>
+                            <li>All current units included, yours to keep</li>
+                            <li>Perfect for focused learners who just want one thing</li>
+                        </ul>
+                        <p class="hook-note muted">
+                            The "pay more once" option: a full year of
+                            Pro costs less — but if you only need one
+                            course, own it instead of renting it.
+                        </p>
+                    </div>
+
+                    <div class="card hook-card">
+                        <p class="hook-card-label">Lifetime · one course</p>
+                        <p class="hook-price">$249 <span class="price-unit">one-time</span></p>
+                        <p class="muted hook-card-note">
+                            Pick your course at checkout — any level,
+                            any skill. Yours forever, no renewals.
+                        </p>
+                        <a class="btn btn-primary btn-block"
+                           href="contact.html?course=Lifetime%20Access">
+                           Enquire about lifetime access</a>
+                        <p class="form-hint">Questions first? We reply within a day.</p>
+                    </div>
+                </div>
+            </details>
+
+        </div>
+    </section>
+
+    <!-- ================= CTA BAND ================= -->
+    <section class="section section-alt cta-band">
+        <div class="container">
+            <h2>Still not sure which plan fits?</h2>
+            <p>Take the free level assessment — we'll point you to the right starting point.</p>
+            <a href="contact.html" class="btn btn-primary">Talk to Us</a>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER (same on every page) ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS =================
+         pricing-data.js defines the data; pricing.js renders
+         whatever pricing UI exists on this page. -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+
+</body>
+</html>
