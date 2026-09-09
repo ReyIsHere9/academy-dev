@@ -43,10 +43,10 @@ function priceHtml(tier, interval) {
             <span class="price-now">$${price}</span><span class="price-unit">${unit}</span>
             ${old ? `
                 <span class="price-old">$${old}
-                    <svg class="scribble" viewBox="0 0 90 22"
-                         aria-hidden="true">
-                        <path d="M6 5 C 28 -2, 60 12, 84 6" />
-                        <path d="M8 16 C 30 10, 62 20, 84 13" />
+                    <svg class="scribble" viewBox="0 0 24 24"
+                         preserveAspectRatio="none" aria-hidden="true">
+                        <path d="M3 3 L21 21" />
+                        <path d="M21 3 L3 21" />
                     </svg>
                 </span>
                 <span class="discount-chip">-${Math.round(tier.discount * 100)}%</span>
@@ -54,8 +54,9 @@ function priceHtml(tier, interval) {
         </div>`;
     /* LESSON — TEMPLATE CONDITIONALS: ${old ? `...` : ""}
        = "if there is an old price, output the strike block,
-       otherwise output nothing." The scribble SVG rides along
-       (two red strokes, drawn by code, absolutely positioned). */
+       otherwise output nothing." The X is two diagonal SVG
+       strokes with vector-effect: non-scaling-stroke, so it
+       stretches over ANY width without getting blurry. */
 }
 
 

@@ -239,12 +239,31 @@ html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
     color: var(--color-primary);
 }
 
-.main-nav a.active {
-    color: var(--color-primary);
+.main-nav a.active,
+.main-nav .dd-btn.active {
+    color: var(--color-primary-dark);
     font-weight: bold;
-    /* .active = "you are HERE" — set in the HTML of
-       the page you're currently viewing */
-    border-bottom: 2px solid var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.1);
+    border-radius: 999px;
+    padding: 6px 14px;
+    /* "you are HERE" chip: a soft filled pill instead of the
+       old underline — instantly readable, both themes */
+}
+
+html[data-theme="dark"] .main-nav a.active,
+html[data-theme="dark"] .main-nav .dd-btn.active {
+    color: #93c5fd;
+    background-color: rgba(110, 168, 254, 0.16);
+}
+
+.main-nav a.active:hover,
+.main-nav .dd-btn.active:hover {
+    color: var(--color-primary-dark);
+}
+
+html[data-theme="dark"] .main-nav a.active:hover,
+html[data-theme="dark"] .main-nav .dd-btn.active:hover {
+    color: #93c5fd;
 }
 
 
@@ -1346,11 +1365,22 @@ html[data-theme="dark"] .map-tag {
    pseudos on every nav child after the first — painted by CSS,
    no markup needed. */
 .main-nav {
+    display: flex;
+    /* THE FIX: a <nav> is block-level by default. Once the
+       Pricing dropdown <div> joined the menu, that block box
+       forced its own line and stacked the whole header.
+       Flex keeps every menu item — links AND the .dd wrapper —
+       on one row. */
     align-items: center;
 }
 
 .main-nav a {
     margin-left: 0;
+}
+
+.dd {
+    display: flex;
+    /* the dropdown wrapper behaves like the links beside it */
 }
 
 .main-nav > * + *::before {
@@ -1485,11 +1515,11 @@ html[data-theme="dark"] .dd-tier.is-popular {
     font-size: 0.9rem;
 }
 
-/* ============ PRICE LINE + PENCIL SCRIBBLE ============
-   .price-old holds the crossed-out "was" price; the scribble
-   is a tiny code-drawn SVG of two wavy strokes, positioned
-   right over the number — reads as hand-scratched, works on
-   both themes. */
+/* ============ PRICE LINE + RED CROSS-OUT ============
+   .price-old holds the "was" price. The cross-out X is a tiny
+   SVG of two diagonal strokes stretched over the number
+   (preserveAspectRatio="none" + non-scaling-stroke keep the
+   strokes crisp at any width). Red works on both themes. */
 .plan-price {
     display: flex;
     align-items: baseline;
@@ -1513,28 +1543,29 @@ html[data-theme="dark"] .dd-tier.is-popular {
     display: inline-block;
     font-size: 0.9rem;
     color: var(--color-text-muted);
-    text-decoration: line-through;
-    padding: 0 6px;
+    padding: 0 4px;
 }
 
 .price-old .scribble {
     position: absolute;
     left: 0;
-    top: 45%;
+    top: 50%;
     width: 100%;
-    height: 55%;
+    height: 100%;
+    transform: translateY(-50%) rotate(-4deg);
+    /* a hand-tilted X, red on both themes */
     pointer-events: none;
-    transform: rotate(-3deg);
-    /* double-stroke handwritten scratch, red on both themes */
     color: #ef4444;
+    overflow: visible;
 }
 
 .price-old .scribble path {
     fill: none;
     stroke: #ef4444;
-    stroke-width: 2.4;
+    stroke-width: 2.6;
     stroke-linecap: round;
-    opacity: 0.9;
+    vector-effect: non-scaling-stroke;
+    opacity: 0.95;
 }
 
 .discount-chip {
