@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     LIVE CLASS — TEACHER ROOM  (academy-dev — generic version)
+     ------------------------------------------------------------
+     SAME ROOM AS class.html, PLUS TEACHER TOOLS:
+       1. Screen share button (mock surface) — while sharing you
+          can click the "screen" to drop CENSOR BOXES over parts
+          of the image. Click a box to remove it.
+       2. Recording toggle — flips the red REC light everyone
+          sees in the student room.
+       3. Materials drag & drop — pdf / ppt / images / video /
+          audio files listed with type + size.
+       4. Pop-out chat — opens the chat in its own window so the
+          class doesn't see it while you share your screen.
+
+     HOW TEACHER MODE WORKS: <body class="teacher-mode"> and
+     classroom.js unlocks its teacher blocks. Everything else
+     (chat, people, timers, badges) is IDENTICAL to the student
+     room — one engine, two views.
+
+     ⚠️ Real screen capture (getDisplayMedia), real recording and
+     real uploads need the backend phase — see notes in
+     classroom.js.
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teaching | The English Academy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+</head>
+
+<body class="teacher-mode">
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <a href="login.html" class="btn-login">Login / Register</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= THE ROOM ================= -->
+    <section class="section class-section">
+        <div class="container class-layout">
+
+            <!-- ========== MAIN ========== -->
+            <div class="class-main">
+
+                <div class="stage" id="stage">
+
+                    <!-- fake presenter video -->
+                    <div class="stage-video">
+                        <span class="stage-avatar">T</span>
+                        <p class="stage-presenter">You are presenting</p>
+                        <p class="stage-hint">(click "Share screen" to try the censor tool)</p>
+                    </div>
+
+                    <!-- MOCK SHARED SCREEN: shows while sharing.
+                         Click it to drop censor boxes. -->
+                    <div class="share-screen">
+                        <div class="share-doc">
+                            <h3>Present Perfect</h3>
+                            <p>I <strong>have lived</strong> in London for 3 years.</p>
+                            <p>I <strong>lived</strong> in London in 2019.</p>
+                            <p class="share-note">Shared document — click anywhere to place a censor box</p>
+                        </div>
+                    </div>
+                    <div class="censor-layer" id="censor-layer"></div>
+
+                    <div class="stage-topbar">
+                        <span class="chip live-chip">
+                            <span class="dot"></span> LIVE
+                        </span>
+                        <span class="chip rec-chip" id="rec-chip">
+                            <span class="dot"></span><span>REC 0:00</span>
+                        </span>
+                        <span class="chip viewer-chip">8 watching</span>
+                    </div>
+                </div>
+
+                <div class="class-meta">
+                    <h1 id="class-title">Live class</h1>
+                    <div class="meta-row">
+                        <span class="meta-pill" id="class-course"></span>
+                        <span class="meta-pill">
+                            Live for <strong id="live-for">0:00</strong>
+                        </span>
+                        <span class="meta-pill late-pill" id="late-note"></span>
+                    </div>
+                </div>
+
+                <!-- CONTROLS: student ones + teacher ones -->
+                <div class="controls">
+                    <button type="button" class="ctrl-btn" id="mic-btn" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        <span>Mic</span>
+                    </button>
+
+                    <button type="button" class="ctrl-btn" id="cam-btn" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                        <span>Camera</span>
+                    </button>
+
+                    <!-- TEACHER: screen share (with censor tool) -->
+                    <button type="button" class="ctrl-btn" id="share-btn" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <span>Share screen</span>
+                    </button>
+
+                    <!-- TEACHER: recording on/off -->
+                    <button type="button" class="ctrl-btn rec-toggle is-rec" id="rec-toggle">
+                        <span class="dot"></span><span>Stop recording</span>
+                    </button>
+
+                    <!-- TEACHER: pop-out chat window -->
+                    <button type="button" class="ctrl-btn" id="popout-chat">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        <span>Pop-out chat</span>
+                    </button>
+
+                    <a href="courses.html" class="ctrl-btn danger-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>End class</span>
+                    </a>
+                </div>
+
+                <h2 class="class-subtitle">In this class</h2>
+                <div class="participants-strip" id="participants-strip"></div>
+
+            </div>
+
+            <!-- ========== SIDEBAR ========== -->
+            <aside class="class-side">
+
+                <div class="tabs">
+                    <button type="button" class="tab-btn is-active"
+                            data-tab="chat">Chat</button>
+                    <button type="button" class="tab-btn"
+                            data-tab="people">People</button>
+                    <button type="button" class="tab-btn"
+                            data-tab="materials">Materials</button>
+                </div>
+
+                <!-- ---- CHAT ---- -->
+                <div class="tab-panel is-active" data-panel="chat">
+                    <div class="chat-header">
+                        <span class="seg" data-role="timestamp"
+                              role="group" aria-label="Timestamp style">
+                            <button type="button" class="seg-btn is-active"
+                                    data-time-mode="class">Class time</button>
+                            <button type="button" class="seg-btn"
+                                    data-time-mode="clock">Clock</button>
+                        </span>
+                    </div>
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="emoji-bar" id="emoji-bar"></div>
+                    <form class="chat-form" id="chat-form">
+                        <button type="button" class="icon-btn" id="image-btn"
+                                aria-label="Share an image (max 5 MB)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </button>
+                        <input type="file" id="chat-image" accept="image/*" hidden>
+                        <input type="text" class="chat-input" id="chat-input"
+                               placeholder="Message the class…" autocomplete="off">
+                        <button type="submit" class="icon-btn send-btn" aria-label="Send">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </form>
+                    <p class="chat-error" id="chat-error" hidden></p>
+                </div>
+
+                <!-- ---- PEOPLE (with teacher controls) ---- -->
+                <div class="tab-panel" data-panel="people">
+                    <div id="people-list"></div>
+                </div>
+
+                <!-- ---- MATERIALS (teacher only) ---- -->
+                <div class="tab-panel" data-panel="materials">
+                    <!-- drag & drop zone: click or drop files -->
+                    <div class="dropzone" id="dropzone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p><strong>Drop class material here</strong><br>
+                           or click to choose files</p>
+                        <p class="muted small">PDF · PowerPoint · Images · Audio · Video</p>
+                        <input type="file" id="file-input" multiple hidden>
+                    </div>
+                    <div class="file-list" id="file-list"></div>
+                </div>
+            </aside>
+
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/class-data.js"></script>
+    <script src="js/classroom.js"></script>
+
+</body>
+</html>

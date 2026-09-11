@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     LIVE CLASS — POP-OUT CHAT  (academy-dev — generic version)
+     ------------------------------------------------------------
+     A tiny chat-only window the teacher can drag to a second
+     monitor while sharing their screen — the class never sees
+     it, but the teacher still reads every message.
+
+     HOW THE SYNC WORKS (no server needed):
+     Both windows load the same js/classroom.js, and messages
+     travel between them through BroadcastChannel — a browser
+     feature that lets windows on the SAME site talk to each
+     other. Send here, it appears in the main room instantly
+     (and vice versa).
+
+     ⚠️ In the real app the sync runs through the backend so it
+     works across devices, not just across your own windows.
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Chat | The English Academy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+</head>
+
+<body class="popup-mode teacher-mode">
+
+    <div class="popup-wrap">
+
+        <div class="popup-header">
+            <h1>Class chat</h1>
+            <span class="popup-live"><span class="dot"></span> LIVE</span>
+        </div>
+
+        <!-- timestamp toggle (same as the main room) -->
+        <div class="chat-header">
+            <span class="seg" data-role="timestamp"
+                  role="group" aria-label="Timestamp style">
+                <button type="button" class="seg-btn is-active"
+                        data-time-mode="class">Class time</button>
+                <button type="button" class="seg-btn"
+                        data-time-mode="clock">Clock</button>
+            </span>
+        </div>
+
+        <div class="chat-messages popup-messages" id="chat-messages"></div>
+
+        <div class="emoji-bar" id="emoji-bar"></div>
+
+        <form class="chat-form" id="chat-form">
+            <input type="text" class="chat-input" id="chat-input"
+                   placeholder="Reply to the class…" autocomplete="off">
+            <button type="submit" class="icon-btn send-btn" aria-label="Send">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </form>
+        <p class="chat-error" id="chat-error" hidden></p>
+
+    </div>
+
+    <!-- class-data first (defines people + chat), engine second -->
+    <script src="js/class-data.js"></script>
+    <script src="js/classroom.js"></script>
+
+</body>
+</html>

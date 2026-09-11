@@ -2027,6 +2027,870 @@ html[data-theme="dark"] .demo-hint code {
     color: #93c5fd;
 }
 
+/* ================= LIVE CLASS ROOM =================
+   Used by class.html (student), class-teacher.html (teacher)
+   and class-chat.html (pop-out chat). Layout: big stage on the
+   left, chat/people sidebar on the right. */
+.class-section {
+    padding: 30px 0 60px;
+}
+
+.class-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ---------- THE STAGE (dark video area) ---------- */
+.stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 18px;
+    overflow: hidden;
+    background: radial-gradient(circle at 30% 20%, #1e293b, #020617 75%);
+    box-shadow: 0 20px 50px rgba(2, 6, 23, 0.35);
+}
+
+.stage-video {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #e2e8f0;
+    text-align: center;
+    padding: 20px;
+}
+
+.stage-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #ffffff;
+    font-size: 2.2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stage-presenter {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.stage-hint {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+/* overlay chips: LIVE / REC / viewers */
+.stage-topbar {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 5;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(2, 6, 23, 0.7);
+    color: #e2e8f0;
+    font-size: 0.78rem;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+}
+
+.chip .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: recPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.25; }
+}
+
+.live-chip .dot {
+    background: #22c55e;
+}
+
+.viewer-chip {
+    margin-left: auto;
+}
+
+/* REC chip turns grey when recording stops */
+.rec-chip.is-off {
+    color: #94a3b8;
+}
+
+.rec-chip.is-off .dot {
+    background: #64748b;
+    animation: none;
+}
+
+/* ---------- TITLE + META (YouTube style) ---------- */
+.class-meta {
+    margin: 18px 0 6px;
+}
+
+.class-meta h1 {
+    font-size: 1.45rem;
+    margin-bottom: 8px;
+}
+
+.meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.meta-pill {
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    padding: 5px 12px;
+    border-radius: 999px;
+}
+
+.meta-pill strong {
+    color: var(--color-text);
+}
+
+.late-pill {
+    border-color: #f59e0b;
+    color: #b45309;
+}
+
+html[data-theme="dark"] .late-pill {
+    color: #fbbf24;
+    border-color: #92400e;
+}
+
+/* ---------- CONTROL BUTTONS ---------- */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 18px 0 26px;
+}
+
+.ctrl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--color-text);
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.ctrl-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.ctrl-btn:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+/* active state: mic on, camera on, sharing... */
+.ctrl-btn.is-active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}
+
+/* raised hand: amber so it stands out immediately */
+.hand-btn.is-raised {
+    background-color: #f59e0b;
+    border-color: #f59e0b;
+    color: #1c1917;
+}
+
+.danger-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* recording toggle button */
+.rec-toggle {
+    border-color: #7f1d1d;
+}
+
+.rec-toggle .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: recPulse 1.4s ease-in-out infinite;
+}
+
+.rec-toggle.is-rec {
+    background-color: #450a0a;
+    border-color: #ef4444;
+    color: #fecaca;
+}
+
+/* ---------- PARTICIPANT TILES ---------- */
+.class-subtitle {
+    font-size: 1.05rem;
+    margin: 10px 0 14px;
+}
+
+.participants-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.p-tile {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.p-avatar {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 1.3rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+
+/* the four-bar connection antenna, pinned to the avatar */
+.conn-bars {
+    position: absolute;
+    right: -10px;
+    bottom: -4px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+    padding: 2px 4px;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.conn-bars i {
+    width: 3px;
+    border-radius: 1px;
+    display: block;
+    background: #cbd5e1;
+}
+
+.conn-bars i:nth-child(1) { height: 4px; }
+.conn-bars i:nth-child(2) { height: 7px; }
+.conn-bars i:nth-child(3) { height: 10px; }
+.conn-bars i:nth-child(4) { height: 13px; }
+
+/* quality coloring: 4 green, 3 yellow, 2 orange, 1 red */
+.conn-4 i { background: #22c55e; }
+.conn-3 i:nth-child(-n+3) { background: #eab308; }
+.conn-2 i:nth-child(-n+2) { background: #f97316; }
+.conn-1 i:nth-child(1) { background: #ef4444; }
+
+html[data-theme="dark"] .conn-bars i { background: #334155; }
+html[data-theme="dark"] .conn-4 i { background: #22c55e; }
+html[data-theme="dark"] .conn-3 i:nth-child(-n+3) { background: #eab308; }
+html[data-theme="dark"] .conn-2 i:nth-child(-n+2) { background: #f97316; }
+html[data-theme="dark"] .conn-1 i:nth-child(1) { background: #ef4444; }
+
+/* raised-hand flag */
+.hand-flag {
+    position: absolute;
+    left: -10px;
+    top: -6px;
+    font-size: 0.85rem;
+    background: #f59e0b;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.p-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.p-icons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    color: var(--color-text-muted);
+}
+
+.p-icons svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* ---------- ROLE TAGS ---------- */
+.role-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.role-presenter {
+    background: rgba(124, 58, 237, 0.15);
+    color: #7c3aed;
+}
+
+.role-speaker {
+    background: rgba(37, 99, 235, 0.15);
+    color: #2563eb;
+}
+
+.role-moderator {
+    background: rgba(5, 150, 105, 0.15);
+    color: #059669;
+}
+
+.role-participant {
+    background: var(--color-bg-alt);
+    color: var(--color-text-muted);
+}
+
+html[data-theme="dark"] .role-presenter { color: #c4b5fd; }
+html[data-theme="dark"] .role-speaker   { color: #93c5fd; }
+html[data-theme="dark"] .role-moderator { color: #6ee7b7; }
+
+/* ---------- BADGES (honors, teacher-chosen colors) ---------- */
+.badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #1c1917;
+    background: var(--badge-color, #f59e0b);
+    padding: 3px 10px;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(2, 6, 23, 0.2);
+}
+
+/* ---------- SIDEBAR: tabs, chat, people, materials ---------- */
+.class-side {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tab-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: bold;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 13px 6px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn:hover {
+    color: var(--color-text);
+}
+
+.tab-btn.is-active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.tab-panel {
+    display: none;
+    padding: 14px;
+}
+
+.tab-panel.is-active {
+    display: block;
+}
+
+/* ---- chat ---- */
+.chat-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+/* segmented control (Class time / Clock) */
+.seg {
+    display: inline-flex;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 3px;
+}
+
+.seg-btn {
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.seg-btn.is-active {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 2px;
+}
+
+.msg {
+    display: flex;
+    gap: 10px;
+}
+
+.msg-avatar {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.msg-body {
+    min-width: 0;
+}
+
+.msg-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.msg-name {
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.msg-time {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-left: auto;
+}
+
+.msg-text {
+    font-size: 0.92rem;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    padding: 8px 12px;
+    border-radius: 4px 12px 12px 12px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.msg-img {
+    max-width: 220px;
+    border-radius: 12px;
+    margin-top: 6px;
+    border: 1px solid var(--color-border);
+}
+
+.emoji-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 10px 0 8px;
+}
+
+.emoji-btn {
+    font-size: 1.15rem;
+    background: none;
+    border: none;
+    padding: 3px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.15s;
+}
+
+.emoji-btn:hover {
+    background-color: var(--color-bg-alt);
+    transform: scale(1.2);
+}
+
+.chat-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 10px 16px;
+    outline: none;
+}
+
+.chat-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.icon-btn {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.icon-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.icon-btn:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.send-btn {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.send-btn:hover {
+    color: #ffffff;
+    background-color: var(--color-primary-dark);
+}
+
+.chat-error {
+    color: #dc2626;
+    font-size: 0.82rem;
+    margin-top: 8px;
+}
+
+html[data-theme="dark"] .chat-error {
+    color: #fca5a5;
+}
+
+/* ---- people list ---- */
+.person-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 11px 2px;
+    border-bottom: 1px dashed var(--color-border);
+}
+
+.person-row:last-child {
+    border-bottom: none;
+}
+
+.person-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.person-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.person-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+/* teacher-only mini controls in each row */
+.teacher-controls {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 118px;
+}
+
+.mini-select {
+    font-family: inherit;
+    font-size: 0.72rem;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 4px 6px;
+}
+
+.color-input {
+    width: 100%;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+}
+
+/* ---- materials / dropzone (teacher) ---- */
+.dropzone {
+    border: 2px dashed var(--color-border);
+    border-radius: 14px;
+    padding: 26px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.dropzone:hover,
+.dropzone.is-drag {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
+.dropzone svg {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 8px;
+    color: var(--color-primary);
+}
+
+.dropzone p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.dropzone .small {
+    font-size: 0.76rem;
+    margin-top: 6px;
+}
+
+.file-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.file-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+}
+
+.file-type {
+    flex: none;
+    font-size: 0.62rem;
+    font-weight: bold;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    background-color: var(--color-primary);
+    border-radius: 6px;
+    padding: 3px 7px;
+}
+
+.file-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-size {
+    flex: none;
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+}
+
+/* ---- screen share surface + censor boxes ---- */
+.share-screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    /* hidden until the teacher clicks "Share screen" */
+    background: #f8fafc;
+    z-index: 2;
+}
+
+.stage.is-sharing .share-screen {
+    display: block;
+}
+
+.stage.is-sharing .stage-video {
+    visibility: hidden;
+}
+
+.share-doc {
+    padding: 44px 50px;
+    color: #0f172a;
+}
+
+.share-doc h3 {
+    font-size: 1.5rem;
+    margin-bottom: 18px;
+}
+
+.share-doc p {
+    font-size: 1.05rem;
+    margin: 10px 0;
+}
+
+.share-note {
+    margin-top: 30px !important;
+    color: #64748b;
+    font-size: 0.85rem !important;
+}
+
+.censor-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    /* keep clicks flowing to the stage below */
+}
+
+.censor-box {
+    position: absolute;
+    background: #000000;
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    pointer-events: auto;
+    /* boxes DO catch clicks (to remove them) */
+}
+
+/* ================= POP-OUT CHAT WINDOW ================= */
+.popup-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 16px;
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.popup-header h1 {
+    font-size: 1.15rem;
+}
+
+.popup-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #16a34a;
+}
+
+.popup-live .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: recPulse 1.4s ease-in-out infinite;
+}
+
+.popup-messages {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+}
+
 /* ================= MOBILE RESPONSIVENESS =================
    LESSON — MEDIA QUERY: "when the screen is small,
    apply these overrides". Rule of thumb: stacks grids
@@ -2141,6 +3005,28 @@ html[data-theme="dark"] .demo-hint code {
 
     .hook-body {
         grid-template-columns: 1fr;
+    }
+
+    .class-layout {
+        grid-template-columns: 1fr;
+        /* sidebar drops below the stage on phones */
+    }
+
+    .chat-messages {
+        height: 300px;
+    }
+
+    .controls {
+        gap: 8px;
+    }
+
+    .ctrl-btn {
+        padding: 9px 12px;
+        font-size: 0.82rem;
+    }
+
+    .participants-strip {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     }
 
     .theme-toggle {
