@@ -93,20 +93,111 @@
                     <div class="stage-video">
                         <span class="stage-avatar">T</span>
                         <p class="stage-presenter">You are presenting</p>
-                        <p class="stage-hint">(click "Share screen" to try the censor tool)</p>
+                        <p class="stage-hint">(use Share screen or Whiteboard to try the annotation tools)</p>
                     </div>
 
-                    <!-- MOCK SHARED SCREEN: shows while sharing.
-                         Click it to drop censor boxes. -->
+                    <!-- MOCK SHARED SCREEN: shows while sharing -->
                     <div class="share-screen">
                         <div class="share-doc">
                             <h3>Present Perfect</h3>
                             <p>I <strong>have lived</strong> in London for 3 years.</p>
                             <p>I <strong>lived</strong> in London in 2019.</p>
-                            <p class="share-note">Shared document — click anywhere to place a censor box</p>
+                            <p class="share-note">Shared document — pick the Censor tool, then click to place a box</p>
                         </div>
                     </div>
+
+                    <!-- WHITEBOARD: a blank surface to draw on -->
+                    <div class="whiteboard-surface"></div>
+
+                    <!-- DRAWING LAYER (pen / highlighter annotations) -->
+                    <canvas class="draw-canvas" id="draw-canvas"></canvas>
+
+                    <!-- CENSOR BOXES layer (drag + resize handles) -->
                     <div class="censor-layer" id="censor-layer"></div>
+
+                    <!-- TEXT BOXES layer (type directly on the board) -->
+                    <div class="text-layer" id="text-layer"></div>
+
+                    <!-- TOOL TOOLBAR: appears while sharing / whiteboard -->
+                    <div class="stage-tools" id="stage-tools">
+                        <button type="button" class="tool-btn" id="tool-pen"
+                                title="Pen">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn" id="tool-highlight"
+                                title="Highlighter">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m9 11-6 6v3h9l3-3"></path>
+                                <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn" id="tool-text"
+                                title="Text box — click the board and type">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                <line x1="9" y1="20" x2="15" y2="20"></line>
+                                <line x1="12" y1="4" x2="12" y2="20"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn" id="tool-erase-stroke"
+                                title="Stroke eraser — removes whole lines">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                                <path d="M22 21H7"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn" id="tool-erase-circle"
+                                title="Circle eraser — rubs pixels away">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="8"></circle>
+                                <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn" id="tool-censor"
+                                title="Censor boxes">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                            </svg>
+                        </button>
+                        <span class="tool-sep"></span>
+                        <div class="swatches" id="swatches"></div>
+                        <span class="tool-sep"></span>
+                        <div class="size-picker" id="size-picker"></div>
+                        <span class="tool-sep"></span>
+                        <button type="button" class="tool-btn" id="tool-undo"
+                                title="Undo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 14 4 9 9 4"></polyline>
+                                <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn" id="tool-redo"
+                                title="Redo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 14 20 9 15 4"></polyline>
+                                <path d="M4 20v-7a4 4 0 0 1 4-4h12"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="tool-btn tool-btn-danger" id="tool-clear"
+                                title="Clear all drawing">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
 
                     <div class="stage-topbar">
                         <span class="chip live-chip">

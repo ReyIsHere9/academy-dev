@@ -25,9 +25,10 @@ const ROLES = {
     participant: { label: "Participant", order: 4 }
 };
 
-/* BADGES — the fun honors the teacher can hand out.
-   Each badge can be shown in any color (teacher picks).
-   "president" gets extra glory: it shows on the stage too. */
+/* BADGES — preset title suggestions. The teacher is NOT limited
+   to these: any custom title can be typed in the Title box
+   (the presets feed the browser's datalist suggestions), and
+   every title gets a teacher-chosen color. */
 const BADGES = [
     { id: "president",  label: "Class President" },
     { id: "star",       label: "Star Speaker" },
@@ -52,12 +53,12 @@ const PARTICIPANTS = [
       conn: 3, mic: true,  cam: true,  hand: false, badge: null },
     { id: "Stu-2003", name: "Negar", role: "participant",
       conn: 4, mic: false, cam: true,  hand: true,
-      badge: { id: "president", color: "#f59e0b" } },
+      badge: { text: "Class President", color: "#f59e0b" } },
     { id: "Stu-2004", name: "Arash", role: "participant",
       conn: 2, mic: false, cam: false, hand: true, badge: null },
     { id: "Stu-2005", name: "Liam", role: "participant",
       conn: 4, mic: false, cam: false, hand: false,
-      badge: { id: "homework", color: "#10b981" } }
+      badge: { text: "Homework Hero", color: "#10b981" } }
 ];
 
 /* SEED CHAT — mixed English + Persian + emoji.

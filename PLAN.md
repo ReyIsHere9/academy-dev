@@ -14,7 +14,7 @@ in the private academy-live repo.
 - [x] **Theme system** — global light/dark via CSS variables + `js/theme.js` toggle, `.grad-*` banner classes, future pages auto-ready (built on `Deltaone`)
 - [x] **Pricing module** — header mega-dropdown on every page + `pricing.html` (billing toggle, comparison matrix, lifetime offer hook)
 - [x] **Auth entry UI** — header Login/Register button, `login.html` (User ID + password + eye toggle + demo session), `recovery.html`. DEMO ONLY: real auth needs a backend (see security notes in `js/auth.js`)
-- [x] **Live class room (UI shell)** — `class.html` (student), `class-teacher.html` (teacher tools: screen share + censor boxes, recording, materials drag-drop, pop-out chat), `class-chat.html` (pop-out window). Chat with EN/FA/emoji/images, hand raise, roles, colored badges, connection bars, class-time/clock toggle. Demo data via `js/class-data.js`
+- [x] **Live class room (UI shell)** — `class.html` (student), `class-teacher.html` (teacher tools: screen share + resizable censor boxes, whiteboard + annotation toolkit with pen/highlighter/text/both erasers/sizes/undo-redo, recording, materials drag-drop, pop-out chat), `class-chat.html` (pop-out window). Chat with EN/FA/emoji/images, hand raise, roles, custom colored titles, connection bars, class-time/clock toggle. Demo data via `js/class-data.js`
 - [ ] **Real class backend** — WebRTC/streaming service, real recording, server-side uploads, cross-device sync (backend phase)
 - [ ] **Real authentication** — server-side hashing (bcrypt/argon2), httpOnly sessions, rate limiting, 2FA, reset tokens (backend phase)
 
