@@ -79,6 +79,8 @@ Every-page mandatory bits (copy from an existing page):
 - In the header (inside `.header-inner`, after `</nav>`): the
   `#theme-toggle` button (sun/moon SVGs) — identical markup on
   every page.
+- Also in the header (left cluster, right after the logo): the
+  `.btn-login` "Login / Register" link to `login.html`.
 - The nav includes the Pricing dropdown block (`.dd` markup,
   `#dd-tiers` slot) — required for the mega-menu to render.
 - Just before `</body>`: the pricing scripts (data first):

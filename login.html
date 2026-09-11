@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE: LOGIN / ENTRY PAGE  (academy-dev — generic version)
+     ------------------------------------------------------------
+     WHAT'S HERE:
+       1. User ID + Password form (with the blinking-eye reveal)
+       2. "Forgot password?" link -> recovery.html
+       3. Demo session panel (greets you + logout)
+       4. Demo credentials hint box
+
+     ⚠️ IMPORTANT: this login is FRONT-END THEATRE.
+     The password check happens in the browser, so it is NOT
+     real security — it's the UI + flow, ready for the day we
+     add a real backend. Full explanation in js/auth.js.
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In | The English Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+</head>
+
+<body>
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+
+            <!-- LOGIN / REGISTER: left side of the header,
+                 distinct blue so it stands out from the bar -->
+            <a href="login.html" class="btn-login">Login / Register</a>
+
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= LOGIN CARD ================= -->
+    <section class="section auth-section">
+        <div class="container">
+            <div class="card auth-card">
+
+                <h1 class="auth-title">Welcome back</h1>
+                <p class="auth-sub">
+                    Log in with your User ID — admin, Tch-… (teachers)
+                    or Stu-… (students).
+                </p>
+
+                <!-- ===== the form (hidden once logged in) ===== -->
+                <form id="login-form" novalidate>
+
+                    <div class="field">
+                        <label for="login-id">User ID</label>
+                        <input type="text" id="login-id" name="userid"
+                               placeholder="admin · Tch-1001 · Stu-2001"
+                               autocomplete="username" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="login-pass">Password</label>
+                        <div class="password-wrap">
+                            <input type="password" id="login-pass" name="password"
+                                   placeholder="Your password"
+                                   autocomplete="current-password" required>
+
+                            <!-- THE BLINKING EYE: toggles password
+                                 visibility (see js/auth.js) -->
+                            <button type="button" class="password-toggle"
+                                    aria-label="Show password" aria-pressed="false">
+                                <svg class="icon icon-eye" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg class="icon icon-eye-off" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="auth-error" id="login-error" hidden></p>
+
+                    <button type="submit" class="btn btn-primary btn-block">Log In</button>
+                </form>
+
+                <!-- ===== session panel (revealed after login) ===== -->
+                <div class="form-success" id="session-panel" hidden>
+                    <h3>Welcome!</h3>
+                    <p id="session-text"></p>
+                    <button type="button" id="logout-btn"
+                            class="btn btn-ghost btn-block">Log out</button>
+                </div>
+
+                <p class="auth-alt">
+                    <a href="recovery.html">Forgot your password?</a>
+                </p>
+                <p class="auth-alt">
+                    New here? Accounts open with enrollment —
+                    <a href="contact.html">talk to us</a>.
+                </p>
+
+                <!-- ===== demo hint (remove for the live site) ===== -->
+                <div class="demo-hint">
+                    <strong>DEMO credentials</strong> (front-end demo only —
+                    real security arrives with the server):<br>
+                    <code>admin</code> / <code>Admin#2026</code> ·
+                    <code>Tch-1001</code> / <code>Teacher#2026</code> ·
+                    <code>Stu-2001</code> / <code>Student#2026</code>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/auth-data.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>
