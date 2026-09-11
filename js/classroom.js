@@ -561,6 +561,7 @@ if (IS_TEACHER && !IS_POPUP) {
         if (history.length > 80) history.shift();    // cap memory
         histIndex = history.length - 1;
         updateToolButtons();
+        pruneFillImages();   // drop fill snapshots nothing references
     }
 
     /* restore both ink and text from a history snapshot */
@@ -949,6 +950,28 @@ if (IS_TEACHER && !IS_POPUP) {
         img.src = snapshot;
         fillImages.set(snapshot, img);
         return img;
+    }
+
+    /* MEMORY HYGIENE: fill snapshots are only needed while some
+       stroke (current OR any undo/redo history state) still
+       references them. When history drops old states (redo
+       branch cut, or the 80-step cap), prune the orphans so a
+       long class doesn't pile up dead images.
+       NOTE: everything here lives in RAM only — closing the
+       page always wipes it regardless. */
+    function pruneFillImages() {
+        const referenced = new Set();
+        const collect = (list) => {
+            for (const s of list) {
+                if (s.tool === "fill" && s.snapshot) referenced.add(s.snapshot);
+            }
+        };
+        collect(strokes);
+        for (const snap of history) collect(snap.strokes);
+
+        for (const key of fillImages.keys()) {
+            if (!referenced.has(key)) fillImages.delete(key);
+        }
     }
 
     /* how close (in canvas fraction) the stroke eraser's touch
