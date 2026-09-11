@@ -517,21 +517,28 @@ if (IS_TEACHER && !IS_POPUP) {
        survive window resizes — we always redraw from data.
        history = snapshots of the strokes list, for undo/redo. */
     const DRAW_COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e",
-                         "#3b82f6", "#8b5cf6", "#0f172a"];
+                         "#3b82f6", "#8b5cf6", "#0f172a", "#ffffff"];
     let currentTool = null;   // "pen" | "highlight" | "text" | "censor"
+                              // | "bucket" | "eyedropper"
                               // | "erase-stroke" | "erase-circle"
     let drawColor = DRAW_COLORS[0];  // red by default
 
-    /* BRUSH SIZES per tool: [small, medium, large] in pixels.
-       pen        = ink stroke thickness
-       highlight  = marker width
-       erase-circle = radius of the round pixel eraser */
-    const TOOL_SIZES = {
-        pen: [2, 4, 7],
-        highlight: [12, 20, 32],
-        "erase-circle": [14, 26, 42]
+    /* PER-TOOL SIZES (px). Each tool remembers its own value,
+       tweaked with the − / + flyout in 1px steps.
+       pen/highlight = stroke thickness; erase-circle = the round
+       eraser's diameter; erase-stroke = its touch sensitivity. */
+    const TOOL_SIZE_CONFIG = {
+        pen:            { min: 1, max: 30,  label: "Pen" },
+        highlight:      { min: 6, max: 60,  label: "Highlighter" },
+        "erase-stroke": { min: 4, max: 40,  label: "Eraser" },
+        "erase-circle": { min: 6, max: 100, label: "Eraser" }
     };
-    let sizeLevel = 1;   // 0 small, 1 medium, 2 large
+    const toolSizes = {
+        pen: 3,
+        highlight: 20,
+        "erase-stroke": 12,
+        "erase-circle": 30
+    };
 
     let strokes = [];                // committed ink strokes
     let currentStroke = null;        // the one being drawn now
@@ -540,7 +547,9 @@ if (IS_TEACHER && !IS_POPUP) {
     let histIndex = 0;
 
     const copyStrokes = list =>
-        list.map(s => ({ ...s, points: s.points.map(p => ({ ...p })) }));
+        list.map(s => s.tool === "fill"
+            ? { ...s }   // fill ops have no points to copy
+            : { ...s, points: s.points.map(p => ({ ...p })) });
     const copyTexts = list => list.map(t => ({ ...t }));
 
     function commitHistory() {
@@ -583,6 +592,20 @@ if (IS_TEACHER && !IS_POPUP) {
     }
 
     function paintStroke(stroke, size) {
+        /* FILL OPS: the bucket writes raw pixels, which a normal
+           redraw would wipe. So each fill stores a full-canvas
+           snapshot (dataURL) taken right after it ran; on every
+           redraw we re-stamp that snapshot in the right order.
+           Memory note: snapshots are strings shared by history
+           copies — fine for a demo; production stores vectors. */
+        if (stroke.tool === "fill") {
+            const img = stroke.snapshot ? fillImages.get(stroke.snapshot) : null;
+            if (img && img.complete && img.naturalWidth) {
+                drawCtx.drawImage(img, 0, 0, size.w, size.h);
+            }
+            return;
+        }
+
         const pts = stroke.points.map(p => ({
             x: p.x * size.w,
             y: p.y * size.h
@@ -660,7 +683,7 @@ if (IS_TEACHER && !IS_POPUP) {
                 currentStroke = {
                     tool: currentTool,
                     color: drawColor,
-                    size: TOOL_SIZES[currentTool][sizeLevel],
+                    size: toolSizes[currentTool],   // this tool's own size
                     points: [posInCanvas(event)]
                 };
             } else if (currentTool === "erase-stroke") {
@@ -675,10 +698,23 @@ if (IS_TEACHER && !IS_POPUP) {
                    rubber tip across ink. */
                 eraseCircleAt(posInCanvas(event));
                 erasing = true;
+            } else if (currentTool === "bucket") {
+                /* FILL BUCKET: flood-fills the connected region of
+                   similar pixels under the click with the current
+                   color (like a paint program's paint pot). */
+                floodFillAt(posInCanvas(event));
+            } else if (currentTool === "eyedropper") {
+                sampleColorAt(posInCanvas(event));
             }
         });
 
         drawCanvas.addEventListener("pointermove", (event) => {
+            updateCursorRing(event);      // ring follows the pointer
+
+            if (currentTool === "eyedropper") {
+                updateLoupe(event);       // magnifier follows too
+                return;
+            }
             if (currentStroke) {
                 currentStroke.points.push(posInCanvas(event));
                 redrawAll();      // live preview while drawing
@@ -689,6 +725,11 @@ if (IS_TEACHER && !IS_POPUP) {
             } else if (currentTool === "erase-stroke" && event.buttons) {
                 eraseWholeStrokeAt(posInCanvas(event));
             }
+        });
+
+        drawCanvas.addEventListener("pointerleave", () => {
+            hideCursorRing();
+            hideLoupe();
         });
 
         const endStroke = () => {
@@ -708,23 +749,232 @@ if (IS_TEACHER && !IS_POPUP) {
         drawCanvas.addEventListener("pointercancel", endStroke);
     }
 
-    /* how close (in canvas fraction) counts as "touching" a
-       stroke — roughly: eraser sensitivity */
-    const HIT_DISTANCE = 0.03;
+    /* ============ CUSTOM CURSOR RING ============
+       A circle outline the size of the current tool, following
+       the pointer — exactly like real drawing apps. Pointer
+       coordinates are converted to the canvas' own box. */
+    const cursorRing = document.getElementById("cursor-ring");
+
+    function updateCursorRing(event) {
+        if (!cursorRing) return;
+        const ringable = { pen: 1, highlight: 1, "erase-stroke": 1, "erase-circle": 1 };
+        if (!ringable[currentTool]) {
+            hideCursorRing();
+            return;
+        }
+        const rect = drawCanvas.getBoundingClientRect();
+        const size = toolSizes[currentTool];
+        cursorRing.hidden = false;
+        cursorRing.style.left = (event.clientX - rect.left) + "px";
+        cursorRing.style.top = (event.clientY - rect.top) + "px";
+        cursorRing.style.width = size + "px";
+        cursorRing.style.height = size + "px";
+        stage.classList.add("is-ring-cursor");
+    }
+
+    function hideCursorRing() {
+        if (cursorRing) cursorRing.hidden = true;
+        stage.classList.remove("is-ring-cursor");
+    }
+
+    /* ============ EYEDROPPER + LOUPE ============
+       The loupe is a tiny canvas showing the magnified pixels
+       under the pointer, plus a crosshair marking the exact
+       sample point. Clicking adopts that color as drawColor.
+       NOTE: it samples the DRAWING canvas. Where nothing is
+       drawn yet, it falls back to the surface beneath
+       (whiteboard = white, stage = dark) so picking the board
+       color still works. */
+    const loupe = document.getElementById("loupe");
+    const loupeCtx = (loupe && loupe.getContext) ? loupe.getContext("2d") : null;
+
+    function surfaceFallbackColor() {
+        return boardOn ? "#ffffff" : "#0f172a";
+    }
+
+    function updateLoupe(event) {
+        if (!loupe || !loupeCtx) return;
+        const rect = drawCanvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        loupe.hidden = false;
+        loupe.style.left = x + "px";
+        loupe.style.top = y + "px";
+        stage.classList.add("is-loupe-cursor");
+
+        const lw = loupe.width;      // the loupe canvas is 150x150
+        const zoom = 10;             // each source pixel becomes 10x
+
+        /* paint the fallback surface, then the drawing on top */
+        loupeCtx.save();
+        loupeCtx.fillStyle = surfaceFallbackColor();
+        loupeCtx.fillRect(0, 0, lw, lw);
+        loupeCtx.imageSmoothingEnabled = false;
+        const dpr = drawCanvas.width / rect.width || 1;
+        const srcSize = lw / zoom;   // how many source px we sample
+        loupeCtx.drawImage(
+            drawCanvas,
+            (x - srcSize / 2) * dpr, (y - srcSize / 2) * dpr,
+            srcSize * dpr, srcSize * dpr,
+            0, 0, lw, lw
+        );
+        loupeCtx.restore();
+
+        /* crosshair marking the exact pixel being sampled */
+        loupeCtx.save();
+        loupeCtx.strokeStyle = "rgba(255,255,255,0.9)";
+        loupeCtx.lineWidth = 1.5;
+        loupeCtx.beginPath();
+        loupeCtx.moveTo(lw / 2, lw / 2 - 10);
+        loupeCtx.lineTo(lw / 2, lw / 2 + 10);
+        loupeCtx.moveTo(lw / 2 - 10, lw / 2);
+        loupeCtx.lineTo(lw / 2 + 10, lw / 2);
+        loupeCtx.stroke();
+        loupeCtx.restore();
+    }
+
+    function hideLoupe() {
+        if (loupe) loupe.hidden = true;
+        stage.classList.remove("is-loupe-cursor");
+    }
+
+    function sampleColorAt(point) {
+        /* read the actual pixel out of the drawing canvas */
+        const dpr = drawCanvas.width / drawCanvas.getBoundingClientRect().width || 1;
+        const px = Math.round(point.x * drawCanvas.getBoundingClientRect().width * dpr);
+        const py = Math.round(point.y * drawCanvas.getBoundingClientRect().height * dpr);
+        try {
+            const data = drawCtx.getImageData(px, py, 1, 1).data;
+            if (data[3] === 0) {
+                drawColor = surfaceFallbackColor();   // transparent = the board
+            } else {
+                drawColor = "#" + [data[0], data[1], data[2]]
+                    .map(v => v.toString(16).padStart(2, "0")).join("");
+            }
+        } catch {
+            return;   // pixel outside canvas: ignore
+        }
+        syncSwatchSelection();
+    }
+
+    /* ============ FILL BUCKET (flood fill) ============
+       Classic scanline flood fill: starting at the clicked
+       pixel, soak every connected pixel whose color is close
+       enough (tolerance), then write the whole region back.
+       Manual typed-array loops keep it fast in pure JS. */
+    function floodFillAt(point) {
+        const w = drawCanvas.width;
+        const h = drawCanvas.height;
+        const rect = drawCanvas.getBoundingClientRect();
+        const dpr = w / rect.width || 1;
+
+        const startX = Math.round(point.x * rect.width * dpr);
+        const startY = Math.round(point.y * rect.height * dpr);
+        if (startX < 0 || startY < 0 || startX >= w || startY >= h) return;
+
+        const image = drawCtx.getImageData(0, 0, w, h);
+        const data = image.data;
+        const at = (x, y) => (y * w + x) * 4;
+
+        const target = data.slice(at(startX, startY), at(startX, startY) + 4);
+        const fill = hexToRgba(drawColor);
+
+        /* same color already? nothing to do */
+        if (Math.abs(target[0] - fill[0]) < 4 &&
+            Math.abs(target[1] - fill[1]) < 4 &&
+            Math.abs(target[2] - fill[2]) < 4 &&
+            Math.abs(target[3] - fill[3]) < 4) return;
+
+        const TOLERANCE = 48;
+        const close = (i) =>
+            Math.abs(data[i] - target[0]) <= TOLERANCE &&
+            Math.abs(data[i + 1] - target[1]) <= TOLERANCE &&
+            Math.abs(data[i + 2] - target[2]) <= TOLERANCE &&
+            Math.abs(data[i + 3] - target[3]) <= TOLERANCE;
+
+        const stack = [[startX, startY]];
+        while (stack.length) {
+            let [x, y] = stack.pop();
+            let i = at(x, y);
+            if (!close(i)) continue;
+
+            /* walk left to the run's edge */
+            let xl = x;
+            while (xl > 0 && close(at(xl - 1, y))) xl--;
+            /* walk right to the run's edge */
+            let xr = x;
+            while (xr < w - 1 && close(at(xr + 1, y))) xr++;
+
+            /* fill the run, and queue the rows above/below */
+            for (let cx = xl; cx <= xr; cx++) {
+                i = at(cx, y);
+                data[i] = fill[0];
+                data[i + 1] = fill[1];
+                data[i + 2] = fill[2];
+                data[i + 3] = fill[3];
+
+                if (y > 0 && close(at(cx, y - 1))) stack.push([cx, y - 1]);
+                if (y < h - 1 && close(at(cx, y + 1))) stack.push([cx, y + 1]);
+            }
+        }
+
+        drawCtx.putImageData(image, 0, 0);
+
+        /* store a snapshot of the whole canvas in the op so the
+           redraw pipeline can re-stamp fills in order (see
+           paintStroke + rememberFill above). The dataURL string
+           is shared across history copies, so memory stays sane
+           for a demo; production apps keep fill regions as
+           vectors or a bitmap layer instead. */
+        const snapshot = drawCanvas.toDataURL();
+        rememberFill(snapshot);
+        strokes.push({ tool: "fill", color: drawColor, points: [], snapshot });
+        commitHistory();
+    }
+
+    function hexToRgba(hex) {
+        const n = parseInt(hex.slice(1), 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
+    }
+
+    /* snapshot cache: dataURL -> loaded Image for re-stamping
+       flood fills during redraws (see paintStroke) */
+    const fillImages = new Map();
+
+    function rememberFill(snapshot) {
+        if (fillImages.has(snapshot)) return fillImages.get(snapshot);
+        const img = new Image();
+        img.onload = () => redrawAll();   // repaint once decoded
+        img.src = snapshot;
+        fillImages.set(snapshot, img);
+        return img;
+    }
+
+    /* how close (in canvas fraction) the stroke eraser's touch
+       counts — derived from ITS OWN size, so the flyout really
+       changes how forgiving the eraser is */
+    function strokeEraserHit() {
+        const rect = drawCanvas.getBoundingClientRect();
+        return (toolSizes["erase-stroke"] / 2) / (rect.width || 1);
+    }
 
     function eraseWholeStrokeAt(point) {
+        const hit = strokeEraserHit();
         const before = strokes.length;
         strokes = strokes.filter(stroke =>
+            stroke.tool === "fill" ||
             !stroke.points.some(p =>
-                Math.hypot(p.x - point.x, p.y - point.y) < HIT_DISTANCE)
+                Math.hypot(p.x - point.x, p.y - point.y) < hit)
         );
         if (strokes.length !== before) redrawAll();
     }
 
     function eraseCircleAt(point) {
-        /* radius in canvas fraction (same idea as HIT_DISTANCE) */
-        const radius = (TOOL_SIZES["erase-circle"][sizeLevel] /
-                        (drawCanvas.getBoundingClientRect().width || 1)) * 1.6;
+        /* radius in canvas fraction, derived from this eraser's
+           own size (diameter in px -> half-width fraction) */
+        const radius = (toolSizes["erase-circle"] / 2 /
+                        (drawCanvas.getBoundingClientRect().width || 1));
 
         let changed = false;
         const next = [];
@@ -738,6 +988,11 @@ if (IS_TEACHER && !IS_POPUP) {
         };
 
         for (const stroke of strokes) {
+            /* fills have no points — they pass through untouched */
+            if (stroke.tool === "fill") {
+                next.push(stroke);
+                continue;
+            }
             /* split the stroke's points into runs OUTSIDE the
                eraser circle; each run becomes a stroke fragment */
             let run = [];
@@ -765,6 +1020,8 @@ if (IS_TEACHER && !IS_POPUP) {
         pen: document.getElementById("tool-pen"),
         highlight: document.getElementById("tool-highlight"),
         text: document.getElementById("tool-text"),
+        bucket: document.getElementById("tool-bucket"),
+        eyedropper: document.getElementById("tool-eyedropper"),
         censor: document.getElementById("tool-censor"),
         "erase-stroke": document.getElementById("tool-erase-stroke"),
         "erase-circle": document.getElementById("tool-erase-circle")
@@ -772,15 +1029,80 @@ if (IS_TEACHER && !IS_POPUP) {
 
     function setTool(tool) {
         currentTool = tool;
+
+        /* the rail lives OUTSIDE the stage now, so drawing works
+           whether sharing, whiteboarding — or just the plain
+           stage. The canvas catches pointer events for drawing
+           tools only; censor/text clicks fall through to the
+           stage listener. */
+        stage.classList.toggle("tool-draw",
+            tool === "pen" || tool === "highlight" ||
+            tool === "erase-stroke" || tool === "erase-circle" ||
+            tool === "bucket" || tool === "eyedropper");
+
         for (const [id, btn] of Object.entries(toolButtons)) {
             if (btn) btn.classList.toggle("is-active", id === tool);
         }
-        /* the canvas only catches pointer events for ink and
-           eraser tools — censor/text clicks fall through to the
-           stage listener above */
-        stage.classList.toggle("tool-draw",
-            tool === "pen" || tool === "highlight" ||
-            tool === "erase-stroke" || tool === "erase-circle");
+
+        hideCursorRing();
+        hideLoupe();
+        updateFlyout();
+    }
+
+    /* ---- SIZE FLYOUT (minus / value / plus, 1px steps) ----
+       Rolls out beside whichever sizing tool is active. Each
+       tool keeps its OWN size in toolSizes. */
+    const flyout = document.getElementById("tool-flyout");
+    const flyoutTitle = document.getElementById("flyout-title");
+    const sizeValue = document.getElementById("size-value");
+    const sizeMinus = document.getElementById("size-minus");
+    const sizePlus = document.getElementById("size-plus");
+
+    function updateFlyout() {
+        if (!flyout) return;
+        const cfg = TOOL_SIZE_CONFIG[currentTool];
+        const railCollapsed =
+            document.getElementById("tool-rail").classList.contains("is-collapsed");
+
+        if (!cfg || railCollapsed) {
+            flyout.hidden = true;
+            return;
+        }
+
+        flyout.hidden = false;
+        flyoutTitle.textContent = cfg.label;
+        sizeValue.textContent = toolSizes[currentTool] + "px";
+
+        /* park the flyout vertically beside the active tool */
+        const btn = toolButtons[currentTool];
+        if (btn) {
+            flyout.style.top = (btn.offsetTop - 4) + "px";
+        }
+    }
+
+    function stepSize(delta) {
+        const cfg = TOOL_SIZE_CONFIG[currentTool];
+        if (!cfg) return;
+        toolSizes[currentTool] = Math.max(
+            cfg.min,
+            Math.min(cfg.max, toolSizes[currentTool] + delta)
+        );
+        updateFlyout();
+    }
+
+    if (sizeMinus) sizeMinus.addEventListener("click", () => stepSize(-1));
+    if (sizePlus) sizePlus.addEventListener("click", () => stepSize(1));
+
+    /* ---- RAIL COLLAPSE (photo-shop style hide arrow) ---- */
+    const rail = document.getElementById("tool-rail");
+    const railToggle = document.getElementById("rail-toggle");
+    if (rail && railToggle) {
+        railToggle.addEventListener("click", () => {
+            const collapsed = rail.classList.toggle("is-collapsed");
+            railToggle.setAttribute("aria-expanded", String(!collapsed));
+            railToggle.title = collapsed ? "Show tools" : "Hide tools";
+            updateFlyout();
+        });
     }
 
     for (const [id, btn] of Object.entries(toolButtons)) {
@@ -788,28 +1110,23 @@ if (IS_TEACHER && !IS_POPUP) {
             currentTool === id ? null : id));
     }
 
-    /* ---- SIZE PICKER (S / M / L) ----
-       The chosen level feeds every tool's size table:
-       TOOL_SIZES[tool][sizeLevel]. Buttons show growing dots. */
-    const sizePicker = document.getElementById("size-picker");
-    if (sizePicker) {
-        sizePicker.innerHTML = [0, 1, 2].map(lvl => `
-            <button type="button" class="size-btn ${lvl === sizeLevel ? "is-active" : ""}"
-                    data-level="${lvl}"
-                    aria-label="${["Small", "Medium", "Large"][lvl]} size">
-                <span class="size-dot size-dot-${lvl}"></span>
-            </button>
-        `).join("");
-        sizePicker.addEventListener("click", (event) => {
-            const btn = event.target.closest(".size-btn");
-            if (!btn) return;
-            sizeLevel = Number(btn.dataset.level);
-            sizePicker.querySelectorAll(".size-btn").forEach(b =>
-                b.classList.toggle("is-active", b === btn));
-        });
+    /* ---- COLOR SWATCHES ----
+       The palette line-up lives in DRAW_COLORS (red, orange,
+       yellow, green, blue, purple, ink, WHITE — white matters
+       for drawing over dark screens/censored areas).
+       syncSwatchSelection() re-marks the active dot whenever
+       the color changes — including colors picked with the
+       eyedropper that aren't in the palette (then nothing is
+       marked, but drawColor still carries the picked value). */
+    const swatchBox = document.getElementById("swatches");
+
+    function syncSwatchSelection() {
+        if (!swatchBox) return;
+        swatchBox.querySelectorAll(".swatch").forEach(s =>
+            s.classList.toggle("is-active",
+                s.dataset.color.toLowerCase() === drawColor.toLowerCase()));
     }
 
-    const swatchBox = document.getElementById("swatches");
     if (swatchBox) {
         swatchBox.innerHTML = DRAW_COLORS.map((color, i) => `
             <button type="button" class="swatch ${i === 0 ? "is-active" : ""}"
@@ -820,8 +1137,7 @@ if (IS_TEACHER && !IS_POPUP) {
             const sw = event.target.closest(".swatch");
             if (!sw) return;
             drawColor = sw.dataset.color;
-            swatchBox.querySelectorAll(".swatch").forEach(s =>
-                s.classList.toggle("is-active", s === sw));
+            syncSwatchSelection();
         });
     }
 
@@ -1079,11 +1395,13 @@ if (IS_TEACHER && !IS_POPUP) {
     }
 
     /* a plain stage click with the Censor tool drops a box;
-       with the Text tool it opens a fresh text box */
+       with the Text tool it opens a fresh text box.
+       WHY NO sharing/boardOn CHECK ANYMORE: the rail is always
+       available, so annotation works over the plain video stage
+       too — a file, a board, or nothing at all. */
     if (stage) {
         stage.addEventListener("click", (event) => {
-            if (!(sharing || boardOn)) return;
-            if (event.target.closest(".stage-topbar, .stage-tools, .censor-box, .text-item")) return;
+            if (event.target.closest(".stage-topbar, .censor-box, .text-item")) return;
             if (currentTool === "censor") {
                 addCensorBox(event.clientX, event.clientY);
             } else if (currentTool === "text") {
@@ -1096,7 +1414,7 @@ if (IS_TEACHER && !IS_POPUP) {
     function syncToolLayer() {
         stage.classList.toggle("is-sharing", sharing);
         stage.classList.toggle("is-whiteboard", boardOn);
-        if (sharing || boardOn) canvasSize();
+        canvasSize();
         redrawAll();
     }
 
@@ -1124,9 +1442,7 @@ if (IS_TEACHER && !IS_POPUP) {
         });
     }
 
-    window.addEventListener("resize", () => {
-        if (sharing || boardOn) redrawAll();
-    });
+    window.addEventListener("resize", () => redrawAll());
     updateToolButtons();
 
     /* --- pop-out chat: a separate window you can drag to a

@@ -2052,6 +2052,12 @@ html[data-theme="dark"] .demo-hint code {
     box-shadow: 0 20px 50px rgba(2, 6, 23, 0.35);
 }
 
+/* inside the shell, the stage takes all leftover width */
+.stage-shell .stage {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 .stage-video {
     position: absolute;
     inset: 0;
@@ -2846,22 +2852,26 @@ html[data-theme="dark"] .chat-error {
     display: block;
 }
 
-/* ---- annotation canvas (pen / highlighter / erasers) ---- */
+/* ---- annotation canvas (pen / highlighter / erasers) ----
+   Always mounted on the teacher page now: the rail is always
+   available, so you can annotate over the video stage, a
+   shared slide, or the whiteboard. Pointer events only turn
+   on while a drawing tool is selected (see .tool-draw). */
 .draw-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     z-index: 3;
-    display: none;
-    /* the canvas only receives pointer events when a drawing
-       or eraser tool is active (see .tool-draw below) */
+    display: block;
     pointer-events: none;
 }
 
-.stage.is-sharing .draw-canvas,
-.stage.is-whiteboard .draw-canvas {
-    display: block;
+.stage.tool-draw .draw-canvas {
+    pointer-events: auto;
+    cursor: crosshair;
+    touch-action: none;
+    /* stops the browser from scrolling while drawing on touch */
 }
 
 .stage.tool-draw .draw-canvas {
@@ -3017,34 +3027,105 @@ html[data-theme="dark"] .text-editor {
     cursor: pointer;
 }
 
-/* ---- tool toolbar (appears while sharing / whiteboard) ---- */
-.stage-tools {
-    position: absolute;
-    left: 50%;
-    bottom: 14px;
-    transform: translateX(-50%);
-    z-index: 6;
-    display: none;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(2, 6, 23, 0.82);
-    backdrop-filter: blur(6px);
-    max-width: calc(100% - 20px);
-    overflow-x: auto;
+/* ---- STAGE SHELL + VERTICAL TOOL RAIL (Photoshop style) ----
+   The rail lives OUTSIDE the video frame, parked to its left.
+   Smooth glassy look, collapse arrow, per-tool size flyout. */
+.stage-shell {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
 }
 
-.stage.is-sharing .stage-tools,
-.stage.is-whiteboard .stage-tools {
+.tool-rail {
+    position: relative;
+    flex: none;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 7px;
+    border-radius: 18px;
+    background: rgba(2, 6, 23, 0.86);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.28),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+    z-index: 8;
+    transition: transform 0.25s ease, padding 0.25s ease;
+}
+
+/* collapse the rail into a slim arrow strip */
+.tool-rail.is-collapsed .rail-body {
+    display: none;
+}
+
+.tool-rail.is-collapsed {
+    padding: 8px 5px;
+    border-radius: 14px;
+}
+
+.rail-toggle {
+    flex: none;
+    width: 30px;
+    height: 24px;
+    margin-bottom: 6px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s, transform 0.25s ease;
+}
+
+.rail-toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+.rail-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+/* arrow flips when the rail is collapsed */
+.tool-rail.is-collapsed .rail-toggle {
+    transform: rotate(180deg);
+    margin-bottom: 0;
+}
+
+.rail-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    animation: railIn 0.22s ease;
+}
+
+@keyframes railIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.rail-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rail-sep {
+    width: 24px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.14);
+    margin: 6px 0;
 }
 
 .tool-btn {
     flex: none;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     border: none;
     background: transparent;
     color: #cbd5e1;
@@ -3052,7 +3133,7 @@ html[data-theme="dark"] .text-editor {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
+    transition: background-color 0.15s, color 0.15s, transform 0.1s;
 }
 
 .tool-btn svg {
@@ -3068,6 +3149,11 @@ html[data-theme="dark"] .text-editor {
 .tool-btn.is-active {
     background: #2563eb;
     color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+}
+
+.tool-btn:active {
+    transform: scale(0.94);
 }
 
 .tool-btn:disabled {
@@ -3080,19 +3166,12 @@ html[data-theme="dark"] .text-editor {
     color: #fca5a5;
 }
 
-.tool-sep {
-    flex: none;
-    width: 1px;
-    height: 22px;
-    background: rgba(255, 255, 255, 0.18);
-    margin: 0 3px;
-}
-
-/* color swatches */
+/* color swatches: 2-column grid inside the narrow rail */
 .swatches {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 22px);
     gap: 5px;
-    flex: none;
+    justify-items: center;
 }
 
 .swatch {
@@ -3106,6 +3185,11 @@ html[data-theme="dark"] .text-editor {
     transition: transform 0.15s, border-color 0.15s;
 }
 
+/* white needs a visible outline on the dark rail */
+.swatch[data-color="#ffffff"] {
+    border-color: rgba(148, 163, 184, 0.8);
+}
+
 .swatch:hover {
     transform: scale(1.15);
 }
@@ -3115,47 +3199,124 @@ html[data-theme="dark"] .text-editor {
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
 
-/* size picker (S / M / L — three growing dots) */
-.size-picker {
+/* ---- PER-TOOL SIZE FLYOUT ----
+   Rolls out to the right of the rail beside the active tool.
+   Minus / number / plus — sized by 1px increments. */
+.tool-flyout {
+    position: absolute;
+    left: calc(100% + 10px);
+    z-index: 9;
     display: flex;
     align-items: center;
-    gap: 2px;
-    flex: none;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.9);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.3),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    white-space: nowrap;
+    animation: flyoutIn 0.18s ease;
 }
 
-.size-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
+@keyframes flyoutIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.flyout-title {
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-right: 2px;
+}
+
+.flyout-step {
+    width: 24px;
+    height: 24px;
     border: none;
-    background: transparent;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    font-size: 15px;
+    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.15s;
 }
 
-.size-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-.size-btn.is-active {
+.flyout-step:hover {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.size-dot {
-    display: block;
+.flyout-value {
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- CUSTOM CURSOR RING (pen / highlighter / erasers) ----
+   A circle outline that follows the pointer, sized to the
+   current tool size, so you know EXACTLY where ink lands. */
+.cursor-ring {
+    position: absolute;
+    z-index: 7;
     border-radius: 50%;
-    background: #cbd5e1;
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.55),
+                inset 0 0 0 1.5px rgba(15, 23, 42, 0.35);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    /* the browser cursor hides while the ring is shown */
 }
 
-.size-btn.is-active .size-dot {
-    background: #ffffff;
+.stage.is-ring-cursor,
+.stage.is-ring-cursor .draw-canvas {
+    cursor: none;
 }
 
-.size-dot-0 { width: 5px;  height: 5px; }
-.size-dot-1 { width: 9px;  height: 9px; }
-.size-dot-2 { width: 14px; height: 14px; }
+/* tiny center dot so tiny sizes stay findable */
+.cursor-ring::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+    opacity: 0.9;
+}
+
+/* ---- EYEDROPPER LOUPE ----
+   Magnified circle of pixels under the cursor + the sampled
+   color in the middle. image-rendering: pixelated keeps the
+   zoomed pixels crisp instead of blurry. */
+.loupe {
+    position: absolute;
+    z-index: 7;
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    border: 2.5px solid #ffffff;
+    box-shadow: 0 8px 22px rgba(2, 6, 23, 0.45),
+                0 0 0 1.5px rgba(15, 23, 42, 0.5);
+    pointer-events: none;
+    transform: translate(14px, 14px);
+    image-rendering: pixelated;
+}
+
+.stage.is-loupe-cursor,
+.stage.is-loupe-cursor .draw-canvas {
+    cursor: none;
+}
 
 /* ================= POP-OUT CHAT WINDOW ================= */
 .popup-wrap {
@@ -3335,6 +3496,50 @@ html[data-theme="dark"] .text-editor {
 
     .participants-strip {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+
+    /* vertical rail would eat half a phone screen — lay it
+       flat above the stage instead */
+    .stage-shell {
+        flex-direction: column;
+    }
+
+    .tool-rail {
+        flex-direction: row;
+        width: 100%;
+        border-radius: 16px;
+        padding: 6px 8px;
+    }
+
+    .rail-body {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .rail-tools {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .rail-sep {
+        width: 24px;
+        height: 24px;
+        background: none;
+        margin: 0 2px;
+        border-left: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .swatches {
+        grid-template-columns: repeat(8, 22px);
+        grid-auto-flow: column;
+    }
+
+    .tool-flyout {
+        top: auto !important;
+        bottom: calc(100% + 8px);
+        left: 12px;
     }
 
     .theme-toggle {
