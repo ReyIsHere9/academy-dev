@@ -2052,10 +2052,18 @@ html[data-theme="dark"] .demo-hint code {
     box-shadow: 0 20px 50px rgba(2, 6, 23, 0.35);
 }
 
-/* inside the shell, the stage takes all leftover width */
-.stage-shell .stage {
+/* inside the shell, the stage column takes all leftover width.
+   The column holds: video, status row, title, controls — so an
+   expanded rail never leaves dead space under the video. */
+.stage-column {
     flex: 1 1 auto;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.stage-column .stage {
+    width: 100%;
 }
 
 .stage-video {
@@ -2094,30 +2102,30 @@ html[data-theme="dark"] .demo-hint code {
     color: #94a3b8;
 }
 
-/* overlay chips: LIVE / REC / viewers */
-.stage-topbar {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    right: 14px;
+/* status row: LIVE / REC / viewers — sits UNDER the video,
+   outside the frame, so the stage stays clean and uncluttered */
+.stage-status {
     display: flex;
-    gap: 10px;
     align-items: center;
-    z-index: 5;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
 }
 
-.chip {
+/* chips out here sit on the PAGE background (not on video),
+   so they follow the theme instead of the old dark overlay */
+.stage-status .chip {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    background: rgba(2, 6, 23, 0.7);
-    color: #e2e8f0;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     font-size: 0.78rem;
     font-weight: bold;
     letter-spacing: 0.04em;
     padding: 6px 12px;
     border-radius: 999px;
-    backdrop-filter: blur(4px);
 }
 
 .chip .dot {
@@ -2143,7 +2151,7 @@ html[data-theme="dark"] .demo-hint code {
 
 /* REC chip turns grey when recording stops */
 .rec-chip.is-off {
-    color: #94a3b8;
+    color: var(--color-text-muted);
 }
 
 .rec-chip.is-off .dot {
@@ -2243,23 +2251,27 @@ html[data-theme="dark"] .late-pill {
     color: #ef4444;
 }
 
-/* recording toggle button */
-.rec-toggle {
-    border-color: #7f1d1d;
-}
-
+/* recording toggle button.
+   TWO STATES (fixing an old bug where it always looked "live"):
+   idle    = grey dot, no animation, normal border
+   .is-rec = red pulsing dot + dark red "recording" look */
 .rec-toggle .dot {
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: #ef4444;
-    animation: recPulse 1.4s ease-in-out infinite;
+    background: #64748b;
+    transition: background-color 0.2s;
 }
 
 .rec-toggle.is-rec {
     background-color: #450a0a;
     border-color: #ef4444;
     color: #fecaca;
+}
+
+.rec-toggle.is-rec .dot {
+    background: #ef4444;
+    animation: recPulse 1.4s ease-in-out infinite;
 }
 
 /* ---------- PARTICIPANT TILES ---------- */

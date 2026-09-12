@@ -223,6 +223,12 @@
                         </div>
                     </aside>
 
+                    <!-- RIGHT COLUMN: the video, the status chips, the
+                         title and the controls all live BESIDE the
+                         rail — so an expanded rail never leaves dead
+                         space under the video -->
+                    <div class="stage-column">
+
                     <div class="stage" id="stage">
 
                     <!-- fake presenter video -->
@@ -275,18 +281,19 @@
                         <button type="button" id="wb-zoom-reset" title="Reset view">&#8634;</button>
                     </div>
 
-                    <div class="stage-topbar">
-                        <span class="chip live-chip">
-                            <span class="dot"></span> LIVE
-                        </span>
-                        <span class="chip rec-chip" id="rec-chip">
-                            <span class="dot"></span><span>REC 0:00</span>
-                        </span>
-                        <span class="chip viewer-chip">8 watching</span>
-                    </div>
-                </div>
+                </div><!-- /.stage -->
 
-                </div><!-- /.stage-shell -->
+                <!-- STATUS ROW (deliberately OUTSIDE the video):
+                     LIVE / REC / viewers -->
+                <div class="stage-status">
+                    <span class="chip live-chip">
+                        <span class="dot"></span> LIVE
+                    </span>
+                    <span class="chip rec-chip" id="rec-chip">
+                        <span class="dot"></span><span>REC 0:00</span>
+                    </span>
+                    <span class="chip viewer-chip">8 watching</span>
+                </div>
 
                 <div class="class-meta">
                     <h1 id="class-title">Live class</h1>
@@ -345,7 +352,7 @@
 
                     <!-- TEACHER: recording on/off -->
                     <button type="button" class="ctrl-btn rec-toggle is-rec" id="rec-toggle">
-                        <span class="dot"></span><span>Stop recording</span>
+                        <span class="dot"></span><span class="rec-label">Stop recording</span>
                     </button>
 
                     <!-- TEACHER: pop-out chat window -->
@@ -369,6 +376,9 @@
                         <span>End class</span>
                     </a>
                 </div>
+
+                    </div><!-- /.stage-column -->
+                </div><!-- /.stage-shell -->
 
                 <h2 class="class-subtitle">In this class</h2>
                 <div class="participants-strip" id="participants-strip"></div>

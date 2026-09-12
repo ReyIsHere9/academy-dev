@@ -479,19 +479,39 @@ if (tabsBox) {
 /* ============ 7. TEACHER TOOLS (guarded by teacher-mode) ============ */
 if (IS_TEACHER && !IS_POPUP) {
 
-    /* --- recording on/off (demo: flips locally; in the real app
-           this state arrives from the server so EVERYONE sees
-           the same red light) --- */
+    /* ============================================================
+       [BUGFIX LOG #5] — READ ME (lesson learned, keep forever)
+       WHAT BROKE:  the recording button showed its label text
+                    jumbled on top of the little red dot.
+       WHY:         the button markup is <span class="dot"> +
+                    <span class="rec-label">. The update code ran
+                    recToggle.querySelector("span") which matches
+                    the FIRST span — the DOT — so "Stop recording"
+                    was painted into the 9px dot, overlapping.
+       THE FIX:     target the label span explicitly:
+                    recToggle.querySelector(".rec-label")
+                    (and updateRecUI() keeps dot + text in sync).
+       ============================================================ */
     const recToggle = document.getElementById("rec-toggle");
     if (recToggle) {
+        function updateRecUI() {
+            recToggle.classList.toggle("is-rec", CLASS_INFO.recording);
+            const label = recToggle.querySelector(".rec-label");
+            if (label) {
+                label.textContent = CLASS_INFO.recording
+                    ? "Stop recording"
+                    : "Start recording";
+            }
+        }
+
         recToggle.addEventListener("click", () => {
             CLASS_INFO.recording = !CLASS_INFO.recording;
             if (CLASS_INFO.recording) recStartMs = Date.now();
-            recToggle.classList.toggle("is-rec", CLASS_INFO.recording);
-            recToggle.querySelector("span").textContent =
-                CLASS_INFO.recording ? "Stop recording" : "Start recording";
+            updateRecUI();
             tickClocks();
         });
+
+        updateRecUI();   // sync the button with the initial state
     }
 
     /* --- screen share + whiteboard + annotation toolkit.
@@ -801,7 +821,7 @@ if (IS_TEACHER && !IS_POPUP) {
     if (stage) {
         stage.addEventListener("pointerdown", (event) => {
             if (!boardOn || currentTool) return;
-            if (event.target.closest(".stage-topbar, .wb-viewbar")) return;
+            if (event.target.closest(".stage-status, .wb-viewbar")) return;
             viewPointers.set(event.pointerId,
                 { x: event.clientX, y: event.clientY });
 
@@ -1702,7 +1722,7 @@ if (IS_TEACHER && !IS_POPUP) {
     if (stage) {
         stage.addEventListener("click", (event) => {
             if (event.target.closest(
-                ".stage-topbar, .wb-viewbar, .censor-box, .text-item")) return;
+                ".stage-status, .wb-viewbar, .censor-box, .text-item")) return;
             if (currentTool === "censor") {
                 addCensorBox(event.clientX, event.clientY);
             } else if (currentTool === "text") {
