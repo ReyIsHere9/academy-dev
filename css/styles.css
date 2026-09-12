@@ -3856,6 +3856,69 @@ html[data-theme="dark"] .text-editor {
     margin-bottom: 0;
 }
 
+/* ================= CONFIRMATION MODAL (end class, etc.) =================
+   Built in JS by classroom.js (shared by teacher + admin rooms).
+   LESSON — BUGFIX LOG #6 again: when a rule sets display on a
+   class, [hidden] must be given its own rule to win, otherwise
+   the modal can never actually hide! */
+.confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;              /* above drawer (60) and dimmer (40) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 23, 0.6);
+    animation: lightsFade 0.2s ease;
+}
+
+.confirm-backdrop[hidden] {
+    display: none;
+}
+
+.confirm-card {
+    width: min(400px, 100%);
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.4);
+    animation: confirmPop 0.2s ease;
+}
+
+@keyframes confirmPop {
+    from { transform: scale(0.95); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+
+.confirm-card h2 {
+    margin-bottom: 8px;
+    font-size: 1.15rem;
+}
+
+.confirm-card p {
+    margin-bottom: 18px;
+    font-size: 0.92rem;
+}
+
+.confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.confirm-danger {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.confirm-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
 /* ================= POP-OUT CHAT WINDOW ================= */
 .popup-wrap {
     display: flex;

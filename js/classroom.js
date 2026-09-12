@@ -530,9 +530,12 @@ if (lightsBtn) {
     /* clicking the dimmed area brings the lights back on */
     backdrop.addEventListener("click", () => setLightsOut(false));
 
-    /* Esc is the panic button for both modals and fullscreen */
+    /* Esc is the panic button for both modals and fullscreen —
+       but if a confirmation dialog is open, let IT handle Esc */
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setLightsOut(false);
+        if (event.key !== "Escape") return;
+        if (document.querySelector(".confirm-backdrop:not([hidden])")) return;
+        setLightsOut(false);
     });
 }
 
@@ -580,6 +583,65 @@ if (popoutBtn) {
     popoutBtn.addEventListener("click", () => {
         window.open("class-chat.html", "AcademyClassChat",
                     "width=440,height=700");
+    });
+}
+
+/* --- end-class confirmation ---
+   Leaving the room is destructive, so an accidental click
+   shouldn't drop the teacher out. Same trick as the dimmer: the
+   modal is BUILT HERE in JS and the whole block is guarded by
+   the button's existence (teacher + admin pages only). */
+const endClassBtn = document.getElementById("end-class");
+if (endClassBtn) {
+    const confirmWrap = document.createElement("div");
+    confirmWrap.className = "confirm-backdrop";
+    confirmWrap.hidden = true;
+    confirmWrap.innerHTML = `
+        <div class="confirm-card" role="dialog" aria-modal="true"
+             aria-labelledby="confirm-title">
+            <h2 id="confirm-title">End the class?</h2>
+            <p class="muted">Everyone will be returned to the courses
+            page and the room will close.</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn btn-ghost"
+                        id="confirm-cancel">Stay in class</button>
+                <button type="button" class="btn confirm-danger"
+                        id="confirm-ok">End class</button>
+            </div>
+        </div>`;
+    document.body.appendChild(confirmWrap);
+
+    const cancelBtn = confirmWrap.querySelector("#confirm-cancel");
+    const okBtn = confirmWrap.querySelector("#confirm-ok");
+
+    function closeConfirm() {
+        confirmWrap.hidden = true;
+        endClassBtn.focus();      // send focus back where it was
+    }
+
+    function openConfirm() {
+        confirmWrap.hidden = false;
+        cancelBtn.focus();        // safe choice focused by default
+    }
+
+    endClassBtn.addEventListener("click", (event) => {
+        event.preventDefault();   // hold the door — confirm first
+        openConfirm();
+    });
+
+    cancelBtn.addEventListener("click", closeConfirm);
+
+    okBtn.addEventListener("click", () => {
+        window.location.href = endClassBtn.href;   // now we leave
+    });
+
+    /* clicking the dark area around the card also cancels */
+    confirmWrap.addEventListener("click", (event) => {
+        if (event.target === confirmWrap) closeConfirm();
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !confirmWrap.hidden) closeConfirm();
     });
 }
 
