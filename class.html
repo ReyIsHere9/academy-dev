@@ -108,8 +108,15 @@
                     </span>
                     <span class="chip viewer-chip">8 watching</span>
 
-                    <!-- VIEW MODES: theater / lights out / fullscreen -->
+                    <!-- VIEW MODES: chat / theater / lights out / fullscreen -->
                     <div class="stage-modes">
+                        <button type="button" class="mode-btn is-active" id="mode-chat"
+                                title="Hide chat" aria-pressed="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
                         <button type="button" class="mode-btn" id="mode-theater"
                                 title="Theater mode" aria-pressed="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -187,6 +194,17 @@
 
                     <button type="button" class="ctrl-btn hand-btn" id="hand-btn">
                         &#9995;<span>Raise hand</span>
+                    </button>
+
+                    <!-- pop-out chat: same chat, own window (syncs live) -->
+                    <button type="button" class="ctrl-btn" id="popout-chat">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        <span>Pop-out chat</span>
                     </button>
 
                     <a href="courses.html" class="ctrl-btn danger-btn">

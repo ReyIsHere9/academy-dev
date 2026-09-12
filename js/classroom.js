@@ -23,6 +23,9 @@
 
 const IS_TEACHER = document.body.classList.contains("teacher-mode");
 const IS_POPUP   = document.body.classList.contains("popup-mode");
+/* class-admin.html marks itself with BOTH teacher-mode (so it
+   inherits every teacher tool) and admin-mode (the extra panel). */
+const IS_ADMIN   = document.body.classList.contains("admin-mode");
 
 /* ============ 1. CLOCKS ============
    The class "started" 37 minutes ago per CLASS_INFO. All times
@@ -71,7 +74,11 @@ setInterval(tickClocks, 1000);
 const AVATAR_COLORS = ["#2563eb", "#7c3aed", "#db2777", "#059669",
                        "#d97706", "#0891b2", "#e11d48"];
 
-const YOU_ID = IS_TEACHER ? CLASS_INFO.presenterId : "Stu-2001";
+/* who am I in this room? The admin page logs in as Site Admin,
+   teacher pages as the presenter, the student page as Stu-2001 */
+const YOU_ID = IS_ADMIN ? "admin"
+             : IS_TEACHER ? CLASS_INFO.presenterId
+             : "Stu-2001";
 
 let participants = PARTICIPANTS.map((p, i) => ({
     ...p,
@@ -477,15 +484,19 @@ if (tabsBox) {
 }
 
 /* ============ 6b. STAGE VIEW MODES (both class rooms) ============
-   Theater  -> hides the chat sidebar, video goes wide
-   Lights   -> dims the whole page except the class area (the
-               bulb icon lights up with rays while it's on)
-   Fullscreen -> native browser fullscreen on the stage shell
-   (on the teacher page the shell includes the tool rail, so you
-   can still draw in fullscreen!) */
+   Theater  -> hides the chat sidebar, video goes wide (chat
+               returns as a floating drawer when shown)
+   Lights   -> dims the whole page except the video, tool rail
+               and the bulb button itself
+   Fullscreen -> native browser fullscreen on the WHOLE layout,
+               so the chat drawer can float over the video
+   Chat     -> show/hide the sidebar (YouTube-comments style)
+   Pop-out  -> chat in its own window (syncs via BroadcastChannel)
+   (blocks are element-guarded, so every page uses what it has) */
 const theaterBtn = document.getElementById("mode-theater");
 const lightsBtn = document.getElementById("mode-lights");
 const fullscreenBtn = document.getElementById("mode-fullscreen");
+const chatToggleBtn = document.getElementById("mode-chat");
 
 if (theaterBtn) {
     theaterBtn.addEventListener("click", () => {
@@ -497,10 +508,14 @@ if (theaterBtn) {
 
 if (lightsBtn) {
     /* the dimmer layer is created here so every page (student
-       and teacher) gets it automatically — no HTML edits. */
+       and teacher) gets it automatically — no HTML edits.
+       It lives INSIDE .class-layout when possible: in native
+       fullscreen only the fullscreened element and its children
+       are rendered, so a body-level backdrop would vanish. */
     const backdrop = document.createElement("div");
     backdrop.className = "lights-out-backdrop";
-    document.body.appendChild(backdrop);
+    (document.querySelector(".class-layout") || document.body)
+        .appendChild(backdrop);
 
     function setLightsOut(on) {
         document.body.classList.toggle("is-lights-out", on);
@@ -521,11 +536,22 @@ if (lightsBtn) {
     });
 }
 
+if (chatToggleBtn) {
+    /* one class drives every mode: normal hides the column,
+       theater/fullscreen slide the drawer off-screen */
+    chatToggleBtn.addEventListener("click", () => {
+        const hidden = document.body.classList.toggle("is-chat-hidden");
+        /* the button is "active" while chat is SHOWN */
+        chatToggleBtn.classList.toggle("is-active", !hidden);
+        chatToggleBtn.setAttribute("aria-pressed", String(!hidden));
+        chatToggleBtn.title = hidden ? "Show chat" : "Hide chat";
+    });
+}
+
 if (fullscreenBtn) {
-    /* on the teacher page we fullscreen the whole shell (rail +
-       video). On the student page there is no shell, so the
-       stage itself gets fullscreened. */
-    const fsTarget = document.querySelector(".stage-shell")
+    /* fullscreen the WHOLE layout (video + rail + chat drawer)
+       so chat can float over the video inside fullscreen */
+    const fsTarget = document.querySelector(".class-layout")
         || document.querySelector(".stage");
 
     if (fsTarget && fsTarget.requestFullscreen) {
@@ -544,6 +570,17 @@ if (fullscreenBtn) {
             fullscreenBtn.setAttribute("aria-pressed", String(on));
         });
     }
+}
+
+/* pop-out chat: a separate window you can drag to a second
+   monitor; it syncs via BroadcastChannel. Shared by BOTH rooms —
+   the button only exists on pages that include it. */
+const popoutBtn = document.getElementById("popout-chat");
+if (popoutBtn) {
+    popoutBtn.addEventListener("click", () => {
+        window.open("class-chat.html", "AcademyClassChat",
+                    "width=440,height=700");
+    });
 }
 
 /* ============ 7. TEACHER TOOLS (guarded by teacher-mode) ============ */
@@ -1854,16 +1891,6 @@ if (IS_TEACHER && !IS_POPUP) {
     window.addEventListener("resize", () => redrawAll());
     updateToolButtons();
 
-    /* --- pop-out chat: a separate window you can drag to a
-           second monitor; it syncs via BroadcastChannel --- */
-    const popoutBtn = document.getElementById("popout-chat");
-    if (popoutBtn) {
-        popoutBtn.addEventListener("click", () => {
-            window.open("class-chat.html", "AcademyClassChat",
-                        "width=440,height=700");
-        });
-    }
-
     /* --- materials drag & drop (client-side list for now;
            real uploads need server storage) --- */
     const dropzone = document.getElementById("dropzone");
@@ -2028,6 +2055,170 @@ if (IS_TEACHER && !IS_POPUP) {
         dropzone.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
 
         renderFiles();
+    }
+
+    /* ============ 7b. ADMIN TOOLS (class-admin.html only) ============
+       The admin page is the teacher room PLUS this panel. It runs
+       INSIDE the teacher block so it can reach the ink layers,
+       media surface and participants directly.
+       ⚠️ participants/materials live in memory (demo data) — in
+       the real app these actions would hit the server so every
+       connected window reacts. */
+    if (IS_ADMIN) {
+        const adminPeopleBox = document.getElementById("admin-people");
+        const adminLogBox = document.getElementById("admin-log");
+
+        /* little timestamped activity feed, newest line on top */
+        function adminLog(text) {
+            if (!adminLogBox) return;
+            const time = new Date().toLocaleTimeString([], {
+                hour: "2-digit", minute: "2-digit", second: "2-digit"
+            });
+            const line = document.createElement("p");
+            line.className = "admin-log-line";
+            line.textContent = `[${time}] ${text}`;
+            adminLogBox.prepend(line);
+        }
+
+        /* --- people list with a kick (×) button per row --- */
+        function renderAdminPeople() {
+            if (!adminPeopleBox) return;
+            adminPeopleBox.innerHTML = participants.map(p => `
+                <li class="admin-person" data-person="${p.id}">
+                    <span class="msg-avatar" style="background:${p.color}">${initialOf(p.name)}</span>
+                    <span class="admin-person-name">${esc(p.name)}</span>
+                    <span class="role-tag role-${p.role}">${ROLES[p.role].label}</span>
+                    ${connBars(p.conn)}
+                    ${p.id === YOU_ID ? "" : `
+                    <button type="button" class="admin-kick" data-kick="${p.id}"
+                            title="Remove from class">&times;</button>`}
+                </li>
+            `).join("");
+        }
+
+        /* remove a user — one delegated listener for the whole list */
+        if (adminPeopleBox) {
+            adminPeopleBox.addEventListener("click", (event) => {
+                const btn = event.target.closest("[data-kick]");
+                if (!btn) return;
+                const person = participants.find(p => p.id === btn.dataset.kick);
+                if (!person) return;
+                participants = participants.filter(p => p.id !== person.id);
+                renderParticipants();
+                renderAdminPeople();
+                adminLog(`Removed ${person.name} (${person.id}) from the class`);
+            });
+        }
+
+        /* --- add a user (name + role, id auto-generated) --- */
+        let nextAdminId = 3001;
+        const addForm = document.getElementById("admin-add-form");
+        if (addForm) {
+            addForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const nameInput = document.getElementById("admin-new-name");
+                const roleSelect = document.getElementById("admin-new-role");
+                const name = nameInput.value.trim();
+                if (!name) return;
+
+                participants.push({
+                    id: "Stu-" + nextAdminId++,
+                    name,
+                    role: roleSelect.value,
+                    conn: 4,                 // fresh joiners start solid
+                    mic: false,
+                    cam: false,
+                    hand: false,
+                    badge: null,
+                    color: AVATAR_COLORS[participants.length % AVATAR_COLORS.length]
+                });
+                nameInput.value = "";
+                renderParticipants();
+                renderAdminPeople();
+                adminLog(`Added ${name} as ${ROLES[roleSelect.value].label}`);
+            });
+        }
+
+        /* --- announcement: a chat message wearing a megaphone --- */
+        const announceForm = document.getElementById("admin-announce-form");
+        if (announceForm) {
+            announceForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const input = document.getElementById("admin-announce-text");
+                const text = input.value.trim();
+                if (!text) return;
+                sendChat("\u{1F4E2} " + text, null);
+                input.value = "";
+                adminLog("Announcement sent to everyone");
+            });
+        }
+
+        /* --- empty the stage: stop share/board/media and wipe every
+               ink layer + censor box, back to a clean slate --- */
+        const emptyBtn = document.getElementById("admin-empty-stage");
+        if (emptyBtn) {
+            emptyBtn.addEventListener("click", () => {
+                sharing = false;
+                boardOn = false;
+                mediaHide();
+                inkLayers.clear();       // every surface's ink, gone
+                strokes = [];
+                textItems = [];
+                history = [{ strokes: [], texts: [] }];
+                histIndex = 0;
+                currentStroke = null;
+                restoreCensorBoxes([]);
+                if (shareBtn) {
+                    shareBtn.classList.remove("is-active");
+                    shareBtn.setAttribute("aria-pressed", "false");
+                }
+                if (boardBtn) {
+                    boardBtn.classList.remove("is-active");
+                    boardBtn.setAttribute("aria-pressed", "false");
+                }
+                renderTexts();
+                redrawAll();
+                updateToolButtons();
+                syncToolLayer();
+                adminLog("Emptied the stage (share, board, media and ink reset)");
+            });
+        }
+
+        /* --- clear the class chat for everyone --- */
+        const clearChatBtn = document.getElementById("admin-clear-chat");
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener("click", () => {
+                messages = [];
+                persistChat();
+                renderChat();
+                adminLog("Class chat cleared");
+            });
+        }
+
+        /* --- lower every raised hand at once --- */
+        const clearHandsBtn = document.getElementById("admin-clear-hands");
+        if (clearHandsBtn) {
+            clearHandsBtn.addEventListener("click", () => {
+                const raised = participants.filter(p => p.hand).length;
+                participants.forEach(p => { p.hand = false; });
+                renderParticipants();
+                renderAdminPeople();
+                adminLog(`Lowered ${raised} raised hand${raised === 1 ? "" : "s"}`);
+            });
+        }
+
+        /* --- end class (demo: announces + logs; a real app would
+               close the room for every connected client) --- */
+        const endBtn = document.getElementById("admin-end-class");
+        if (endBtn) {
+            endBtn.addEventListener("click", () => {
+                sendChat("\u{1F534} The admin has ended the class. See you next time!", null);
+                adminLog("Class ended for everyone (demo)");
+            });
+        }
+
+        renderAdminPeople();
+        adminLog(`Admin console ready — ${participants.length} people in class`);
     }
 }
 

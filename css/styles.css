@@ -2218,13 +2218,43 @@ html[data-theme="dark"] .demo-hint code {
     stroke: #fde68a;
 }
 
+/* --- chat show/hide (the toggle button in the status row) ---
+   Like collapsing YouTube comments: the chat column disappears
+   and the player takes every pixel. */
+body.is-chat-hidden .class-layout {
+    grid-template-columns: 1fr;
+}
+
+body.is-chat-hidden .class-side {
+    display: none;
+}
+
 /* --- theater mode: the chat column steps aside, player goes wide --- */
 body.is-theater .class-layout {
     grid-template-columns: 1fr;
 }
 
+/* ...but if chat is ON in theater it returns as a floating
+   DRAWER that slides in from the right — YouTube comments style.
+   is-chat-hidden then slides it back off-screen. */
 body.is-theater .class-side {
-    display: none;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 92px;
+    right: 20px;
+    bottom: 20px;
+    width: min(390px, 92vw);
+    z-index: 60;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.5);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+body.is-theater.is-chat-hidden .class-side {
+    transform: translateX(calc(100% + 40px));
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* --- lights out: dim everything except the stage area.
@@ -2248,42 +2278,73 @@ body.is-lights-out .lights-out-backdrop {
     display: block;
 }
 
-/* keep the class area bright: the whole shell on the teacher
-   page (rail + video + controls), just the stage on the
-   student page */
-body.is-lights-out .stage-shell,
-body.is-lights-out .stage-status,
-body.is-lights-out .class-main > .stage {
+/* ============================================================
+   [BUGFIX LOG #7] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:  lights out kept the LIVE/REC/viewers chips and
+                every mode button bright — only the bulb (plus
+                video, and the tool rail on teacher pages) was
+                supposed to stay lit.
+   WHY:         the old rule raised big WRAPPERS on z-index 41:
+                .stage-shell and .stage-status. Lifting a wrapper
+                lifts ALL of its children with it, so the chips
+                and buttons floated above the dimmer too.
+   THE FIX:     raise ONLY the exact elements that must stay
+                bright: .stage, .tool-rail and #mode-lights (the
+                bulb). Everything else stays under the backdrop.
+   ============================================================ */
+body.is-lights-out .stage,
+body.is-lights-out .tool-rail,
+body.is-lights-out #mode-lights {
     position: relative;
     z-index: 41;
 }
 
-/* --- fullscreen (native Fullscreen API; Esc exits) --- */
-.stage-shell:fullscreen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background: #020617;
-    padding: 16px;
+/* the chat drawer is context, not a tool — keep it under the dimmer */
+body.is-lights-out .class-side {
+    z-index: 30;
 }
 
-.stage-shell:fullscreen .stage-column {
+/* --- fullscreen (native Fullscreen API; Esc exits) ---
+   We fullscreen the WHOLE layout so the chat drawer can float
+   over the video, exactly like fullscreen YouTube. */
+.class-layout:fullscreen {
+    display: block;
+    padding: 16px;
+    background: #020617;
+    overflow-y: auto;
+}
+
+.class-layout:fullscreen .stage-column {
     max-width: calc((100vh - 32px) * 16 / 9);
 }
 
-/* fullscreen keeps video + rail only, YouTube style */
-.stage-shell:fullscreen .stage-status,
-.stage-shell:fullscreen .class-meta,
-.stage-shell:fullscreen .controls {
+.class-layout:fullscreen .class-meta {
     display: none;
 }
 
-.stage:fullscreen {
-    width: 100vw;
-    height: 100vh;
-    border-radius: 0;
-    aspect-ratio: auto;
+.class-layout:fullscreen .class-side {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: min(390px, 92vw);
+    z-index: 60;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.5);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+body.is-chat-hidden .class-layout:fullscreen .class-side {
+    transform: translateX(calc(100% + 40px));
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* fullscreen + lights out: the drawer dims like everything else */
+body.is-lights-out .class-layout:fullscreen .class-side {
+    z-index: 30;
 }
 
 /* ---------- TITLE + META (YouTube style) ---------- */
@@ -3648,6 +3709,118 @@ html[data-theme="dark"] .text-editor {
 .stage.is-loupe-cursor,
 .stage.is-loupe-cursor .draw-canvas {
     cursor: none;
+}
+
+/* ================= ADMIN CONSOLE (class-admin.html) =================
+   The Admin tab reuses the sidebar's card look: headings, a
+   people list with kick buttons, small forms and a log feed.
+   Rendered by section 7b in classroom.js. */
+.admin-heading {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    margin: 18px 0 8px;
+}
+
+.admin-heading:first-child {
+    margin-top: 0;
+}
+
+.admin-people {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-person {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background-color: var(--color-bg-alt);
+}
+
+.admin-person-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-kick {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+.admin-kick:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-form-row {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-form-row .mini-select {
+    flex: 1;
+}
+
+.admin-danger {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.admin-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.admin-log {
+    margin: 0 0 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background-color: var(--color-bg-alt);
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.admin-log-line {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+    line-height: 1.45;
+}
+
+.admin-log-line:last-child {
+    margin-bottom: 0;
 }
 
 /* ================= POP-OUT CHAT WINDOW ================= */

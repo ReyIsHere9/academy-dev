@@ -21,8 +21,9 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `contact.html` | Contact form (mailto engine), hours, socials, map slot |
 | `pricing.html` | Billing toggle, OpenAI-style comparison matrix, lifetime offer |
 | `login.html` / `recovery.html` | Auth entry UI (demo) |
-| `class.html` | Live class room — student view |
-| `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat) |
+| `class.html` | Live class room — student view (chat show/hide drawer, pop-out chat, theater / lights-out / fullscreen modes) |
+| `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat, view modes) |
+| `class-admin.html` | Admin room — everything the teacher has, plus an Admin tab: manage people, broadcast, empty the stage, clear chat, activity log |
 | `class-chat.html` | Pop-out chat window |
 
 Supporting files: `css/styles.css` (one shared stylesheet for everything),
@@ -51,6 +52,12 @@ local server (clipboard, some media APIs are stricter on `file://`).
   boxes and undo history.
 - **Annotation toolkit** — pen/highlighter/text, two kinds of erasers,
   fill bucket, eyedropper with loupe, per-tool sizes, undo/redo.
+- **Stage view modes** — chat show/hide (YouTube-comments style drawer),
+  theater mode, lights-out (only video + rail + bulb stay lit) and
+  fullscreen with the chat drawer floating over the video.
+- **Admin console** — `class-admin.html` inherits every teacher tool and
+  adds participant management, stage reset, chat clearing and an activity
+  log (section 7b in `js/classroom.js`).
 
 ## Demo vs. real
 

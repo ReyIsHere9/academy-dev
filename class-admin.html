@@ -1,26 +1,30 @@
 <!DOCTYPE html>
 <!-- ============================================================
-     LIVE CLASS — TEACHER ROOM  (academy-dev — generic version)
+     LIVE CLASS — ADMIN ROOM  (academy-dev — generic version)
      ------------------------------------------------------------
-     SAME ROOM AS class.html, PLUS TEACHER TOOLS:
-       1. Screen share button (mock surface) — while sharing you
-          can click the "screen" to drop CENSOR BOXES over parts
-          of the image. Click a box to remove it.
-       2. Recording toggle — flips the red REC light everyone
-          sees in the student room.
-       3. Materials drag & drop — pdf / ppt / images / video /
-          audio files listed with type + size.
-       4. Pop-out chat — opens the chat in its own window so the
-          class doesn't see it while you share your screen.
+     THE TEACHER ROOM + AN ADMIN CONSOLE.
+     <body class="teacher-mode admin-mode"> gives this page
+     EVERY teacher tool (rail, share, whiteboard, recording,
+     materials, pop-out chat) plus an extra "Admin" tab where the
+     admin can:
+       1. See every person in class (role + connection).
+       2. Remove a user (× button on each row).
+       3. Add a user (name + role).
+       4. Broadcast an announcement to the class chat.
+       5. Empty the stage content (share / board / media / ink).
+       6. Clear the class chat.
+       7. Lower all raised hands.
+       8. End the class for everyone (demo).
+       9. Watch an activity log of everything above.
 
-     HOW TEACHER MODE WORKS: <body class="teacher-mode"> and
-     classroom.js unlocks its teacher blocks. Everything else
-     (chat, people, timers, badges) is IDENTICAL to the student
-     room — one engine, two views.
+     HOW ADMIN MODE WORKS: classroom.js checks for .admin-mode and
+     runs section 7b on top of the teacher tools. The admin's
+     YOU_ID is "admin" (Site Admin in class-data.js), so messages
+     and badges show correctly.
 
-     ⚠️ Real screen capture (getDisplayMedia), real recording and
-     real uploads need the backend phase — see notes in
-     classroom.js.
+     ⚠️ participants and materials are in-memory demo data — a
+     real app would send every admin action to the server so all
+     connected rooms react. See notes in classroom.js section 7b.
      ============================================================ -->
 
 <html lang="en">
@@ -28,12 +32,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teaching | The English Academy</title>
+    <title>Admin | The English Academy</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
 </head>
 
-<body class="teacher-mode">
+<body class="teacher-mode admin-mode">
 
     <!-- ================= HEADER (same on every page) ================= -->
     <header class="site-header">
@@ -442,6 +446,8 @@
                             data-tab="people">People</button>
                     <button type="button" class="tab-btn"
                             data-tab="materials">Materials</button>
+                    <button type="button" class="tab-btn"
+                            data-tab="admin">Admin</button>
                 </div>
 
                 <!-- ---- CHAT ---- -->
@@ -502,6 +508,49 @@
                         <input type="file" id="file-input" multiple hidden>
                     </div>
                     <div class="file-list" id="file-list"></div>
+                </div>
+
+                <!-- ---- ADMIN (class-admin.html only) ----
+                     Section 7b in classroom.js brings this to life. -->
+                <div class="tab-panel" data-panel="admin">
+
+                    <h3 class="admin-heading">People in class</h3>
+                    <ul class="admin-people" id="admin-people"></ul>
+
+                    <h3 class="admin-heading">Add a user</h3>
+                    <form class="admin-form" id="admin-add-form">
+                        <input type="text" class="chat-input" id="admin-new-name"
+                               placeholder="Name" autocomplete="off">
+                        <div class="admin-form-row">
+                            <select class="mini-select" id="admin-new-role">
+                                <option value="participant">Participant</option>
+                                <option value="speaker">Speaker</option>
+                                <option value="moderator">Moderator</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-small">Add</button>
+                        </div>
+                    </form>
+
+                    <h3 class="admin-heading">Announcement</h3>
+                    <form class="admin-form" id="admin-announce-form">
+                        <input type="text" class="chat-input" id="admin-announce-text"
+                               placeholder="Message for everyone" autocomplete="off">
+                        <button type="submit" class="btn btn-primary btn-small btn-block">
+                            Send announcement</button>
+                    </form>
+
+                    <h3 class="admin-heading">Debug tools</h3>
+                    <button type="button" class="btn btn-ghost btn-block" id="admin-empty-stage">
+                        Empty stage content</button>
+                    <button type="button" class="btn btn-ghost btn-block" id="admin-clear-chat">
+                        Clear class chat</button>
+                    <button type="button" class="btn btn-ghost btn-block" id="admin-clear-hands">
+                        Lower all raised hands</button>
+                    <button type="button" class="btn btn-block admin-danger" id="admin-end-class">
+                        End class for everyone</button>
+
+                    <h3 class="admin-heading">Admin log</h3>
+                    <div class="admin-log" id="admin-log"></div>
                 </div>
             </aside>
 
