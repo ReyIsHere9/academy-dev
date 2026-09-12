@@ -2798,6 +2798,37 @@ html[data-theme="dark"] .chat-error {
     font-size: 0.78rem;
 }
 
+/* Show/Hide button: sends the file to the stage */
+.file-show-btn {
+    flex: none;
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: bold;
+    color: var(--color-primary);
+    background-color: transparent;
+    border: 1px solid var(--color-primary);
+    border-radius: 999px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.file-show-btn:hover {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
+/* the row currently shown on stage */
+.file-row.is-showing {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.file-row.is-showing .file-show-btn {
+    background-color: var(--color-primary);
+    color: #ffffff;
+}
+
 /* ---- screen share surface + whiteboard ---- */
 .share-screen {
     position: absolute;
@@ -2839,13 +2870,16 @@ html[data-theme="dark"] .chat-error {
 }
 
 /* the blank whiteboard surface (white in BOTH themes —
-   it's a whiteboard, that's the point) */
+   it's a whiteboard, that's the point).
+   transform-origin 0 0 = zoom/pan math anchor point, so the
+   normalized stroke coordinates survive any zoom level. */
 .whiteboard-surface {
     position: absolute;
     inset: 0;
     display: none;
     background: #ffffff;
     z-index: 2;
+    transform-origin: 0 0;
 }
 
 .stage.is-whiteboard .whiteboard-surface {
@@ -2865,6 +2899,9 @@ html[data-theme="dark"] .chat-error {
     z-index: 3;
     display: block;
     pointer-events: none;
+    transform-origin: 0 0;
+    /* same anchor as the whiteboard surface — the two layers
+       must transform identically or ink would drift */
 }
 
 .stage.tool-draw .draw-canvas {
@@ -2874,11 +2911,127 @@ html[data-theme="dark"] .chat-error {
     /* stops the browser from scrolling while drawing on touch */
 }
 
-.stage.tool-draw .draw-canvas {
-    pointer-events: auto;
-    cursor: crosshair;
-    touch-action: none;
-    /* stops the browser from scrolling while drawing on touch */
+/* whiteboard navigation: grab cursor when no tool is chosen */
+.stage.is-whiteboard {
+    cursor: grab;
+}
+
+.stage.is-whiteboard.tool-draw {
+    cursor: auto;
+}
+
+.stage.is-panning {
+    cursor: grabbing;
+}
+
+/* whiteboard zoom controls (bottom-right of the stage) */
+.wb-viewbar {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 6;
+    display: none;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.75);
+    backdrop-filter: blur(6px);
+}
+
+.stage.is-whiteboard .wb-viewbar {
+    display: flex;
+}
+
+.wb-viewbar button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.wb-viewbar button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.wb-viewbar span {
+    min-width: 46px;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #e2e8f0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- media screen (uploaded files showcased on stage) ---- */
+.media-screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    z-index: 2;
+    background: #0b1220;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.stage.is-media .media-screen {
+    display: flex;
+}
+
+.stage.is-media .stage-video {
+    visibility: hidden;
+}
+
+.media-screen iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #ffffff;
+}
+
+.media-screen img,
+.media-screen video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+}
+
+.media-audio-wrap {
+    text-align: center;
+    color: #e2e8f0;
+    padding: 30px;
+}
+
+.media-audio-wrap p {
+    margin-bottom: 14px;
+    font-weight: bold;
+}
+
+.media-audio-wrap audio {
+    width: min(420px, 80vw);
+}
+
+.media-note {
+    text-align: center;
+    color: #e2e8f0;
+    padding: 30px;
+    max-width: 420px;
+}
+
+.media-note p {
+    margin: 8px 0;
 }
 
 /* ---- text boxes layer ---- */
@@ -3188,6 +3341,30 @@ html[data-theme="dark"] .text-editor {
 /* white needs a visible outline on the dark rail */
 .swatch[data-color="#ffffff"] {
     border-color: rgba(148, 163, 184, 0.8);
+}
+
+/* the 9th slot = eyedropper color. Empty it shows a dashed,
+   transparent chip; after sampling it fills with the picked
+   color and behaves like any other swatch. */
+.swatch-picked {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swatch-picked[data-color=""] {
+    background:
+        repeating-conic-gradient(rgba(148, 163, 184, 0.35) 0% 25%,
+                                 transparent 0% 50%) 50% / 8px 8px;
+    border-style: dashed;
+    border-color: rgba(148, 163, 184, 0.9);
+}
+
+.swatch-picked[data-color=""]:hover::after {
+    content: "?";
+    font-size: 11px;
+    font-weight: bold;
+    color: #e2e8f0;
 }
 
 .swatch:hover {
@@ -3532,7 +3709,7 @@ html[data-theme="dark"] .text-editor {
     }
 
     .swatches {
-        grid-template-columns: repeat(8, 22px);
+        grid-template-columns: repeat(9, 22px);
         grid-auto-flow: column;
     }
 

@@ -245,6 +245,11 @@
                     <!-- WHITEBOARD: a blank surface to draw on -->
                     <div class="whiteboard-surface"></div>
 
+                    <!-- MEDIA SCREEN: showcases an uploaded file
+                         (PDF / image / video / audio) right where
+                         screen sharing would appear -->
+                    <div class="media-screen" id="media-screen"></div>
+
                     <!-- DRAWING LAYER (pen / highlighter annotations) -->
                     <canvas class="draw-canvas" id="draw-canvas"></canvas>
 
@@ -261,6 +266,14 @@
                     <!-- EYEDROPPER LOUPE: a magnified circle of the
                          pixels under the cursor for precise picking -->
                     <canvas class="loupe" id="loupe" width="150" height="150" hidden></canvas>
+
+                    <!-- WHITEBOARD VIEW CONTROLS (zoom / reset) -->
+                    <div class="wb-viewbar" id="wb-viewbar">
+                        <button type="button" id="wb-zoom-out" title="Zoom out">&#8722;</button>
+                        <span id="wb-zoom-label">100%</span>
+                        <button type="button" id="wb-zoom-in" title="Zoom in">+</button>
+                        <button type="button" id="wb-zoom-reset" title="Reset view">&#8634;</button>
+                    </div>
 
                     <div class="stage-topbar">
                         <span class="chip live-chip">
@@ -317,6 +330,17 @@
                             <line x1="12" y1="17" x2="12" y2="21"></line>
                         </svg>
                         <span>Share screen</span>
+                    </button>
+
+                    <!-- TEACHER: whiteboard (blank board with
+                         zoom / pan / pinch — draw on it) -->
+                    <button type="button" class="ctrl-btn" id="whiteboard-btn" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <path d="m9 13 6-6 2 2-6 6-3 1 1-3z"></path>
+                        </svg>
+                        <span>Whiteboard</span>
                     </button>
 
                     <!-- TEACHER: recording on/off -->

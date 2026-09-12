@@ -665,6 +665,152 @@ if (IS_TEACHER && !IS_POPUP) {
         if (currentStroke) paintStroke(currentStroke, size);
     }
 
+    /* ============ WHITEBOARD VIEW (zoom / pan / pinch) ============
+       The board can be zoomed and moved around. The SAME transform
+       is applied to the whiteboard surface AND the drawing canvas,
+       so ink stays glued to the board while you navigate.
+       HOW THE MATH SURVIVES: stroke points are normalized (0..1),
+       and a scale+translate transform preserves normalized
+       positions inside a box — so posInCanvas() keeps working
+       unchanged no matter how far you zoom or pan. */
+    const wbView = { scale: 1, x: 0, y: 0 };
+    const WB_MIN_SCALE = 0.4;
+    const WB_MAX_SCALE = 4;
+
+    const clampScale = s => Math.min(WB_MAX_SCALE, Math.max(WB_MIN_SCALE, s));
+
+    function applyWbView() {
+        const wbSurface = stage.querySelector(".whiteboard-surface");
+        const value = boardOn
+            ? `translate(${wbView.x}px, ${wbView.y}px) scale(${wbView.scale})`
+            : "none";
+        if (wbSurface) wbSurface.style.transform = value;
+        if (drawCanvas) drawCanvas.style.transform = value;
+        const label = document.getElementById("wb-zoom-label");
+        if (label) label.textContent = Math.round(wbView.scale * 100) + "%";
+    }
+
+    /* zoom while keeping the point under the pointer fixed
+       (the same formula every map app uses) */
+    function zoomWbAt(clientX, clientY, factor) {
+        const rect = stage.getBoundingClientRect();
+        const cx = clientX - rect.left;
+        const cy = clientY - rect.top;
+        const next = clampScale(wbView.scale * factor);
+        const k = next / wbView.scale;
+        wbView.x = cx - k * (cx - wbView.x);
+        wbView.y = cy - k * (cy - wbView.y);
+        wbView.scale = next;
+        applyWbView();
+    }
+
+    function zoomWbCenter(factor) {
+        const rect = stage.getBoundingClientRect();
+        zoomWbAt(rect.left + rect.width / 2,
+                 rect.top + rect.height / 2, factor);
+    }
+
+    const zoomInBtn = document.getElementById("wb-zoom-in");
+    const zoomOutBtn = document.getElementById("wb-zoom-out");
+    const zoomResetBtn = document.getElementById("wb-zoom-reset");
+    if (zoomInBtn) zoomInBtn.addEventListener("click", () => zoomWbCenter(1.25));
+    if (zoomOutBtn) zoomOutBtn.addEventListener("click", () => zoomWbCenter(1 / 1.25));
+    if (zoomResetBtn) zoomResetBtn.addEventListener("click", () => {
+        wbView.scale = 1;
+        wbView.x = 0;
+        wbView.y = 0;
+        applyWbView();
+    });
+
+    /* mouse wheel = zoom toward the pointer */
+    if (stage) {
+        stage.addEventListener("wheel", (event) => {
+            if (!boardOn) return;
+            event.preventDefault();
+            zoomWbAt(event.clientX, event.clientY,
+                     event.deltaY < 0 ? 1.12 : 1 / 1.12);
+        }, { passive: false });
+    }
+
+    /* drag (mouse) or pinch (touch) = move around.
+       Only when NO tool is selected, so drawing is never
+       interrupted by navigation. */
+    const viewPointers = new Map();
+    let panStart = null;
+    let pinchStart = null;
+
+    if (stage) {
+        stage.addEventListener("pointerdown", (event) => {
+            if (!boardOn || currentTool) return;
+            if (event.target.closest(".stage-topbar, .wb-viewbar")) return;
+            viewPointers.set(event.pointerId,
+                { x: event.clientX, y: event.clientY });
+
+            if (viewPointers.size === 1 && event.pointerType === "mouse") {
+                panStart = {
+                    id: event.pointerId,
+                    x: event.clientX,
+                    y: event.clientY,
+                    vx: wbView.x,
+                    vy: wbView.y
+                };
+                stage.classList.add("is-panning");
+                stage.setPointerCapture(event.pointerId);
+            } else if (viewPointers.size === 2) {
+                panStart = null;
+                const [a, b] = [...viewPointers.values()];
+                pinchStart = {
+                    dist: Math.hypot(a.x - b.x, a.y - b.y),
+                    midX: (a.x + b.x) / 2,
+                    midY: (a.y + b.y) / 2,
+                    scale: wbView.scale,
+                    x: wbView.x,
+                    y: wbView.y
+                };
+            }
+        });
+
+        stage.addEventListener("pointermove", (event) => {
+            if (!viewPointers.has(event.pointerId)) return;
+            viewPointers.set(event.pointerId,
+                { x: event.clientX, y: event.clientY });
+
+            if (pinchStart && viewPointers.size >= 2) {
+                /* two fingers: distance change = zoom,
+                   midpoint movement = pan */
+                const [a, b] = [...viewPointers.values()];
+                const dist = Math.hypot(a.x - b.x, a.y - b.y);
+                const midX = (a.x + b.x) / 2;
+                const midY = (a.y + b.y) / 2;
+                const rect = stage.getBoundingClientRect();
+                const next = clampScale(
+                    pinchStart.scale * (dist / pinchStart.dist));
+                const k = next / pinchStart.scale;
+                wbView.scale = next;
+                wbView.x = (midX - rect.left) -
+                    k * ((pinchStart.midX - rect.left) - pinchStart.x);
+                wbView.y = (midY - rect.top) -
+                    k * ((pinchStart.midY - rect.top) - pinchStart.y);
+                applyWbView();
+            } else if (panStart && event.pointerId === panStart.id) {
+                wbView.x = panStart.vx + (event.clientX - panStart.x);
+                wbView.y = panStart.vy + (event.clientY - panStart.y);
+                applyWbView();
+            }
+        });
+
+        const endViewPointer = (event) => {
+            viewPointers.delete(event.pointerId);
+            if (panStart && event.pointerId === panStart.id) {
+                panStart = null;
+                stage.classList.remove("is-panning");
+            }
+            if (viewPointers.size < 2) pinchStart = null;
+        };
+        stage.addEventListener("pointerup", endViewPointer);
+        stage.addEventListener("pointercancel", endViewPointer);
+    }
+
     const posInCanvas = (event) => {
         const rect = drawCanvas.getBoundingClientRect();
         return {
@@ -763,13 +909,19 @@ if (IS_TEACHER && !IS_POPUP) {
             hideCursorRing();
             return;
         }
-        const rect = drawCanvas.getBoundingClientRect();
-        const size = toolSizes[currentTool];
+        /* the ring lives in STAGE coordinates (stage is never
+           transformed), so use the stage box — and scale the
+           ring's diameter with the whiteboard zoom so it always
+           matches the screen size of the painted line. */
+        const rect = stage.getBoundingClientRect();
+        const visibleSize = boardOn
+            ? toolSizes[currentTool] * wbView.scale
+            : toolSizes[currentTool];
         cursorRing.hidden = false;
         cursorRing.style.left = (event.clientX - rect.left) + "px";
         cursorRing.style.top = (event.clientY - rect.top) + "px";
-        cursorRing.style.width = size + "px";
-        cursorRing.style.height = size + "px";
+        cursorRing.style.width = visibleSize + "px";
+        cursorRing.style.height = visibleSize + "px";
         stage.classList.add("is-ring-cursor");
     }
 
@@ -795,29 +947,39 @@ if (IS_TEACHER && !IS_POPUP) {
 
     function updateLoupe(event) {
         if (!loupe || !loupeCtx) return;
-        const rect = drawCanvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        /* loupe sits in stage coordinates; sampling uses the
+           NORMALIZED point so zoom/pan can't break it */
+        const stageRect = stage.getBoundingClientRect();
+        const point = posInCanvas(event);
 
         loupe.hidden = false;
-        loupe.style.left = x + "px";
-        loupe.style.top = y + "px";
+        loupe.style.left = (event.clientX - stageRect.left) + "px";
+        loupe.style.top = (event.clientY - stageRect.top) + "px";
         stage.classList.add("is-loupe-cursor");
 
         const lw = loupe.width;      // the loupe canvas is 150x150
-        const zoom = 10;             // each source pixel becomes 10x
+        const zoom = 10;             // each screen pixel becomes 10x
 
         /* paint the fallback surface, then the drawing on top */
         loupeCtx.save();
         loupeCtx.fillStyle = surfaceFallbackColor();
         loupeCtx.fillRect(0, 0, lw, lw);
         loupeCtx.imageSmoothingEnabled = false;
-        const dpr = drawCanvas.width / rect.width || 1;
-        const srcSize = lw / zoom;   // how many source px we sample
+
+        /* sample a ~15 SCREEN px neighbourhood, converted into
+           canvas bitmap pixels. Dividing by the whiteboard zoom
+           keeps the magnifier showing screen-sized detail no
+           matter how far the board is zoomed. */
+        const stageW = stage.getBoundingClientRect().width || 1;
+        const devicePerCss = drawCanvas.width / stageW;
+        const sampleCss = (lw / zoom) / (boardOn ? wbView.scale : 1);
+        const srcDevice = sampleCss * devicePerCss;
+        const cx = point.x * drawCanvas.width;
+        const cy = point.y * drawCanvas.height;
         loupeCtx.drawImage(
             drawCanvas,
-            (x - srcSize / 2) * dpr, (y - srcSize / 2) * dpr,
-            srcSize * dpr, srcSize * dpr,
+            cx - srcDevice / 2, cy - srcDevice / 2,
+            srcDevice, srcDevice,
             0, 0, lw, lw
         );
         loupeCtx.restore();
@@ -841,10 +1003,12 @@ if (IS_TEACHER && !IS_POPUP) {
     }
 
     function sampleColorAt(point) {
-        /* read the actual pixel out of the drawing canvas */
-        const dpr = drawCanvas.width / drawCanvas.getBoundingClientRect().width || 1;
-        const px = Math.round(point.x * drawCanvas.getBoundingClientRect().width * dpr);
-        const py = Math.round(point.y * drawCanvas.getBoundingClientRect().height * dpr);
+        /* read the actual pixel out of the drawing canvas.
+           point is normalized to the UNtransformed canvas, so
+           bitmap coords = normalized * bitmap size — this works
+           even while the whiteboard is zoomed/panned. */
+        const px = Math.round(point.x * drawCanvas.width);
+        const py = Math.round(point.y * drawCanvas.height);
         try {
             const data = drawCtx.getImageData(px, py, 1, 1).data;
             if (data[3] === 0) {
@@ -855,6 +1019,12 @@ if (IS_TEACHER && !IS_POPUP) {
             }
         } catch {
             return;   // pixel outside canvas: ignore
+        }
+        /* mirror the sampled color into the 9th swatch slot */
+        const pickedSwatch = document.getElementById("swatch-picked");
+        if (pickedSwatch) {
+            pickedSwatch.dataset.color = drawColor;
+            pickedSwatch.style.setProperty("--sw", drawColor);
         }
         syncSwatchSelection();
     }
@@ -975,11 +1145,12 @@ if (IS_TEACHER && !IS_POPUP) {
     }
 
     /* how close (in canvas fraction) the stroke eraser's touch
-       counts — derived from ITS OWN size, so the flyout really
-       changes how forgiving the eraser is */
+       counts — derived from ITS OWN size. Uses the STAGE width
+       (never transformed) so the eraser scales with board zoom
+       exactly like the cursor ring does. */
     function strokeEraserHit() {
-        const rect = drawCanvas.getBoundingClientRect();
-        return (toolSizes["erase-stroke"] / 2) / (rect.width || 1);
+        const stageW = stage.getBoundingClientRect().width || 1;
+        return (toolSizes["erase-stroke"] / 2) / stageW;
     }
 
     function eraseWholeStrokeAt(point) {
@@ -995,9 +1166,11 @@ if (IS_TEACHER && !IS_POPUP) {
 
     function eraseCircleAt(point) {
         /* radius in canvas fraction, derived from this eraser's
-           own size (diameter in px -> half-width fraction) */
-        const radius = (toolSizes["erase-circle"] / 2 /
-                        (drawCanvas.getBoundingClientRect().width || 1));
+           own size (diameter in px -> half-width fraction).
+           Uses the STAGE width (never transformed) so the eraser
+           scales with board zoom exactly like the painted ink. */
+        const stageW = stage.getBoundingClientRect().width || 1;
+        const radius = (toolSizes["erase-circle"] / 2) / stageW;
 
         let changed = false;
         const next = [];
@@ -1151,14 +1324,21 @@ if (IS_TEACHER && !IS_POPUP) {
     }
 
     if (swatchBox) {
+        /* 8 fixed palette colors + a 9th "picked" slot that the
+           eyedropper fills with whatever color you sample */
         swatchBox.innerHTML = DRAW_COLORS.map((color, i) => `
             <button type="button" class="swatch ${i === 0 ? "is-active" : ""}"
                     data-color="${color}" style="--sw:${color}"
                     aria-label="Ink color ${i + 1}"></button>
-        `).join("");
+        `).join("") + `
+            <button type="button" class="swatch swatch-picked" id="swatch-picked"
+                    data-color="" style="--sw:transparent"
+                    title="Eyedropper color — sample one from the board"
+                    aria-label="Eyedropper-picked color"></button>
+        `;
         swatchBox.addEventListener("click", (event) => {
             const sw = event.target.closest(".swatch");
-            if (!sw) return;
+            if (!sw || !sw.dataset.color) return;   // empty picked slot
             drawColor = sw.dataset.color;
             syncSwatchSelection();
         });
@@ -1424,7 +1604,8 @@ if (IS_TEACHER && !IS_POPUP) {
        too — a file, a board, or nothing at all. */
     if (stage) {
         stage.addEventListener("click", (event) => {
-            if (event.target.closest(".stage-topbar, .censor-box, .text-item")) return;
+            if (event.target.closest(
+                ".stage-topbar, .wb-viewbar, .censor-box, .text-item")) return;
             if (currentTool === "censor") {
                 addCensorBox(event.clientX, event.clientY);
             } else if (currentTool === "text") {
@@ -1434,17 +1615,26 @@ if (IS_TEACHER && !IS_POPUP) {
     }
 
     /* ---- share / whiteboard toggles ---- */
+    /* mediaHide is assigned by the materials block below; calling
+       it always hides any showcased upload (the four surfaces —
+       video, share, whiteboard, media — are mutually exclusive) */
+    let mediaHide = () => {};
+
     function syncToolLayer() {
         stage.classList.toggle("is-sharing", sharing);
         stage.classList.toggle("is-whiteboard", boardOn);
         canvasSize();
+        applyWbView();    // whiteboard zoom/pan transform (or none)
         redrawAll();
     }
 
     if (shareBtn) {
         shareBtn.addEventListener("click", () => {
             sharing = !sharing;
-            if (sharing) boardOn = false;      // the two surfaces are exclusive
+            if (sharing) {
+                boardOn = false;      // the two surfaces are exclusive
+                mediaHide();
+            }
             shareBtn.classList.toggle("is-active", sharing);
             shareBtn.setAttribute("aria-pressed", String(sharing));
             if (boardBtn) boardBtn.classList.toggle("is-active", boardOn);
@@ -1455,13 +1645,16 @@ if (IS_TEACHER && !IS_POPUP) {
     if (boardBtn) {
         boardBtn.addEventListener("click", () => {
             boardOn = !boardOn;
-            if (boardOn) sharing = false;
+            if (boardOn) {
+                sharing = false;
+                mediaHide();
+                if (!currentTool) setTool("pen");
+                /* a fresh whiteboard naturally starts with the pen */
+            }
             boardBtn.classList.toggle("is-active", boardOn);
             boardBtn.setAttribute("aria-pressed", String(boardOn));
             if (shareBtn) shareBtn.classList.toggle("is-active", sharing);
             syncToolLayer();
-            if (boardOn && !currentTool) setTool("pen");
-            /* a fresh whiteboard naturally starts with the pen */
         });
     }
 
@@ -1485,6 +1678,8 @@ if (IS_TEACHER && !IS_POPUP) {
         const fileInput = document.getElementById("file-input");
         const fileList = document.getElementById("file-list");
         const materials = [];
+        let shownIndex = -1;   // which material is currently on the stage
+        let shownUrl = null;   // its object URL (revoked on switch/hide)
 
         const fmtSize = bytes => bytes > 1048576
             ? (bytes / 1048576).toFixed(1) + " MB"
@@ -1501,15 +1696,114 @@ if (IS_TEACHER && !IS_POPUP) {
             return "FILE";
         };
 
+        /* ============ MEDIA SHOWCASE ============
+           Presenting an uploaded file on the stage — the same
+           spot screen sharing appears. We use the browser's
+           native renderers where they exist:
+             PDF   -> <iframe>   (browser's built-in PDF viewer)
+             IMG   -> <img>      (object URL of the local file)
+             VID   -> <video>    (object URL + controls)
+             AUD   -> <audio>
+             other -> honest "can't preview" card (PPT/DOC need
+                      a real office renderer, so share screen instead)
+           Object URLs are free, instant, and never leave the
+           machine — perfect for the demo (real hosting would
+           stream from a server). */
+        const mediaScreen = document.getElementById("media-screen");
+
+        function hideShownMedia() {
+            stage.classList.remove("is-media");
+            if (mediaScreen) mediaScreen.innerHTML = "";
+            if (shownUrl) {
+                URL.revokeObjectURL(shownUrl);   // free browser memory
+                shownUrl = null;
+            }
+            shownIndex = -1;
+            renderFiles();
+        }
+
+        /* share/whiteboard toggles (defined above) call this */
+        mediaHide = hideShownMedia;
+
+        function showMaterial(index) {
+            if (!mediaScreen) return;
+            const file = materials[index];
+            if (!file) return;
+
+            const wasShown = shownIndex === index;
+            hideShownMedia();          // clears old URL + screen first
+            if (wasShown) return;      // clicking the shown file = hide
+
+            const type = typeTag(file.name);
+            shownUrl = URL.createObjectURL(file);
+            const url = shownUrl;
+            let inner = "";
+
+            if (type === "PDF") {
+                inner = `<iframe class="media-frame" src="${url}"
+                                 title="${file.name}"></iframe>`;
+                /* NOTE: some browsers refuse to show PDFs in a
+                   bare iframe; on those, the teacher can still
+                   share the screen instead. */
+            } else if (type === "IMG") {
+                inner = `<img class="media-img" src="${url}" alt="${file.name}">`;
+            } else if (type === "VID") {
+                inner = `<video class="media-video" src="${url}"
+                                controls autoplay></video>`;
+            } else if (type === "AUD") {
+                inner = `<div class="media-audio-wrap">
+                             <p>${file.name}</p>
+                             <audio src="${url}" controls autoplay></audio>
+                         </div>`;
+            } else {
+                inner = `<div class="media-note">
+                             <p><strong>Can't preview this format in a browser</strong></p>
+                             <p class="muted small">${file.name}</p>
+                             <p class="muted small">PowerPoint / Word need an office
+                             renderer — use Share screen to present it instead.</p>
+                         </div>`;
+            }
+
+            mediaScreen.innerHTML = inner;
+            stage.classList.add("is-media");
+
+            /* media, share and whiteboard are exclusive surfaces */
+            sharing = false;
+            boardOn = false;
+            if (shareBtn) {
+                shareBtn.classList.remove("is-active");
+                shareBtn.setAttribute("aria-pressed", "false");
+            }
+            if (boardBtn) {
+                boardBtn.classList.remove("is-active");
+                boardBtn.setAttribute("aria-pressed", "false");
+            }
+            syncToolLayer();
+
+            shownIndex = index;
+            renderFiles();
+        }
+
         const renderFiles = () => {
-            fileList.innerHTML = materials.length ? materials.map(f => `
-                <div class="file-row">
+            fileList.innerHTML = materials.length ? materials.map((f, i) => `
+                <div class="file-row ${i === shownIndex ? "is-showing" : ""}">
                     <span class="file-type">${typeTag(f.name)}</span>
                     <span class="file-name">${f.name}</span>
                     <span class="file-size">${fmtSize(f.size)}</span>
+                    <button type="button" class="file-show-btn"
+                            data-index="${i}">
+                        ${i === shownIndex ? "Hide" : "Show"}
+                    </button>
                 </div>
             `).join("") : `<p class="muted small">Nothing uploaded yet.</p>`;
         };
+
+        /* one delegated listener for all Show/Hide buttons */
+        fileList.addEventListener("click", (event) => {
+            const btn = event.target.closest(".file-show-btn");
+            if (!btn) return;
+            showMaterial(Number(btn.dataset.index));
+        });
 
         const addFiles = (files) => {
             for (const f of files) materials.push(f);  // demo: in-memory
