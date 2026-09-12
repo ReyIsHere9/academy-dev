@@ -2299,9 +2299,32 @@ body.is-lights-out #mode-lights {
     z-index: 41;
 }
 
-/* the chat drawer is context, not a tool — keep it under the dimmer */
+/* ============================================================
+   [BUGFIX LOG #8] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:  1) in fullscreen the chat drawer sat ON TOP of
+                   the bottom controls (mic / camera / End class)
+                2) in lights out the chat seemed to vanish — it
+                   was actually still there, swallowed by the
+                   near-opaque dimmer (z-index 30, under it)
+   WHY:         1) the drawer is fixed to the viewport edge while
+                   the layout still spanned the full width
+                2) the chat was deliberately pushed UNDER the
+                   backdrop, so the 86% dark layer hid it
+   THE FIX:     1) fullscreen reserves right-side space while the
+                   chat is shown (video shrinks, chat sits beside
+                   it — same as fullscreen YouTube)
+                2) the chat now rides ABOVE the dimmer at half
+                   opacity; hovering it brightens it back
+   ============================================================ */
+/* the chat STAYS visible in lights out, just faded — hover
+   brightens it back so it's readable whenever needed */
 body.is-lights-out .class-side {
-    z-index: 30;
+    z-index: 41;   /* ride above the dimmer */
+    opacity: 0.5;
+}
+
+body.is-lights-out .class-side:hover {
+    opacity: 0.85;
 }
 
 /* --- fullscreen (native Fullscreen API; Esc exits) ---
@@ -2322,6 +2345,17 @@ body.is-lights-out .class-side {
     display: none;
 }
 
+/* reserve room for the chat drawer so it never covers the
+   bottom controls (BUGFIX LOG #8): video shrinks, chat sits
+   beside it, and the space animates back when chat is hidden */
+.class-layout:fullscreen .class-main {
+    transition: padding-right 0.3s ease;
+}
+
+body:not(.is-chat-hidden) .class-layout:fullscreen .class-main {
+    padding-right: min(430px, 45vw);
+}
+
 .class-layout:fullscreen .class-side {
     display: flex;
     flex-direction: column;
@@ -2340,11 +2374,6 @@ body.is-chat-hidden .class-layout:fullscreen .class-side {
     transform: translateX(calc(100% + 40px));
     opacity: 0;
     pointer-events: none;
-}
-
-/* fullscreen + lights out: the drawer dims like everything else */
-body.is-lights-out .class-layout:fullscreen .class-side {
-    z-index: 30;
 }
 
 /* ---------- TITLE + META (YouTube style) ---------- */
@@ -2626,6 +2655,10 @@ html[data-theme="dark"] .role-moderator { color: #6ee7b7; }
     border: 1px solid var(--color-border);
     border-radius: 18px;
     overflow: hidden;
+    /* positioned + fade-ready for lights out (see view modes):
+       z-index only works on positioned elements */
+    position: relative;
+    transition: opacity 0.25s ease;
 }
 
 .tabs {
