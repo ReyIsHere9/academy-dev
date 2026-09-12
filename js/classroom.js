@@ -580,6 +580,65 @@ if (IS_TEACHER && !IS_POPUP) {
         if (redo) redo.disabled = histIndex >= history.length - 1;
     }
 
+    /* ============ PER-SURFACE INK LAYERS ============
+       Every surface gets its OWN strokes, text boxes and undo
+       history, stored under a key:
+         "stage"      -> plain video stage
+         "share"      -> screen share mock
+         "board"      -> whiteboard
+         "media:<i>"  -> uploaded file #i (one layer PER FILE)
+       Switching surfaces stashes the current layer and loads the
+       target one, so ink never bleeds between surfaces — and
+       nothing is ever lost when you come back. */
+    const inkLayers = new Map();
+    let activeSurface = "stage";
+
+    function stashActiveLayer() {
+        inkLayers.set(activeSurface, {
+            strokes: copyStrokes(strokes),
+            texts: copyTexts(textItems),
+            censors: snapshotCensorBoxes(),
+            history: history.map(snap => ({
+                strokes: copyStrokes(snap.strokes),
+                texts: copyTexts(snap.texts)
+            })),
+            histIndex
+        });
+        pruneFillImages();
+    }
+
+    function loadLayer(key) {
+        activeSurface = key;
+        const saved = inkLayers.get(key);
+        if (saved) {
+            strokes = copyStrokes(saved.strokes);
+            textItems = copyTexts(saved.texts);
+            history = saved.history.map(snap => ({
+                strokes: copyStrokes(snap.strokes),
+                texts: copyTexts(snap.texts)
+            }));
+            histIndex = saved.histIndex;
+            restoreCensorBoxes(saved.censors);
+        } else {
+            /* first visit to this surface: fresh empty layer */
+            strokes = [];
+            textItems = [];
+            history = [{ strokes: [], texts: [] }];
+            histIndex = 0;
+            restoreCensorBoxes([]);
+        }
+        currentStroke = null;
+        renderTexts();
+        redrawAll();
+        updateToolButtons();
+    }
+
+    function switchInkLayer(key) {
+        if (key === activeSurface) return;
+        stashActiveLayer();
+        loadLayer(key);
+    }
+
     function canvasSize() {
         const rect = stage.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
@@ -1136,8 +1195,16 @@ if (IS_TEACHER && !IS_POPUP) {
                 if (s.tool === "fill" && s.snapshot) referenced.add(s.snapshot);
             }
         };
+        /* the ACTIVE layer: its live strokes + its undo history */
         collect(strokes);
         for (const snap of history) collect(snap.strokes);
+        /* every STASHED surface layer: strokes + their histories.
+           Without this, switching surfaces would leave fills
+           unprotected and the prune would delete them. */
+        for (const layer of inkLayers.values()) {
+            collect(layer.strokes);
+            for (const snap of layer.history) collect(snap.strokes);
+        }
 
         for (const key of fillImages.keys()) {
             if (!referenced.has(key)) fillImages.delete(key);
@@ -1500,25 +1567,55 @@ if (IS_TEACHER && !IS_POPUP) {
     const HANDLE_DIRS = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
     const MIN_SIZE = 4;   // percent
 
+    /* build a censor box from PERCENT geometry (used both by
+       click-to-add and by layer restore) */
+    function makeCensorBox(left, top, width, height) {
+        const box = document.createElement("div");
+        box.className = "censor-box";
+        box.style.left = left + "%";
+        box.style.top = top + "%";
+        box.style.width = width + "%";
+        box.style.height = height + "%";
+        box.innerHTML =
+            HANDLE_DIRS.map(d =>
+                `<span class="censor-handle ch-${d}" data-dir="${d}"></span>`
+            ).join("") +
+            `<button type="button" class="censor-del" title="Remove box">&times;</button>`;
+        return box;
+    }
+
     function addCensorBox(clientX, clientY) {
         const rect = stage.getBoundingClientRect();
         const w = 16, h = 22;
         const x = ((clientX - rect.left) / rect.width) * 100 - w / 2;
         const y = ((clientY - rect.top) / rect.height) * 100 - h / 2;
 
-        const box = document.createElement("div");
-        box.className = "censor-box";
-        box.style.left = Math.max(0, Math.min(100 - w, x)) + "%";
-        box.style.top = Math.max(0, Math.min(100 - h, y)) + "%";
-        box.style.width = w + "%";
-        box.style.height = h + "%";
-        box.innerHTML =
-            HANDLE_DIRS.map(d =>
-                `<span class="censor-handle ch-${d}" data-dir="${d}"></span>`
-            ).join("") +
-            `<button type="button" class="censor-del" title="Remove box">&times;</button>`;
+        censorLayer.appendChild(makeCensorBox(
+            Math.max(0, Math.min(100 - w, x)),
+            Math.max(0, Math.min(100 - h, y)),
+            w, h
+        ));
+    }
 
-        censorLayer.appendChild(box);
+    /* censor boxes join the per-surface layers: snapshot them
+       as percent geometry, restore by rebuilding the DOM */
+    function snapshotCensorBoxes() {
+        if (!censorLayer) return [];
+        return [...censorLayer.querySelectorAll(".censor-box")].map(box => ({
+            left: parseFloat(box.style.left),
+            top: parseFloat(box.style.top),
+            width: parseFloat(box.style.width),
+            height: parseFloat(box.style.height)
+        }));
+    }
+
+    function restoreCensorBoxes(list) {
+        if (!censorLayer) return;
+        censorLayer.innerHTML = "";
+        for (const c of list || []) {
+            censorLayer.appendChild(
+                makeCensorBox(c.left, c.top, c.width, c.height));
+        }
     }
 
     function dragOrResize(event, box, dir) {
@@ -1634,6 +1731,9 @@ if (IS_TEACHER && !IS_POPUP) {
             if (sharing) {
                 boardOn = false;      // the two surfaces are exclusive
                 mediaHide();
+                switchInkLayer("share");
+            } else {
+                switchInkLayer("stage");
             }
             shareBtn.classList.toggle("is-active", sharing);
             shareBtn.setAttribute("aria-pressed", String(sharing));
@@ -1650,6 +1750,9 @@ if (IS_TEACHER && !IS_POPUP) {
                 mediaHide();
                 if (!currentTool) setTool("pen");
                 /* a fresh whiteboard naturally starts with the pen */
+                switchInkLayer("board");
+            } else {
+                switchInkLayer("stage");
             }
             boardBtn.classList.toggle("is-active", boardOn);
             boardBtn.setAttribute("aria-pressed", String(boardOn));
@@ -1732,7 +1835,11 @@ if (IS_TEACHER && !IS_POPUP) {
 
             const wasShown = shownIndex === index;
             hideShownMedia();          // clears old URL + screen first
-            if (wasShown) return;      // clicking the shown file = hide
+            if (wasShown) {
+                /* hiding the file returns to the base video layer */
+                switchInkLayer("stage");
+                return;
+            }
 
             const type = typeTag(file.name);
             shownUrl = URL.createObjectURL(file);
@@ -1779,6 +1886,11 @@ if (IS_TEACHER && !IS_POPUP) {
                 boardBtn.setAttribute("aria-pressed", "false");
             }
             syncToolLayer();
+
+            /* EACH FILE GETS ITS OWN INK LAYER — notes on PDF-A
+               never bleed onto PDF-B, and they're all waiting
+               when you come back. */
+            switchInkLayer("media:" + index);
 
             shownIndex = index;
             renderFiles();
