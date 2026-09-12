@@ -2035,6 +2035,12 @@ html[data-theme="dark"] .demo-hint code {
     padding: 30px 0 60px;
 }
 
+/* the class rooms use a WIDER container than the rest of the
+   site plain pages, so the video area can be bigger */
+.class-section .container {
+    max-width: 1320px;
+}
+
 .class-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 380px;
@@ -2157,6 +2163,127 @@ html[data-theme="dark"] .demo-hint code {
 .rec-chip.is-off .dot {
     background: #64748b;
     animation: none;
+}
+
+/* ---------- STAGE VIEW MODES (theater / lights / fullscreen) ---------- */
+.stage-modes {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+}
+
+.mode-btn {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-alt);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mode-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.mode-btn:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.mode-btn.is-active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}
+
+/* the bulb's RAYS only appear when lights-out is ON —
+   and the bulb itself glows warm, like a lamp switching on */
+.mode-btn .bulb-rays {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.mode-btn.is-active .bulb-rays {
+    opacity: 1;
+}
+
+.mode-btn.is-active .bulb-body {
+    stroke: #fde68a;
+}
+
+/* --- theater mode: the chat column steps aside, player goes wide --- */
+body.is-theater .class-layout {
+    grid-template-columns: 1fr;
+}
+
+body.is-theater .class-side {
+    display: none;
+}
+
+/* --- lights out: dim everything except the stage area.
+   Clicking the dimmed backdrop (or the bulb button) brings it back. --- */
+.lights-out-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.86);
+    z-index: 40;
+    cursor: pointer;
+    animation: lightsFade 0.25s ease;
+}
+
+@keyframes lightsFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+body.is-lights-out .lights-out-backdrop {
+    display: block;
+}
+
+/* keep the class area bright: the whole shell on the teacher
+   page (rail + video + controls), just the stage on the
+   student page */
+body.is-lights-out .stage-shell,
+body.is-lights-out .stage-status,
+body.is-lights-out .class-main > .stage {
+    position: relative;
+    z-index: 41;
+}
+
+/* --- fullscreen (native Fullscreen API; Esc exits) --- */
+.stage-shell:fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #020617;
+    padding: 16px;
+}
+
+.stage-shell:fullscreen .stage-column {
+    max-width: calc((100vh - 32px) * 16 / 9);
+}
+
+/* fullscreen keeps video + rail only, YouTube style */
+.stage-shell:fullscreen .stage-status,
+.stage-shell:fullscreen .class-meta,
+.stage-shell:fullscreen .controls {
+    display: none;
+}
+
+.stage:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    aspect-ratio: auto;
 }
 
 /* ---------- TITLE + META (YouTube style) ---------- */
@@ -3407,6 +3534,22 @@ html[data-theme="dark"] .text-editor {
     color: #e2e8f0;
     white-space: nowrap;
     animation: flyoutIn 0.18s ease;
+}
+
+/* ============================================================
+   [BUGFIX LOG #6] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:  the tool size flyout stayed on screen after the
+                tool was deselected or the rail was collapsed.
+   WHY:         the `hidden` ATTRIBUTE only hides elements via
+                the browser's DEFAULT style (display:none). Any
+                author rule overrides a default rule — and this
+                class sets display:flex. So `flyout.hidden = true`
+                in JS had no visible effect at all.
+   THE FIX:     .tool-flyout[hidden] { display:none; } gives the
+                attribute a winning rule again.
+   ============================================================ */
+.tool-flyout[hidden] {
+    display: none;
 }
 
 @keyframes flyoutIn {

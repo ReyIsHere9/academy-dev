@@ -476,6 +476,76 @@ if (tabsBox) {
     });
 }
 
+/* ============ 6b. STAGE VIEW MODES (both class rooms) ============
+   Theater  -> hides the chat sidebar, video goes wide
+   Lights   -> dims the whole page except the class area (the
+               bulb icon lights up with rays while it's on)
+   Fullscreen -> native browser fullscreen on the stage shell
+   (on the teacher page the shell includes the tool rail, so you
+   can still draw in fullscreen!) */
+const theaterBtn = document.getElementById("mode-theater");
+const lightsBtn = document.getElementById("mode-lights");
+const fullscreenBtn = document.getElementById("mode-fullscreen");
+
+if (theaterBtn) {
+    theaterBtn.addEventListener("click", () => {
+        const on = document.body.classList.toggle("is-theater");
+        theaterBtn.classList.toggle("is-active", on);
+        theaterBtn.setAttribute("aria-pressed", String(on));
+    });
+}
+
+if (lightsBtn) {
+    /* the dimmer layer is created here so every page (student
+       and teacher) gets it automatically — no HTML edits. */
+    const backdrop = document.createElement("div");
+    backdrop.className = "lights-out-backdrop";
+    document.body.appendChild(backdrop);
+
+    function setLightsOut(on) {
+        document.body.classList.toggle("is-lights-out", on);
+        lightsBtn.classList.toggle("is-active", on);
+        lightsBtn.setAttribute("aria-pressed", String(on));
+        lightsBtn.title = on ? "Lights on" : "Lights out";
+    }
+
+    lightsBtn.addEventListener("click", () =>
+        setLightsOut(!document.body.classList.contains("is-lights-out")));
+
+    /* clicking the dimmed area brings the lights back on */
+    backdrop.addEventListener("click", () => setLightsOut(false));
+
+    /* Esc is the panic button for both modals and fullscreen */
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") setLightsOut(false);
+    });
+}
+
+if (fullscreenBtn) {
+    /* on the teacher page we fullscreen the whole shell (rail +
+       video). On the student page there is no shell, so the
+       stage itself gets fullscreened. */
+    const fsTarget = document.querySelector(".stage-shell")
+        || document.querySelector(".stage");
+
+    if (fsTarget && fsTarget.requestFullscreen) {
+        fullscreenBtn.addEventListener("click", () => {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                fsTarget.requestFullscreen();
+            }
+        });
+
+        /* keep the button in sync (Esc exit updates it too) */
+        document.addEventListener("fullscreenchange", () => {
+            const on = Boolean(document.fullscreenElement);
+            fullscreenBtn.classList.toggle("is-active", on);
+            fullscreenBtn.setAttribute("aria-pressed", String(on));
+        });
+    }
+}
+
 /* ============ 7. TEACHER TOOLS (guarded by teacher-mode) ============ */
 if (IS_TEACHER && !IS_POPUP) {
 
