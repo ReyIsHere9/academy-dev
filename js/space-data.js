@@ -1,18 +1,19 @@
 /* ============================================================
    SPACE DATA — SEED CONTENT FOR THE ACCOUNT SPACES
    ------------------------------------------------------------
-   WHO USES THIS: dashboard.html (student), dashboard-teacher.html
-   and dashboard-admin.html. js/space.js loads this seed, copies
-   it into localStorage once, and from then on reads/writes the
-   stored copy (so profile edits, grades and admin changes
-   survive reloads — like a tiny demo database).
+   WHO USES THIS: dashboard.html (student), profile.html (public
+   profile), dashboard-teacher.html and dashboard-admin.html.
+   js/space.js loads this seed, copies it into localStorage once,
+   and from then on reads/writes the stored copy (so profile
+   edits, submissions, comments and admin changes survive
+   reloads — like a tiny demo database).
 
    WHY RELATIVE TIMES? Every time here is "minutes from NOW"
-   (minutesAgo / startsInMinutes / dueInHours). A fixed date
-   would go stale the moment the demo sits for a week; relative
-   times recompute on every page load, so the schedule ALWAYS
-   looks alive. (Same trick as CLASS_INFO.startedMinutesAgo in
-   class-data.js.)
+   (minutesAgo / startsInMinutes / dueInHours / earnedDaysAgo).
+   A fixed date would go stale the moment the demo sits for a
+   week; relative times recompute on every page load, so the
+   schedule ALWAYS looks alive. (Same trick as
+   CLASS_INFO.startedMinutesAgo in class-data.js.)
 
    ⚠️ THE REAL BUILD: this file is replaced by API calls. The
    server owns the truth, the browser asks for it, and the
@@ -20,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 1;
+const SPACE_DB_VERSION = 2;   /* v2: Phase 1 (courses, materials, badges) */
 
 const SPACE_SEED = {
-    version: 1,
+    version: 2,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -111,6 +112,31 @@ const SPACE_SEED = {
         }
     ],
 
+    /* ============ ENROLLMENTS ============
+       One row per student per course. `progress` drives the
+       progress bars; `nextLesson` is what "Continue learning"
+       shows. level+skill map to course.html?level=…&skill=… */
+    enrollments: [
+        {
+            id: "enr-1", student: "Stu-2001", level: "B1", skill: "Conversation",
+            title: "B1 · Conversation", teacher: "Tch-1001",
+            progress: 64, sessionsDone: 9, sessionsTotal: 14,
+            nextLesson: "Lesson 12 — Telling a story"
+        },
+        {
+            id: "enr-2", student: "Stu-2001", level: "B1", skill: "Grammar",
+            title: "B1 · Grammar", teacher: "Tch-1001",
+            progress: 48, sessionsDone: 7, sessionsTotal: 14,
+            nextLesson: "Unit 5 — Present perfect continuous"
+        },
+        {
+            id: "enr-3", student: "Stu-2001", level: "A2", skill: "Writing",
+            title: "A2 · Writing", teacher: "Tch-2002",
+            progress: 82, sessionsDone: 16, sessionsTotal: 20,
+            nextLesson: "Lesson 19 — Opinion paragraphs"
+        }
+    ],
+
     /* ============ ANNOUNCEMENTS ============ */
     announcements: [
         {
@@ -132,18 +158,23 @@ const SPACE_SEED = {
 
     /* ============ ASSIGNMENTS ============
        submissions is keyed by student id. score = null means
-       "submitted, waiting for grading". */
+       "submitted, waiting for grading". `allowed` + `maxMB` are
+       the upload RULES the dropzone enforces (the real build
+       enforces them again on the server — always). */
     assignments: [
         {
             id: "asg-1", course: "B1 · Grammar", skill: "Grammar",
             title: "Present Perfect — worksheet 4",
             instructions: "Complete exercises 1–12. Write FULL sentences, not just the verb.",
             createdBy: "Tch-1001", dueInHours: 20, maxScore: 100,
+            allowed: ["pdf", "docx", "jpg", "png"], maxMB: 5,
             submissions: {
                 "Stu-2002": {
                     text: "1. I have lived here for three years…",
-                    fileName: "ryan-pp4.pdf", submittedAtMinutesAgo: 95,
-                    score: null, feedback: ""
+                    fileName: "Stu-2002_asg-1_present-perfect-worksheet-4.pdf",
+                    sizeKB: 310, submittedAtMinutesAgo: 95,
+                    score: null, feedback: "",
+                    comments: []
                 }
             }
         },
@@ -152,16 +183,31 @@ const SPACE_SEED = {
             title: "Present Perfect vs Past Simple",
             instructions: "Write 10 pairs of sentences showing the difference.",
             createdBy: "Tch-1001", dueInHours: -30, maxScore: 100,
+            allowed: ["pdf", "docx", "txt"], maxMB: 5,
             submissions: {
                 "Stu-2001": {
                     text: "1. I have visited London three times. / I visited London in 2019.",
-                    fileName: "demo-student-hw2.pdf", submittedAtMinutesAgo: 40 * 60,
+                    fileName: "Stu-2001_asg-2_present-perfect-vs-past-simple.pdf",
+                    sizeKB: 184, submittedAtMinutesAgo: 40 * 60,
                     score: 92,
-                    feedback: "Excellent control of the present perfect. Watch the third-person -s."
+                    feedback: "Excellent control of the present perfect. Watch the third-person -s.",
+                    comments: [
+                        {
+                            by: "Tch-1001",
+                            text: "Great work! I left two small notes on page 2.",
+                            minutesAgo: 38 * 60
+                        },
+                        {
+                            by: "Stu-2001",
+                            text: "Thank you! I fixed both of them in my notebook.",
+                            minutesAgo: 37 * 60
+                        }
+                    ]
                 },
                 "Stu-2003": {
-                    text: "My ten pairs…", fileName: "negar-hw2.docx",
-                    submittedAtMinutesAgo: 39 * 60, score: null, feedback: ""
+                    text: "My ten pairs…", fileName: "Stu-2003_asg-2_present-perfect-vs-past-simple.docx",
+                    sizeKB: 96, submittedAtMinutesAgo: 39 * 60,
+                    score: null, feedback: "", comments: []
                 }
             }
         },
@@ -170,9 +216,65 @@ const SPACE_SEED = {
             title: "A short story about your week",
             instructions: "80–120 words. Use at least five past-simple verbs.",
             createdBy: "Tch-2002", dueInHours: 3 * 24, maxScore: 50,
+            allowed: ["pdf", "docx", "txt", "jpg", "png"], maxMB: 5,
             submissions: {}
         }
     ],
+
+    /* ============ MATERIALS LIBRARY ============
+       Teacher uploads a course's students can download. The demo
+       can't host real files, so "Download" explains itself
+       (honest > fake). */
+    materials: [
+        {
+            id: "mat-1", course: "B1 · Grammar",
+            title: "Present Perfect cheat sheet",
+            fileName: "b1-present-perfect.pdf", sizeKB: 236,
+            teacher: "Tch-1001", minutesAgo: 120
+        },
+        {
+            id: "mat-2", course: "B1 · Conversation",
+            title: "50 discussion questions",
+            fileName: "b1-conversation-questions.pdf", sizeKB: 410,
+            teacher: "Tch-1001", minutesAgo: 300
+        },
+        {
+            id: "mat-3", course: "A2 · Writing",
+            title: "Paragraph structure worksheet",
+            fileName: "a2-paragraph-structure.docx", sizeKB: 88,
+            teacher: "Tch-2002", minutesAgo: 16 * 60
+        },
+        {
+            id: "mat-4", course: "B1 · Grammar",
+            title: "Irregular verbs audio drill",
+            fileName: "b1-irregular-verbs.mp3", sizeKB: 1450,
+            teacher: "Tch-1001", minutesAgo: 43 * 60
+        }
+    ],
+
+    /* ============ ACHIEVEMENTS ============
+       badgeCatalog = every badge that exists.
+       earnedBadges = who has which, and when (days ago).
+       ("first-steps" is ALSO unlocked live by js/space.js the
+       first time a student submits anything — watch it pop.) */
+    badgeCatalog: [
+        { id: "first-steps", label: "First Steps",   icon: "\u{1F331}", desc: "Sent your first assignment" },
+        { id: "star",        label: "Star Speaker",  icon: "\u2B50",     desc: "Spoke in 10 live classes" },
+        { id: "helper",      label: "Class Helper",  icon: "\u{1F91D}", desc: "Helped a classmate in chat" },
+        { id: "streak",      label: "Streak Keeper", icon: "\u{1F525}", desc: "Attended 4 classes in a row" },
+        { id: "homework",    label: "Homework Hero", icon: "\u{1F4DA}", desc: "Five assignments aced" },
+        { id: "perfect",     label: "Perfect Score", icon: "\u{1F4AF}", desc: "Scored 100 on an assignment" }
+    ],
+    earnedBadges: {
+        "Stu-2001": [
+            { id: "star",   earnedDaysAgo: 12 },
+            { id: "streak", earnedDaysAgo: 5 }
+        ],
+        "Stu-2002": [
+            { id: "star",        earnedDaysAgo: 20 },
+            { id: "first-steps", earnedDaysAgo: 3 }
+        ]
+    },
 
     /* ============ ACTIVITY LOG (admin / teacher overview) ============ */
     activity: [

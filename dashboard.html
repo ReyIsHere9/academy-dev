@@ -148,11 +148,37 @@
 
                     <!-- ---- HOME ---- -->
                     <section class="space-panel is-active" data-panel="home">
-                        <div class="space-grid-2">
-                            <div class="space-card">
-                                <h2>Next live class</h2>
-                                <div id="space-next-class"></div>
+                        <div class="space-stack">
+                            <div class="space-stat-row">
+                                <div class="space-stat">
+                                    <strong id="stat-courses">0</strong>
+                                    <span>Courses in progress</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="stat-due">0</strong>
+                                    <span>Assignments due this week</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="stat-badges">0</strong>
+                                    <span>Badges earned</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="stat-next">&mdash;</strong>
+                                    <span>Next live class</span>
+                                </div>
                             </div>
+
+                            <div class="space-grid-2">
+                                <div class="space-card">
+                                    <h2>Continue learning</h2>
+                                    <div id="space-continue"></div>
+                                </div>
+                                <div class="space-card">
+                                    <h2>Next live class</h2>
+                                    <div id="space-next-class"></div>
+                                </div>
+                            </div>
+
                             <div class="space-card">
                                 <h2>Announcements</h2>
                                 <div id="space-announcements"></div>
@@ -160,46 +186,129 @@
                         </div>
                     </section>
 
-                    <!-- ---- placeholders filled in Phase 1 ---- -->
+                    <!-- ---- MY COURSES ---- -->
                     <section class="space-panel" data-panel="courses">
-                        <div class="space-empty">
-                            <p><strong>My courses</strong></p>
-                            <p>Enrolled courses with progress — next build phase.</p>
+                        <div class="space-card">
+                            <h2>Enrolled courses</h2>
+                            <div id="space-courses"></div>
                         </div>
                     </section>
 
+                    <!-- ---- CLASSES ---- -->
                     <section class="space-panel" data-panel="classes">
-                        <div class="space-empty">
-                            <p><strong>Classes</strong></p>
-                            <p>Full schedule + join by code — next build phase.</p>
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>Join a class by code</h2>
+                                <form class="join-row" id="space-join-form">
+                                    <input type="text" class="chat-input" id="space-join-code"
+                                           placeholder="e.g. B1-SPEAK" autocomplete="off">
+                                    <button type="submit" class="btn btn-primary">Join</button>
+                                </form>
+                                <p class="space-hint" id="space-join-hint">
+                                    Your teacher shares a code for each live class.</p>
+                            </div>
+                            <div class="space-card">
+                                <h2>Upcoming</h2>
+                                <div id="space-classes-upcoming"></div>
+                            </div>
+                            <div class="space-card">
+                                <h2>Past classes</h2>
+                                <div id="space-classes-past"></div>
+                            </div>
                         </div>
                     </section>
 
+                    <!-- ---- ASSIGNMENTS (list + detail) ---- -->
                     <section class="space-panel" data-panel="assignments">
-                        <div class="space-empty">
-                            <p><strong>Assignments</strong></p>
-                            <p>Submit work, read feedback — next build phase.</p>
+                        <div class="space-card" id="space-asg-list">
+                            <h2>Assignments</h2>
+                            <div class="space-filter-row" id="space-asg-filters">
+                                <button type="button" class="seg-btn is-active"
+                                        data-filter="all">All</button>
+                                <button type="button" class="seg-btn"
+                                        data-filter="todo">To do</button>
+                                <button type="button" class="seg-btn"
+                                        data-filter="submitted">Submitted</button>
+                                <button type="button" class="seg-btn"
+                                        data-filter="graded">Graded</button>
+                            </div>
+                            <div id="space-asg-rows"></div>
+                        </div>
+
+                        <div id="space-asg-detail" hidden>
+                            <button type="button" class="space-back" id="space-asg-back">
+                                &larr; All assignments</button>
+                            <div class="space-card" id="space-asg-detail-card"></div>
                         </div>
                     </section>
 
+                    <!-- ---- MATERIALS ---- -->
                     <section class="space-panel" data-panel="materials">
-                        <div class="space-empty">
-                            <p><strong>Materials</strong></p>
-                            <p>Handouts from your teachers — next build phase.</p>
+                        <div class="space-card">
+                            <h2>Class materials</h2>
+                            <input type="search" class="chat-input" id="space-mat-search"
+                                   placeholder="Search by title, course or file name&hellip;"
+                                   autocomplete="off">
+                            <div class="file-list" id="space-materials"></div>
                         </div>
                     </section>
 
+                    <!-- ---- ACHIEVEMENTS ---- -->
                     <section class="space-panel" data-panel="achievements">
-                        <div class="space-empty">
-                            <p><strong>Achievements</strong></p>
-                            <p>Your badge showcase — next build phase.</p>
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>Badges earned</h2>
+                                <div class="badge-grid" id="space-badges-earned"></div>
+                            </div>
+                            <div class="space-card">
+                                <h2>Still to unlock</h2>
+                                <div class="badge-grid" id="space-badges-locked"></div>
+                            </div>
                         </div>
                     </section>
 
+                    <!-- ---- PROFILE ---- -->
                     <section class="space-panel" data-panel="profile">
-                        <div class="space-empty">
-                            <p><strong>Profile</strong></p>
-                            <p>Avatar, bio, accent color, notifications — next build phase.</p>
+                        <div class="space-grid-2">
+                            <div class="space-card">
+                                <h2>Public profile</h2>
+                                <div class="field">
+                                    <label class="space-label" for="prof-name">Display name</label>
+                                    <input type="text" class="chat-input" id="prof-name"
+                                           autocomplete="off">
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="prof-bio">Short bio</label>
+                                    <textarea class="chat-input space-textarea" id="prof-bio"
+                                              rows="3"
+                                              placeholder="A line about you - shown on your public profile"></textarea>
+                                </div>
+                                <p class="space-label">Avatar color</p>
+                                <div class="space-swatches" id="prof-avatar-colors"></div>
+                                <a class="btn btn-ghost btn-small" id="prof-public-link"
+                                   href="profile.html" target="_blank" rel="noopener">
+                                   View public profile</a>
+                            </div>
+                            <div class="space-card">
+                                <h2>Personalization</h2>
+                                <p class="space-label">Accent color for your space</p>
+                                <div class="space-swatches" id="prof-accent-colors"></div>
+                                <h3 class="space-subhead">Notifications</h3>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-assignments">
+                                    Email me when assignments are posted or graded</label>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-announcements">
+                                    Email me class announcements</label>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-chat">
+                                    Ping me on chat mentions</label>
+                            </div>
+                        </div>
+                        <div class="space-card space-save-row">
+                            <button type="button" class="btn btn-primary" id="prof-save">
+                                Save changes</button>
+                            <span class="muted small" id="prof-status"></span>
                         </div>
                     </section>
 

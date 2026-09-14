@@ -21,7 +21,8 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `contact.html` | Contact form (mailto engine), hours, socials, map slot |
 | `pricing.html` | Billing toggle, OpenAI-style comparison matrix, lifetime offer |
 | `login.html` / `recovery.html` | Auth entry UI (demo) |
-| `dashboard.html` | Student space — login gate, shell, next class + announcements (more panels in later phases) |
+| `dashboard.html` | Student space — stats + continue learning, courses with progress, classes + join by code, assignments (drag-&-drop submit with naming rules + comments + grades), materials, badges, profile & personalization |
+| `profile.html` | Public profile (`?id=Stu-2001`) — safe fields only: name, avatar, bio, badges |
 | `class.html` | Live class room — student view (chat show/hide drawer, pop-out chat, theater / lights-out / fullscreen modes) |
 | `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat, view modes) |
 | `class-admin.html` | Admin room — everything the teacher has, plus an Admin tab: manage people, broadcast, empty the stage, clear chat, activity log |
@@ -63,8 +64,12 @@ local server (clipboard, some media APIs are stricter on `file://`).
   (`js/space.js`) on top of a demo database (`js/space-data.js`,
   localStorage, relative times so the demo never goes stale). The header
   swaps "Login / Register" for "Dashboard" via `js/session.js` when a
-  session exists. Student space is live; teacher studio and admin console
-  arrive in later phases.
+  session exists. Student space is complete (Phase 1); teacher studio and
+  admin console arrive in later phases.
+- **Assignment submissions** — drag-&-drop with per-assignment allowed
+  types + size limit, the `StuID_assignmentID_title.ext` naming
+  convention (auto-rename + live validation), comment threads and
+  seeded grades/feedback.
 
 ## Demo vs. real
 

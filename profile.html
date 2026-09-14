@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 6 — ACCOUNT SPACES: PUBLIC PROFILE (profile.html)
+     ------------------------------------------------------------
+     A page ANYONE can open:  profile.html?id=Stu-2001
+     It shows only what is SAFE to share:
+        name, role, avatar, bio, member-since, badges.
+     It NEVER shows grades, email, schedule or submissions — that
+     privacy line is the whole point of a separate public page
+     (js/space.js §11 renders it).
+
+     No login required: this page has no role class, so the
+     dashboard gate and shell are skipped entirely.
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | The English Academy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+    <script src="js/session.js"></script>
+</head>
+
+<body>
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <a href="login.html" class="btn-login">Login / Register</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <section class="section space-section">
+        <div class="container">
+            <!-- js/space.js §11 fills this from `?id=` -->
+            <div class="public-card" id="public-profile"></div>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/space-data.js"></script>
+    <script src="js/space.js"></script>
+
+</body>
+</html>
