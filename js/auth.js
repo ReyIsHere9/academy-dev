@@ -73,8 +73,16 @@ function showLoggedIn(user) {
     loginForm.hidden = true;
     sessionPanel.hidden = false;
     document.getElementById("session-text").textContent =
-        `Logged in as ${user.name} (${user.id}) — role: ${user.role}. ` +
-        `Your ${user.role} dashboard arrives in a later module.`;
+        `Logged in as ${user.name} (${user.id}) — role: ${user.role}.`;
+
+    /* the dashboard button points at the right space for the
+       role (map lives in js/session.js) */
+    const dash = document.getElementById("session-dashboard");
+    if (dash) {
+        dash.href = typeof dashboardFor === "function"
+            ? dashboardFor(user.role)
+            : "dashboard.html";
+    }
 }
 
 if (loginForm) {
@@ -110,6 +118,8 @@ if (loginForm) {
         /* success: remember the session and greet the role */
         saveSession(user);
         showLoggedIn(user);
+        /* swap the header button immediately (no reload needed) */
+        if (typeof refreshHeaderChip === "function") refreshHeaderChip();
     });
 
     /* already logged in? show that instead of the form */
@@ -125,6 +135,8 @@ if (logoutBtn) {
         sessionPanel.hidden = true;
         loginForm.hidden = false;
         loginForm.reset();
+        /* put the header button back to "Login / Register" */
+        if (typeof refreshHeaderChip === "function") refreshHeaderChip();
     });
 }
 

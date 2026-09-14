@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 6 — ACCOUNT SPACES: STUDENT DASHBOARD
+     (academy-dev — generic version)
+     ------------------------------------------------------------
+     WHAT'S HERE IN PHASE 0 (this build):
+       1. The LOGIN GATE — no session? friendly panel with
+          one-click demo logins (real builds redirect to login).
+       2. The SPACE SHELL — sidebar nav, greeting bar, personal
+          accent color, logout.
+       3. HOME PANEL — next live class + announcements, read from
+          the demo database (js/space-data.js -> localStorage).
+
+     WHAT ARRIVES NEXT (Phase 1): My courses, Classes (join by
+     code), Assignments (submit + feedback), Materials,
+     Achievements and the Profile/personalization panel.
+
+     HOW THE SPACES SHARE ONE ENGINE: body class="role-student"
+     unlocks the student sections of js/space.js — the same
+     pattern as the class rooms (teacher/admin pages add
+     role-teacher / role-admin).
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | The English Academy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+    <script src="js/session.js"></script>
+</head>
+
+<body class="role-student">
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <a href="login.html" class="btn-login">Login / Register</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <section class="section space-section">
+        <div class="container">
+
+            <!-- ========== 1. THE GATE ==========
+                 Visible by default; js/space.js hides it the moment
+                 a matching session is found (or swaps it to the
+                 "wrong door" variant when the role doesn't match). -->
+            <div class="space-gate" id="space-gate">
+                <h1>Student space</h1>
+                <p id="space-gate-msg">Log in to open your space.</p>
+
+                <div class="space-quick-row">
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="student">Continue as Demo Student</button>
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="teacher">As Ms. Demo Teacher</button>
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="admin">As Site Admin</button>
+                </div>
+
+                <!-- shown only for the "wrong door" case -->
+                <div class="space-quick-row space-gate-extra">
+                    <a id="space-gate-go" class="btn btn-primary" href="#" hidden>
+                        Go to my dashboard</a>
+                    <button type="button" class="btn btn-ghost" id="space-gate-logout" hidden>
+                        Log out</button>
+                </div>
+
+                <p class="muted small">Demo accounts need no password — one click logs you in.</p>
+            </div>
+
+            <!-- ========== 2. THE SHELL ========== -->
+            <div class="space-layout" id="space-shell" hidden>
+
+                <!-- sidebar navigation -->
+                <aside class="space-nav">
+                    <p class="space-nav-title" id="space-nav-title">Student space</p>
+                    <button type="button" class="space-nav-btn is-active"
+                            data-panel="home">Home</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="courses">My courses</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="classes">Classes</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="assignments">Assignments</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="materials">Materials</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="achievements">Achievements</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="profile">Profile</button>
+                </aside>
+
+                <div class="space-main">
+
+                    <!-- greeting bar -->
+                    <div class="space-greeting">
+                        <span class="space-avatar" id="space-avatar">S</span>
+                        <div>
+                            <h1 id="space-greeting-name">Welcome back.</h1>
+                            <p class="space-sub" id="space-role-label">Student space</p>
+                        </div>
+                        <span class="space-date-chip" id="space-date"></span>
+                        <button type="button" class="btn btn-ghost btn-small"
+                                id="space-logout">Log out</button>
+                    </div>
+
+                    <!-- ---- HOME ---- -->
+                    <section class="space-panel is-active" data-panel="home">
+                        <div class="space-grid-2">
+                            <div class="space-card">
+                                <h2>Next live class</h2>
+                                <div id="space-next-class"></div>
+                            </div>
+                            <div class="space-card">
+                                <h2>Announcements</h2>
+                                <div id="space-announcements"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- placeholders filled in Phase 1 ---- -->
+                    <section class="space-panel" data-panel="courses">
+                        <div class="space-empty">
+                            <p><strong>My courses</strong></p>
+                            <p>Enrolled courses with progress — next build phase.</p>
+                        </div>
+                    </section>
+
+                    <section class="space-panel" data-panel="classes">
+                        <div class="space-empty">
+                            <p><strong>Classes</strong></p>
+                            <p>Full schedule + join by code — next build phase.</p>
+                        </div>
+                    </section>
+
+                    <section class="space-panel" data-panel="assignments">
+                        <div class="space-empty">
+                            <p><strong>Assignments</strong></p>
+                            <p>Submit work, read feedback — next build phase.</p>
+                        </div>
+                    </section>
+
+                    <section class="space-panel" data-panel="materials">
+                        <div class="space-empty">
+                            <p><strong>Materials</strong></p>
+                            <p>Handouts from your teachers — next build phase.</p>
+                        </div>
+                    </section>
+
+                    <section class="space-panel" data-panel="achievements">
+                        <div class="space-empty">
+                            <p><strong>Achievements</strong></p>
+                            <p>Your badge showcase — next build phase.</p>
+                        </div>
+                    </section>
+
+                    <section class="space-panel" data-panel="profile">
+                        <div class="space-empty">
+                            <p><strong>Profile</strong></p>
+                            <p>Avatar, bio, accent color, notifications — next build phase.</p>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/auth-data.js"></script>
+    <script src="js/space-data.js"></script>
+    <script src="js/space.js"></script>
+
+</body>
+</html>

@@ -1111,6 +1111,15 @@ html[data-theme="dark"] .main-nav .dd-btn.active:hover {
     margin-bottom: 6px;
 }
 
+/* stacked actions inside the login session panel
+   (Open my dashboard + Log out) */
+.session-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+}
+
 /* ============ INFO ROWS (icon + label + value) ============ */
 .info-row {
     display: flex;
@@ -3917,6 +3926,291 @@ html[data-theme="dark"] .text-editor {
 .confirm-danger:hover {
     background-color: #b91c1c;
     border-color: #b91c1c;
+}
+
+/* ================= ACCOUNT SPACES (dashboard pages) =================
+   One shell reused by dashboard.html (student), the teacher studio
+   and the admin console. The personal accent color arrives as
+   --space-accent (set by js/space.js from the profile); every
+   highlighted bit falls back to the site primary when absent. */
+.space-section {
+    padding: 28px 0 64px;
+}
+
+/* ---- the gate: shown until a matching session exists ---- */
+.space-gate {
+    max-width: 560px;
+    margin: 30px auto 10px;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 30px 26px;
+    text-align: center;
+}
+
+.space-gate h1 {
+    margin-bottom: 8px;
+}
+
+.space-gate > p {
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+}
+
+.space-quick-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.space-gate-extra {
+    margin-top: 12px;
+}
+
+.space-gate .small {
+    margin: 18px 0 0;
+}
+
+/* ---- the shell layout ---- */
+.space-layout {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: 22px;
+    align-items: start;
+}
+
+.space-layout[hidden] {
+    display: none;
+}
+
+.space-nav {
+    position: sticky;
+    top: 92px;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.space-nav-title {
+    font-size: 0.78rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+    padding: 10px 12px 8px;
+}
+
+.space-nav-btn {
+    font-family: inherit;
+    text-align: left;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.space-nav-btn:hover {
+    color: var(--color-text);
+    background-color: var(--color-bg-alt);
+}
+
+.space-nav-btn.is-active {
+    background-color: var(--space-accent, var(--color-primary));
+    color: #ffffff;
+}
+
+/* ---- greeting bar ---- */
+.space-greeting {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+}
+
+.space-avatar {
+    width: 48px;
+    height: 48px;
+    flex: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 1.25rem;
+    background: var(--space-accent, var(--color-primary));
+}
+
+.space-greeting h1 {
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+}
+
+.space-sub {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.space-date-chip {
+    margin-left: auto;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 5px 12px;
+    white-space: nowrap;
+}
+
+/* ---- panels + cards ---- */
+.space-panel {
+    display: none;
+}
+
+.space-panel.is-active {
+    display: block;
+}
+
+.space-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.space-card {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 20px;
+}
+
+.space-card h2 {
+    font-size: 1.05rem;
+    margin-bottom: 14px;
+}
+
+.space-empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    border: 1px dashed var(--color-border);
+    border-radius: 18px;
+    padding: 40px 20px;
+}
+
+.space-empty p + p {
+    margin-top: 6px;
+    font-size: 0.9rem;
+}
+
+.space-empty-inline {
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+}
+
+/* ---- home widgets ---- */
+.space-next {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.space-next-course {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.space-next-meta {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.space-next .btn {
+    margin-left: auto;
+    flex: none;
+}
+
+.space-ann + .space-ann {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.space-ann-text {
+    font-size: 0.92rem;
+    margin-bottom: 4px;
+}
+
+.space-ann-meta {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+/* ---- toasts (UI kit) ---- */
+.space-toasts {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 90;
+}
+
+.space-toast {
+    background-color: #0f172a;
+    color: #f8fafc;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.35);
+    cursor: pointer;
+    animation: lightsFade 0.2s ease;
+}
+
+.space-toast.is-good { background-color: #14532d; }
+.space-toast.is-bad  { background-color: #7f1d1d; }
+
+/* spaces stack on small screens */
+@media (max-width: 768px) {
+    .space-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .space-nav {
+        position: static;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 8px;
+    }
+
+    .space-nav-title {
+        display: none;
+    }
+
+    .space-nav-btn {
+        white-space: nowrap;
+    }
+
+    .space-greeting {
+        flex-wrap: wrap;
+    }
+
+    .space-grid-2 {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ================= POP-OUT CHAT WINDOW ================= */

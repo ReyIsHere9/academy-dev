@@ -29,10 +29,16 @@ academy-dev/
 ├── course.html       # Module: Course detail (one per course template)
 ├── about.html        # Module: About
 ├── contact.html      # Module: Contact
+├── dashboard.html    # Module: Account spaces (student; teacher/admin next)
 ├── PLAN.md           # roadmap + module checklist (update it!)
 ├── CODING_GUIDE.md   # this file
 ├── css/
 │   └── styles.css    # ONE shared stylesheet for every page
+├── js/
+│   ├── theme.js      # light/dark engine (head script, every page)
+│   ├── session.js    # session helpers + header chip (head script, every page)
+│   ├── *-data.js     # seed/demo data files (pages render from them)
+│   └── *.js          # per-feature engines, guarded (see class/space engines)
 └── assets/
     └── images/       # photos go here (later: /audio, /video per module)
 ```
@@ -75,7 +81,10 @@ Class naming rules (CRITICAL):
 
 Every-page mandatory bits (copy from an existing page):
 - In `<head>`: `css/styles.css` link, THEN the theme engine line:
-  `<script src="js/theme.js"></script>` (must run before paint).
+  `<script src="js/theme.js"></script>` (must run before paint),
+  THEN the session chip line:
+  `<script src="js/session.js"></script>` (reads the demo session,
+  swaps the Login button for "Dashboard" when logged in).
 - In the header (inside `.header-inner`, after `</nav>`): the
   `#theme-toggle` button (sun/moon SVGs) — identical markup on
   every page.
@@ -88,7 +97,8 @@ Every-page mandatory bits (copy from an existing page):
   `<script src="js/pricing.js"></script>` (they guard themselves:
   each page uses only the pricing parts it has markup for).
 - If a page needs its own data/behavior JS, load those at the
-  bottom of `<body>` as usual (theme.js is the ONLY head script).
+  bottom of `<body>` as usual (theme.js + session.js are the ONLY
+  head scripts — both tiny and safe before paint).
 
 Commenting style (keep it!):
 - Big banner comment at the top of every NEW page explaining
@@ -173,11 +183,15 @@ Style rules:
 5. Test: open via Live Server, resize window to mobile width.
 6. Test BOTH themes: click the header sun/moon toggle on the new
    page — every new component must look right in dark mode.
-7. Update PLAN.md: tick the checkbox.
-8. Commit with a clear message: `git add .` →
+7. If you touched any JS, verify it: `node --check js/<file>.js`
+   plus the DOM-stub smoke harnesses in
+   `%TEMP%\opencode\` (class-smoke / teach-smoke / admin-smoke /
+   space-student-smoke) — every engine has one.
+8. Update PLAN.md: tick the checkbox.
+9. Commit with a clear message: `git add .` →
    `git commit -m "Add Module 4: about page"` → `git push origin main`
-9. Walk the user through the module afterward (they're learning!):
-   what was added, what each new class does, what changed in CSS.
+10. Walk the user through the module afterward (they're learning!):
+    what was added, what each new class does, what changed in CSS.
 
 ---
 

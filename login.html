@@ -26,6 +26,7 @@
           rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
+    <script src="js/session.js"></script>
 </head>
 
 <body>
@@ -139,8 +140,14 @@
                 <div class="form-success" id="session-panel" hidden>
                     <h3>Welcome!</h3>
                     <p id="session-text"></p>
-                    <button type="button" id="logout-btn"
-                            class="btn btn-ghost btn-block">Log out</button>
+                    <!-- the button text/href for the right role is set
+                         by js/auth.js via dashboardFor() -->
+                    <div class="session-actions">
+                        <a href="dashboard.html" class="btn btn-primary btn-block"
+                           id="session-dashboard">Open my dashboard</a>
+                        <button type="button" id="logout-btn"
+                                class="btn btn-ghost btn-block">Log out</button>
+                    </div>
                 </div>
 
                 <p class="auth-alt">
