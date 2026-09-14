@@ -46,7 +46,7 @@ const SPACE_TITLES = {
    pages — flip these to true as each phase ships) */
 const SPACE_READY = {
     student: true,
-    teacher: false,
+    teacher: true,
     admin: false
 };
 
@@ -268,8 +268,9 @@ function startSpaceShell(session) {
         });
     });
 
-    /* --- role-specific panels (teacher/admin arrive later) --- */
+    /* --- role-specific panels (admin console arrives later) --- */
     if (SPACE_ROLE === "student") startStudentSpace(db, session);
+    else if (SPACE_ROLE === "teacher") startTeacherSpace(db, session);
 }
 
 /* paint avatar + accent color from the profile (also reused after
@@ -380,6 +381,14 @@ function startStudentSpace(db, session) {
     renderAchievements(db, session);
     renderProfile(db, session);
     wireStudentPanels(db, session);
+    wireProfilePanel(db, session);
+    setupInbox(db, session.id, "stu", studentAudience(db, session));
+}
+
+/* who may a student message? The teachers of their classes. */
+function studentAudience(db, session) {
+    const mine = db.courseInstances.filter(c => c.students.includes(session.id));
+    return [...new Set(mine.map(c => c.teacher))];
 }
 
 /* ---------- §4 HOME ---------- */
@@ -394,7 +403,7 @@ function renderHome(db, session) {
     const next = nextClassFor(db, session);
 
     /* stats row */
-    const dueSoon = db.assignments.filter(a => {
+    const dueSoon = studentAssignments(db, session).filter(a => {
         const st = assignmentStatus(a, session.id);
         return (st === "todo" || st === "overdue") && a.dueInHours <= 7 * 24;
     }).length;
@@ -545,12 +554,21 @@ function renderClasses(db, session) {
 }
 
 /* ---------- §7 ASSIGNMENTS ---------- */
+/* a student sees assignments for their classes only */
+function studentAssignments(db, session) {
+    const myClassIds = db.courseInstances
+        .filter(c => c.students.includes(session.id))
+        .map(c => c.id);
+    return db.assignments.filter(a => !a.classId || myClassIds.includes(a.classId));
+}
+
 function renderAssignments(db, session) {
     const rows = document.getElementById("space-asg-rows");
     if (!rows) return;
 
     const rank = { overdue: 0, todo: 1, submitted: 2, graded: 3 };
-    let list = db.assignments.map(a => ({ a, status: assignmentStatus(a, session.id) }));
+    let list = studentAssignments(db, session)
+        .map(a => ({ a, status: assignmentStatus(a, session.id) }));
     if (spaceAsgFilter !== "all") {
         list = list.filter(x => x.status === spaceAsgFilter ||
             (spaceAsgFilter === "todo" && x.status === "overdue"));
@@ -715,7 +733,9 @@ function assignmentDetailHTML(db, asg, session) {
         </div>
         <span class="status-chip is-${status}">${ASG_STATUS_LABEL[status]}</span>
     </div>
-    <p class="asg-instructions">${spaceEsc(asg.instructions)}</p>`;
+    <p class="asg-instructions">${spaceEsc(asg.instructions)}</p>
+    <button type="button" class="btn btn-ghost btn-small" id="asg-ask"
+            data-ask="${spaceEsc(asg.createdBy)}">Ask your teacher</button>`;
 
     if (status === "graded") {
         return head + `
@@ -883,6 +903,19 @@ function wireDetail(db, session, asg) {
 
     const submitBtn = document.getElementById("asg-submit");
     if (submitBtn) submitBtn.addEventListener("click", () => submitAssignment(db, session, asg));
+
+    /* "Ask your teacher" opens Messages with a prefilled draft */
+    const askBtn = document.getElementById("asg-ask");
+    if (askBtn) {
+        askBtn.addEventListener("click", () => {
+            const navBtn = document.querySelector('.space-nav-btn[data-panel="messages"]');
+            if (navBtn) navBtn.click();
+            if (window.spaceInboxOpenWith) {
+                window.spaceInboxOpenWith(askBtn.dataset.ask,
+                    'About "' + asg.title + '": ');
+            }
+        });
+    }
 
     const removeBtn = document.getElementById("asg-remove");
     if (removeBtn) {
@@ -1199,10 +1232,1271 @@ function wireStudentPanels(db, session) {
             }
         });
     }
+}
 
-    /* profile save */
+/* the profile panel is IDENTICAL on every space page — one
+   wiring helper serves student + teacher + admin */
+function wireProfilePanel(db, session) {
     const save = document.getElementById("prof-save");
     if (save) save.addEventListener("click", () => saveProfile(db, session));
+}
+
+/* ============ MESSAGES / INBOX (shared by student + teacher) ===
+   One thread list, two perspectives. Each thread has exactly TWO
+   participants; every screen shows "the other person". setupInbox
+   is parameterized by a PREFIX (stu-/tch-) so both pages reuse
+   this one implementation. */
+function otherOf(thread, meId) {
+    return thread.participants.find(id => id !== meId);
+}
+
+function threadUnread(thread, meId) {
+    return thread.messages.filter(m => m.by !== meId &&
+        !(m.readBy || []).includes(meId)).length;
+}
+
+function unreadTotal(db, meId) {
+    return db.messages
+        .filter(t => t.participants.includes(meId))
+        .reduce((n, t) => n + threadUnread(t, meId), 0);
+}
+
+function setupInbox(db, meId, prefix, audience) {
+    const listBox = document.getElementById(prefix + "-inbox-list");
+    const viewBox = document.getElementById(prefix + "-inbox-view");
+    const composeTo = document.getElementById(prefix + "-inbox-new-to");
+    const composeText = document.getElementById(prefix + "-inbox-new-text");
+    const composeBtn = document.getElementById(prefix + "-inbox-new-send");
+    if (!listBox || !viewBox) return;
+
+    let openId = null;
+
+    /* audience dropdown for brand-new conversations */
+    if (composeTo) {
+        composeTo.innerHTML = audience.map(id => {
+            const p = spaceProfile(db, id);
+            return `<option value="${spaceEsc(id)}">${spaceEsc(p.name)}</option>`;
+        }).join("");
+    }
+
+    const myThreads = () => db.messages.filter(t => t.participants.includes(meId));
+
+    function paintBadges() {
+        const n = unreadTotal(db, meId);
+        const badge = document.getElementById(prefix + "-inbox-badge");
+        if (badge) {
+            badge.textContent = n;
+            badge.hidden = n === 0;
+        }
+        const stat = document.getElementById("tstat-unread");
+        if (stat && SPACE_ROLE === "teacher") stat.textContent = n;
+    }
+
+    function renderList() {
+        const threads = myThreads();
+        if (!threads.length) {
+            listBox.innerHTML = '<p class="space-empty-inline">No conversations yet.</p>';
+            paintBadges();
+            return;
+        }
+        listBox.innerHTML = threads.map(t => {
+            const other = spaceProfile(db, otherOf(t, meId));
+            const last = t.messages[t.messages.length - 1];
+            const unread = threadUnread(t, meId);
+            return `
+            <button type="button" class="thread-row ${t.id === openId ? "is-open" : ""}"
+                    data-thread="${t.id}">
+                <span class="msg-avatar" style="background:${other.avatarColor}">${spaceEsc(other.name.trim().charAt(0).toUpperCase())}</span>
+                <span class="thread-info">
+                    <span class="thread-name">${spaceEsc(other.name)}
+                        ${unread ? `<span class="unread-dot">${unread}</span>` : ""}</span>
+                    <span class="thread-preview">${last ? spaceEsc(last.text) : ""}</span>
+                </span>
+            </button>`;
+        }).join("");
+        paintBadges();
+    }
+
+    function renderView() {
+        const thread = myThreads().find(t => t.id === openId);
+        if (!thread) {
+            viewBox.innerHTML = '<p class="space-empty-inline">Pick a conversation to read it here.</p>';
+            return;
+        }
+        const other = spaceProfile(db, otherOf(thread, meId));
+        viewBox.innerHTML = `
+            <div class="thread-head">
+                <span class="msg-avatar" style="background:${other.avatarColor}">${spaceEsc(other.name.trim().charAt(0).toUpperCase())}</span>
+                <div>
+                    <p class="thread-name">${spaceEsc(other.name)}</p>
+                    <p class="thread-subject">${spaceEsc(thread.subject || "Conversation")}</p>
+                </div>
+            </div>
+            <div class="thread-messages">
+                ${thread.messages.map(m => {
+                    const mine = m.by === meId;
+                    return `
+                    <div class="bubble-row ${mine ? "is-mine" : ""}">
+                        <div class="bubble ${mine ? "is-mine" : ""}">
+                            <p>${spaceEsc(m.text)}</p>
+                            <span class="bubble-time">${spaceAgo(m.minutesAgo)}</span>
+                        </div>
+                    </div>`;
+                }).join("")}
+            </div>
+            <form class="comment-form" id="${prefix}-inbox-reply">
+                <input type="text" class="chat-input" id="${prefix}-inbox-input"
+                       placeholder="Write a reply…" autocomplete="off">
+                <button type="submit" class="btn btn-primary btn-small">Send</button>
+            </form>`;
+
+        const replyForm = document.getElementById(prefix + "-inbox-reply");
+        if (replyForm) {
+            replyForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const input = document.getElementById(prefix + "-inbox-input");
+                sendThreadMessage(thread, input ? input.value : "");
+            });
+        }
+    }
+
+    function sendThreadMessage(thread, raw) {
+        const text = (raw || "").trim();
+        if (!text) return;
+        thread.messages.push({ by: meId, text, minutesAgo: 0, readBy: [meId] });
+        spaceSave(db);
+        renderList();
+        renderView();
+        spaceToast("Message sent", "good");
+    }
+
+    function openThread(id) {
+        openId = id;
+        const thread = myThreads().find(t => t.id === id);
+        if (thread) {
+            /* reading marks the OTHER side's messages as seen */
+            thread.messages.forEach(m => {
+                if (m.by === meId) return;
+                if (!m.readBy) m.readBy = [];
+                if (!m.readBy.includes(meId)) m.readBy.push(meId);
+            });
+            spaceSave(db);
+        }
+        renderList();
+        renderView();
+    }
+
+    /* open (or create) the thread with a specific person, with an
+       optional prefilled draft — used by "Ask your teacher" and
+       "Message" buttons across the spaces */
+    function openWith(otherId, prefill) {
+        let thread = myThreads().find(t => otherOf(t, meId) === otherId);
+        if (!thread) {
+            thread = {
+                id: "thr-" + Date.now(),
+                participants: [meId, otherId],
+                subject: "New conversation",
+                messages: []
+            };
+            db.messages.push(thread);
+            spaceSave(db);
+        }
+        openId = thread.id;
+        renderList();
+        renderView();
+        const input = document.getElementById(prefix + "-inbox-input");
+        if (input) {
+            input.value = prefill || "";
+            input.focus();
+        }
+    }
+    window.spaceInboxOpenWith = openWith;
+
+    listBox.addEventListener("click", (event) => {
+        const row = event.target.closest("[data-thread]");
+        if (row) openThread(row.dataset.thread);
+    });
+
+    if (composeBtn) {
+        composeBtn.addEventListener("click", () => {
+            const to = composeTo ? composeTo.value : null;
+            const text = composeText ? composeText.value.trim() : "";
+            if (!to || !text) {
+                spaceToast("Pick a person and write a message", "bad");
+                return;
+            }
+            let thread = myThreads().find(t => otherOf(t, meId) === to);
+            if (!thread) {
+                thread = {
+                    id: "thr-" + Date.now(),
+                    participants: [meId, to],
+                    subject: "New conversation",
+                    messages: []
+                };
+                db.messages.push(thread);
+            }
+            if (composeText) composeText.value = "";
+            openId = thread.id;
+            sendThreadMessage(thread, text);
+        });
+    }
+
+    renderList();
+    renderView();
+}
+
+/* ============ TEACHER SPACE ====================================
+   Everything below renders into dashboard-teacher.html's panels.
+   Same element-guarded style as the student space. */
+
+const GRADING_PHRASES = [
+    "Great work — clear and accurate!",
+    "Nice effort — watch your verb tenses.",
+    "Good ideas; focus on paragraph structure.",
+    "Almost there — check the third-person -s.",
+    "Please review the present perfect form.",
+    "Excellent vocabulary range. Keep it up!"
+];
+
+const GRADING_RUBRIC = [
+    { id: "task",    weight: 25, label: "Task fully completed" },
+    { id: "grammar", weight: 25, label: "Grammar mostly accurate" },
+    { id: "vocab",   weight: 25, label: "Good range of vocabulary" },
+    { id: "struct",  weight: 25, label: "Clear structure" }
+];
+
+const TEACHER_KIND_LABEL = { task: "Task", worksheet: "Worksheet", exam: "Exam" };
+
+let gbClassId = null;   // gradebook: which class is selected
+let gbGrader = null;    // { stuId, asgId } while the grader is open
+
+function teacherClasses(db, session) {
+    return db.courseInstances.filter(c => c.teacher === session.id);
+}
+
+function teacherStudents(db, session) {
+    const ids = new Set();
+    teacherClasses(db, session).forEach(c => c.students.forEach(s => ids.add(s)));
+    return [...ids];
+}
+
+function teacherAssignments(db, session) {
+    const clsIds = teacherClasses(db, session).map(c => c.id);
+    return db.assignments.filter(a => clsIds.includes(a.classId));
+}
+
+function startTeacherSpace(db, session) {
+    renderTeacherToday(db, session);
+    renderTeacherClasses(db, session);
+    renderGradebook(db, session);
+    renderTeacherAssignments(db, session);
+    renderTeacherStudents(db, session);
+    renderTeacherMaterials(db, session);
+    renderProfile(db, session);
+    wireProfilePanel(db, session);
+    setupInbox(db, session.id, "tch", teacherStudents(db, session));
+    wireTeacherPanels(db, session);
+}
+
+/* ---------- teacher: TODAY ---------- */
+function renderTeacherToday(db, session) {
+    const students = teacherStudents(db, session);
+    const asgs = teacherAssignments(db, session);
+
+    let ungraded = 0;
+    asgs.forEach(a => Object.values(a.submissions)
+        .forEach(s => { if (s.score == null) ungraded++; }));
+
+    const stStudents = document.getElementById("tstat-students");
+    if (stStudents) stStudents.textContent = students.length;
+    const stUngraded = document.getElementById("tstat-ungraded");
+    if (stUngraded) stUngraded.textContent = ungraded;
+    const stUnread = document.getElementById("tstat-unread");
+    if (stUnread) stUnread.textContent = unreadTotal(db, session.id);
+
+    const next = db.schedule
+        .filter(s => s.teacher === session.id && s.startsInMinutes >= 0)
+        .sort((a, b) => a.startsInMinutes - b.startsInMinutes)[0] || null;
+    const stNext = document.getElementById("tstat-next");
+    if (stNext) stNext.textContent = next ? spaceWhen(next.startsInMinutes) : "—";
+
+    const nextBox = document.getElementById("tch-next-class");
+    if (nextBox) {
+        nextBox.innerHTML = next ? `
+            <div class="space-next">
+                <div>
+                    <p class="space-next-course">${spaceEsc(next.course)}</p>
+                    <p class="space-next-meta">${next.students.length} students &middot;
+                       ${spaceWhen(next.startsInMinutes)} (${spaceClock(next.startsInMinutes)})
+                       &middot; code <code>${spaceEsc(next.code)}</code></p>
+                </div>
+                <a class="btn btn-primary" href="class-teacher.html">Open room</a>
+            </div>` : '<p class="space-empty-inline">No live class scheduled right now.</p>';
+    }
+
+    const queue = document.getElementById("tch-ungraded-list");
+    if (queue) {
+        const items = [];
+        asgs.forEach(a => {
+            const cls = db.courseInstances.find(c => c.id === a.classId);
+            Object.entries(a.submissions).forEach(([stuId, sub]) => {
+                if (sub.score == null) items.push({ a, stuId, cls });
+            });
+        });
+        queue.innerHTML = items.length ? items.slice(0, 5).map(({ a, stuId }) => {
+            const student = spaceProfile(db, stuId);
+            return `
+            <div class="today-row">
+                <span class="msg-avatar" style="background:${student.avatarColor}">${spaceEsc(student.name.trim().charAt(0).toUpperCase())}</span>
+                <div class="today-row-main">
+                    <p class="space-next-course">${spaceEsc(student.name)}</p>
+                    <p class="space-next-meta">${spaceEsc(a.title)} &middot; ${dueLabel(a)}</p>
+                </div>
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-grade-now="${spaceEsc(a.id)}|${spaceEsc(stuId)}">Grade</button>
+            </div>`;
+        }).join("") : '<p class="space-empty-inline">Nothing waiting for grading. 🎉</p>';
+    }
+
+    const activity = document.getElementById("tch-activity");
+    if (activity) {
+        activity.innerHTML = db.activity.slice(0, 5).map(act => `
+            <div class="today-row">
+                <span class="activity-dot"></span>
+                <div class="today-row-main">
+                    <p class="space-next-meta">${spaceEsc(act.text)}</p>
+                    <p class="space-next-meta muted">${spaceAgo(act.minutesAgo)}</p>
+                </div>
+            </div>`).join("");
+    }
+}
+
+/* ---------- teacher: MY CLASSES (course instances) ---------- */
+function renderTeacherClasses(db, session) {
+    const box = document.getElementById("tch-classes");
+    if (box) {
+        const mine = teacherClasses(db, session);
+        box.innerHTML = mine.length ? mine.map(c => `
+            <div class="class-manage">
+                <div class="class-manage-main">
+                    <p class="space-next-course">${spaceEsc(c.title)}
+                        <span class="level-tag">${spaceEsc(c.level)}</span></p>
+                    <p class="space-next-meta">${spaceEsc(c.meetings)} &middot;
+                       ${c.students.length} students &middot;
+                       code <code>${spaceEsc(c.code)}</code></p>
+                    <div class="progress-track" title="${c.progress}% average progress">
+                        <div class="progress-fill" style="--progress:${c.progress}%"></div>
+                    </div>
+                </div>
+                <div class="class-manage-actions">
+                    <a class="btn btn-primary btn-small" href="class-teacher.html">Open room</a>
+                    <button type="button" class="btn btn-ghost btn-small"
+                            data-gb-class="${spaceEsc(c.id)}">Gradebook</button>
+                </div>
+            </div>`).join("")
+            : '<p class="space-empty-inline">No classes yet — create your first one below.</p>';
+    }
+
+    /* level + skill picker comes from the real course catalog */
+    const levelSelect = document.getElementById("tch-new-level");
+    if (levelSelect && typeof LEVELS !== "undefined") {
+        levelSelect.innerHTML = LEVELS.map(level =>
+            level.skills.map(skill => {
+                const value = level.id + "|" + skill.name;
+                return `<option value="${spaceEsc(value)}">${spaceEsc(level.id)} ·
+                        ${spaceEsc(skill.name)}</option>`;
+            }).join("")
+        ).join("");
+    }
+
+    /* who can be enrolled? every demo student profile */
+    const picker = document.getElementById("tch-new-students");
+    if (picker) {
+        const students = Object.keys(db.profiles)
+            .filter(id => db.profiles[id].role === "student");
+        picker.innerHTML = students.map(id => {
+            const p = db.profiles[id];
+            return `
+            <label class="pick-row">
+                <input type="checkbox" value="${spaceEsc(id)}">
+                ${spaceEsc(p.name)} <span class="muted small">(${spaceEsc(id)})</span>
+            </label>`;
+        }).join("");
+    }
+}
+
+function createTeacherInstance(db, session) {
+    const levelSel = document.getElementById("tch-new-level");
+    const groupInput = document.getElementById("tch-new-group");
+    const meetingsInput = document.getElementById("tch-new-meetings");
+    const sessionsInput = document.getElementById("tch-new-sessions");
+    if (!levelSel) return;
+
+    const [level, skill] = levelSel.value.split("|");
+    if (!level || !skill) return;
+    const group = groupInput ? groupInput.value.trim() : "";
+    const meetings = meetingsInput && meetingsInput.value.trim()
+        ? meetingsInput.value.trim() : "Schedule to be announced";
+    const sessionsTotal = sessionsInput && Number(sessionsInput.value) > 0
+        ? Number(sessionsInput.value) : 10;
+
+    /* unique join code, e.g. B1-CONV or B1-CONV-2 */
+    let code = level.toUpperCase() + "-" + skill.slice(0, 4).toUpperCase();
+    let n = 2;
+    while (db.courseInstances.some(c => c.code === code)) {
+        code = level.toUpperCase() + "-" + skill.slice(0, 4).toUpperCase() + "-" + n;
+        n++;
+    }
+
+    const students = [...document.querySelectorAll("#tch-new-students input:checked")]
+        .map(input => input.value);
+
+    const instance = {
+        id: "cls-" + Date.now(),
+        title: level + " · " + skill + (group ? " — " + group : ""),
+        level, skill,
+        teacher: session.id,
+        students,
+        meetings, code,
+        sessionsTotal,
+        progress: 0
+    };
+    db.courseInstances.push(instance);
+
+    /* enrolled students get the course on their dashboard too */
+    students.forEach((stuId, i) => {
+        const already = db.enrollments.some(e =>
+            e.student === stuId && e.title === instance.title);
+        if (already) return;
+        db.enrollments.push({
+            id: "enr-" + Date.now() + "-" + i,
+            student: stuId, level, skill,
+            title: instance.title, teacher: session.id,
+            progress: 0, sessionsDone: 0, sessionsTotal,
+            nextLesson: "First lesson — orientation"
+        });
+    });
+
+    spaceSave(db);
+    spaceToast("Class created — students see it on their dashboards", "good");
+    if (groupInput) groupInput.value = "";
+    if (meetingsInput) meetingsInput.value = "";
+    renderTeacherClasses(db, session);
+    renderGradebook(db, session);
+    renderTeacherToday(db, session);
+}
+
+/* ---------- teacher: GRADEBOOK (the interactive matrix) ---------- */
+function renderGradebook(db, session) {
+    const select = document.getElementById("gb-class");
+    const tableBox = document.getElementById("gb-table");
+    const mine = teacherClasses(db, session);
+
+    if (select) {
+        select.innerHTML = mine.map(c =>
+            `<option value="${spaceEsc(c.id)}">${spaceEsc(c.title)}</option>`
+        ).join("");
+        if (!gbClassId || !mine.some(c => c.id === gbClassId)) {
+            gbClassId = mine.length ? mine[0].id : null;
+        }
+        if (gbClassId) select.value = gbClassId;
+    }
+    if (!tableBox || !gbClassId) {
+        if (tableBox) tableBox.innerHTML =
+            '<p class="space-empty-inline">Create a class first.</p>';
+        return;
+    }
+
+    const cls = db.courseInstances.find(c => c.id === gbClassId);
+    const asgs = db.assignments.filter(a => a.classId === gbClassId)
+        .sort((a, b) => a.dueInHours - b.dueInHours);
+
+    if (!cls.students.length) {
+        tableBox.innerHTML = '<p class="space-empty-inline">No students in this class yet.</p>';
+        return;
+    }
+
+    const head = `
+        <tr>
+            <th class="gb-sticky">Student</th>
+            ${asgs.map(a => `
+                <th>
+                    <span class="gb-asg-title">${spaceEsc(a.title)}</span>
+                    <span class="kind-chip is-${spaceEsc(a.kind)}">${TEACHER_KIND_LABEL[a.kind] || "Task"}</span>
+                    <span class="gb-due">${dueLabel(a)}</span>
+                </th>`).join("")}
+            <th>Average</th>
+        </tr>`;
+
+    const rows = cls.students.map(stuId => {
+        const student = spaceProfile(db, stuId);
+        let gradedPct = [];
+
+        const cells = asgs.map(a => {
+            const sub = a.submissions[stuId];
+            const status = assignmentStatus(a, stuId);
+            if (sub && sub.score != null) {
+                gradedPct.push(sub.score / a.maxScore);
+                return `<td><button type="button" class="gb-cell is-graded"
+                    data-stu="${spaceEsc(stuId)}" data-asg="${spaceEsc(a.id)}"
+                    title="Graded ${sub.score}/${a.maxScore}">${sub.score}</button></td>`;
+            }
+            if (sub) {
+                return `<td><button type="button" class="gb-cell is-submitted"
+                    data-stu="${spaceEsc(stuId)}" data-asg="${spaceEsc(a.id)}"
+                    title="Submitted — waiting for a grade">Grade</button></td>`;
+            }
+            const missing = status === "overdue";
+            return `<td><button type="button" class="gb-cell ${missing ? "is-missing" : "is-none"}"
+                data-stu="${spaceEsc(stuId)}" data-asg="${spaceEsc(a.id)}"
+                title="${missing ? "Not submitted (overdue)" : "Not submitted yet"}">${missing ? "–" : "·"}</button></td>`;
+        }).join("");
+
+        const avg = gradedPct.length
+            ? Math.round(gradedPct.reduce((x, y) => x + y, 0) / gradedPct.length * 100) + "%"
+            : "—";
+
+        return `
+        <tr>
+            <td class="gb-sticky">
+                <span class="msg-avatar" style="background:${student.avatarColor}">${spaceEsc(student.name.trim().charAt(0).toUpperCase())}</span>
+                <span class="gb-name">${spaceEsc(student.name)}</span>
+            </td>
+            ${cells}
+            <td class="gb-avg">${avg}</td>
+        </tr>`;
+    }).join("");
+
+    tableBox.innerHTML = `
+        <div class="gb-scroll">
+            <table class="gb-table">
+                <thead>${head}</thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+        <p class="space-hint">Click any cell to grade, read or message the student.
+           · <span class="gb-key is-graded">score</span>
+           <span class="gb-key is-submitted">needs grading</span>
+           <span class="gb-key is-missing">missing</span></p>`;
+}
+
+function graderHTML(db, session, asg, student, sub) {
+    const status = assignmentStatus(asg, student.id);
+    const cls = db.courseInstances.find(c => c.id === asg.classId);
+
+    const head = `
+    <div class="asg-head">
+        <div>
+            <h2>${spaceEsc(student.name)} — ${spaceEsc(asg.title)}</h2>
+            <p class="space-next-meta">${spaceEsc(cls ? cls.title : asg.course)} &middot;
+               ${TEACHER_KIND_LABEL[asg.kind] || "Task"} &middot; ${dueLabel(asg)} &middot;
+               max ${asg.maxScore} points</p>
+        </div>
+        <span class="status-chip is-${status}">${ASG_STATUS_LABEL[status]}</span>
+        <button type="button" class="btn btn-ghost btn-small" id="gr-close">Close</button>
+    </div>
+    <div class="grade-actions">
+        <button type="button" class="btn btn-ghost btn-small"
+                data-msg-student="${spaceEsc(student.id)}">Message ${spaceEsc(student.name)}</button>
+    </div>`;
+
+    if (!sub) {
+        return head + `
+        <p class="space-empty-inline">No submission yet from this student.</p>`;
+    }
+
+    const fileRow = sub.fileName ? `
+        <div class="file-row space-file-card is-static">
+            <span class="file-type">${spaceTypeTag(sub.fileName)}</span>
+            <div class="space-file-info">
+                <p class="space-file-name-static">${spaceEsc(sub.fileName)}</p>
+                <p class="space-file-note">${spaceSize(sub.sizeKB || 0)}</p>
+            </div>
+        </div>` : "";
+
+    const comments = (sub.comments || []).map(c => {
+        const author = spaceProfile(db, c.by);
+        return `
+        <div class="comment-row">
+            <span class="msg-avatar" style="background:${author.avatarColor}">${spaceEsc(author.name.trim().charAt(0).toUpperCase())}</span>
+            <div class="comment-body">
+                <p class="comment-head">${spaceEsc(author.name)}
+                   <span>${spaceAgo(c.minutesAgo)}</span></p>
+                <p class="comment-text">${spaceEsc(c.text)}</p>
+            </div>
+        </div>`;
+    }).join("");
+
+    return head + `
+    <h3 class="space-subhead">Submission (${spaceAgo(sub.submittedAtMinutesAgo)})</h3>
+    ${sub.text ? `<p class="asg-answer">${spaceEsc(sub.text)}</p>` : ""}
+    ${fileRow}
+
+    <h3 class="space-subhead">Grading tools</h3>
+    <div class="grade-tools">
+        <div class="grade-tool-block">
+            <p class="space-label">Quick score</p>
+            <div class="quick-scores">
+                ${[0, 50, 75, 85, 95].map(pct =>
+                    `<button type="button" class="btn btn-ghost btn-small"
+                             data-score-pct="${pct}">${pct}%</button>`).join("")}
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-score-pct="100">Full marks</button>
+            </div>
+            <p class="space-label">Score (out of ${asg.maxScore})</p>
+            <input type="number" class="mini-input" id="gr-score" min="0"
+                   max="${asg.maxScore}" value="${sub.score != null ? sub.score : ""}">
+        </div>
+        <div class="grade-tool-block">
+            <p class="space-label">Rubric — tick what the work shows</p>
+            ${GRADING_RUBRIC.map(r => `
+                <label class="pick-row">
+                    <input type="checkbox" class="gr-rubric" value="${r.weight}">
+                    ${spaceEsc(r.label)} <span class="muted small">${r.weight}%</span>
+                </label>`).join("")}
+            <p class="space-hint">Suggested: <strong id="gr-suggest">—</strong>
+                <button type="button" class="btn btn-ghost btn-small"
+                        id="gr-apply-suggest" hidden>Apply</button></p>
+        </div>
+        <div class="grade-tool-block grade-tool-wide">
+            <p class="space-label">Feedback to the student</p>
+            <div class="phrase-row">
+                <select class="mini-select" id="gr-phrase">
+                    ${GRADING_PHRASES.map(p =>
+                        `<option value="${spaceEsc(p)}">${spaceEsc(p)}</option>`).join("")}
+                </select>
+                <button type="button" class="btn btn-ghost btn-small"
+                        id="gr-insert">Insert</button>
+            </div>
+            <textarea class="chat-input space-textarea" id="gr-feedback" rows="4"
+                      placeholder="What went well? What should they fix?">${spaceEsc(sub.feedback || "")}</textarea>
+            <label class="switch-row">
+                <input type="checkbox" id="gr-notify" ${sub.score == null ? "checked" : ""}>
+                Also send the feedback as an inbox message</label>
+        </div>
+    </div>
+
+    <div class="space-submit-row">
+        <button type="button" class="btn btn-primary" id="gr-save">Save grade</button>
+        ${sub.score != null ? `<button type="button" class="btn btn-ghost" id="gr-clear">Remove grade</button>` : ""}
+    </div>
+
+    <h3 class="space-subhead">Comments</h3>
+    ${comments || '<p class="space-empty-inline">No comments yet.</p>'}
+    <form class="comment-form" id="gr-comment-form">
+        <input type="text" class="chat-input" id="gr-comment-input"
+               placeholder="Leave a comment on the submission…" autocomplete="off">
+        <button type="submit" class="btn btn-primary btn-small">Send</button>
+    </form>`;
+}
+
+function openGrader(db, session, stuId, asgId) {
+    const box = document.getElementById("gb-grader");
+    const card = document.getElementById("gb-grader-card");
+    if (!box || !card) return;
+
+    const asg = db.assignments.find(a => a.id === asgId);
+    if (!asg) return;
+    gbGrader = { stuId, asgId };
+
+    const student = spaceProfile(db, stuId);
+    const sub = asg.submissions[stuId];
+    card.innerHTML = graderHTML(db, session, asg, student, sub);
+    wireGrader(db, session, asg, stuId);
+    box.hidden = false;
+    if (box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeGrader() {
+    gbGrader = null;
+    const box = document.getElementById("gb-grader");
+    if (box) box.hidden = true;
+}
+
+function wireGrader(db, session, asg, stuId) {
+    const closeBtn = document.getElementById("gr-close");
+    if (closeBtn) closeBtn.addEventListener("click", closeGrader);
+
+    const msgBtn = document.querySelector("#gb-grader-card [data-msg-student]");
+    if (msgBtn) {
+        msgBtn.addEventListener("click", () => {
+            const navBtn = document.querySelector('.space-nav-btn[data-panel="inbox"]');
+            if (navBtn) navBtn.click();
+            if (window.spaceInboxOpenWith) {
+                window.spaceInboxOpenWith(stuId, 'About "' + asg.title + '": ');
+            }
+        });
+    }
+
+    const scoreInput = document.getElementById("gr-score");
+    if (scoreInput) {
+        document.querySelectorAll("[data-score-pct]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const pct = Number(btn.dataset.scorePct);
+                scoreInput.value = Math.round(pct / 100 * asg.maxScore);
+            });
+        });
+    }
+
+    /* rubric -> suggested score */
+    const suggestEl = document.getElementById("gr-suggest");
+    const applyBtn = document.getElementById("gr-apply-suggest");
+    const rubricBoxes = document.querySelectorAll(".gr-rubric");
+    function updateSuggestion() {
+        let sum = 0;
+        rubricBoxes.forEach(b => { if (b.checked) sum += Number(b.value); });
+        const suggested = Math.round(sum / 100 * asg.maxScore);
+        if (suggestEl) {
+            suggestEl.textContent = sum ? suggested + " / " + asg.maxScore : "—";
+        }
+        if (applyBtn) applyBtn.hidden = sum === 0;
+    }
+    rubricBoxes.forEach(b => b.addEventListener("change", updateSuggestion));
+
+    if (applyBtn) {
+        applyBtn.addEventListener("click", () => {
+            let sum = 0;
+            rubricBoxes.forEach(b => { if (b.checked) sum += Number(b.value); });
+            if (scoreInput) scoreInput.value = Math.round(sum / 100 * asg.maxScore);
+        });
+    }
+
+    const insertBtn = document.getElementById("gr-insert");
+    const phraseSel = document.getElementById("gr-phrase");
+    const feedback = document.getElementById("gr-feedback");
+    if (insertBtn && phraseSel && feedback) {
+        insertBtn.addEventListener("click", () => {
+            feedback.value = (feedback.value ? feedback.value + "\n" : "") + phraseSel.value;
+            feedback.focus();
+        });
+    }
+
+    const saveBtn = document.getElementById("gr-save");
+    if (saveBtn) {
+        saveBtn.addEventListener("click", () => {
+            const sub = asg.submissions[stuId];
+            if (!sub) return;
+            const raw = scoreInput ? Number(scoreInput.value) : NaN;
+            if (isNaN(raw) || scoreInput.value === "") {
+                spaceToast("Enter a score (or use a quick score)", "bad");
+                return;
+            }
+            const score = Math.max(0, Math.min(asg.maxScore, Math.round(raw)));
+            sub.score = score;
+            sub.feedback = feedback ? feedback.value.trim() : "";
+
+            const notifyBox = document.getElementById("gr-notify");
+            if (notifyBox && notifyBox.checked) {
+                const student = spaceProfile(db, stuId);
+                let thread = db.messages.find(t =>
+                    t.participants.includes(session.id) && t.participants.includes(stuId));
+                if (!thread) {
+                    thread = {
+                        id: "thr-" + Date.now(),
+                        participants: [session.id, stuId],
+                        subject: "Grade posted",
+                        messages: []
+                    };
+                    db.messages.push(thread);
+                }
+                thread.messages.push({
+                    by: session.id,
+                    text: "Grade posted for \"" + asg.title + "\": " + score + "/" +
+                          asg.maxScore + (sub.feedback ? " — " + sub.feedback : ""),
+                    minutesAgo: 0,
+                    readBy: [session.id]
+                });
+            }
+
+            spaceSave(db);
+            spaceToast("Grade saved — " + spaceProfile(db, stuId).name + ": " +
+                       score + "/" + asg.maxScore, "good");
+            renderGradebook(db, session);
+            renderTeacherToday(db, session);
+            openGrader(db, session, stuId, asg.id);
+        });
+    }
+
+    const clearBtn = document.getElementById("gr-clear");
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            const sub = asg.submissions[stuId];
+            if (!sub) return;
+            sub.score = null;
+            sub.feedback = "";
+            spaceSave(db);
+            spaceToast("Grade removed — back in the queue", "bad");
+            renderGradebook(db, session);
+            renderTeacherToday(db, session);
+            openGrader(db, session, stuId, asg.id);
+        });
+    }
+
+    const commentForm = document.getElementById("gr-comment-form");
+    if (commentForm) {
+        commentForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const input = document.getElementById("gr-comment-input");
+            const text = input ? input.value.trim() : "";
+            if (!text) return;
+            const sub = asg.submissions[stuId];
+            if (!sub) return;
+            if (!sub.comments) sub.comments = [];
+            sub.comments.push({ by: session.id, text, minutesAgo: 0 });
+            spaceSave(db);
+            spaceToast("Comment added", "good");
+            openGrader(db, session, stuId, asg.id);
+        });
+    }
+}
+
+/* ---------- teacher: ASSIGNMENTS + TEMPLATES ---------- */
+function asgFormAllowed() {
+    return [...document.querySelectorAll('input[name="tch-asg-type"]:checked')]
+        .map(input => input.value);
+}
+
+function readAsgForm(db) {
+    const title = document.getElementById("tch-asg-title");
+    const classSel = document.getElementById("tch-asg-class");
+    const kind = document.getElementById("tch-asg-kind");
+    const instructions = document.getElementById("tch-asg-instructions");
+    const due = document.getElementById("tch-asg-due");
+    const dueUnit = document.getElementById("tch-asg-due-unit");
+    const max = document.getElementById("tch-asg-max");
+    const maxmb = document.getElementById("tch-asg-maxmb");
+
+    return {
+        title: title ? title.value.trim() : "",
+        classId: classSel ? classSel.value : "",
+        kind: kind ? kind.value : "task",
+        instructions: instructions ? instructions.value.trim() : "",
+        hours: due && Number(due.value) > 0 ? Number(due.value) : 48,
+        unit: dueUnit ? dueUnit.value : "hours",
+        maxScore: max && Number(max.value) > 0 ? Number(max.value) : 100,
+        maxMB: maxmb && Number(maxmb.value) > 0 ? Number(maxmb.value) : 5,
+        allowed: asgFormAllowed()
+    };
+}
+
+function renderTeacherAssignments(db, session) {
+    /* class dropdown */
+    const classSel = document.getElementById("tch-asg-class");
+    const mine = teacherClasses(db, session);
+    if (classSel) {
+        classSel.innerHTML = mine.map(c =>
+            `<option value="${spaceEsc(c.id)}">${spaceEsc(c.title)}</option>`
+        ).join("");
+    }
+
+    /* templates */
+    const tplBox = document.getElementById("tch-templates");
+    if (tplBox) {
+        tplBox.innerHTML = db.assignmentTemplates.length
+            ? db.assignmentTemplates.map(t => `
+                <div class="file-row tpl-row">
+                    <span class="kind-chip is-${spaceEsc(t.kind)}">${TEACHER_KIND_LABEL[t.kind] || "Task"}</span>
+                    <div class="space-file-info">
+                        <p class="space-file-name-static">${spaceEsc(t.title)}</p>
+                        <p class="space-file-note">max ${t.maxScore} pts &middot; up to ${t.maxMB} MB</p>
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-small"
+                            data-use-template="${spaceEsc(t.id)}">Use</button>
+                    <button type="button" class="admin-kick" data-del-template="${spaceEsc(t.id)}"
+                            title="Delete template">&times;</button>
+                </div>`).join("")
+            : '<p class="space-empty-inline">No saved templates yet.</p>';
+    }
+
+    /* existing assignments */
+    const list = document.getElementById("tch-asg-list");
+    if (list) {
+        const asgs = teacherAssignments(db, session)
+            .sort((a, b) => a.dueInHours - b.dueInHours);
+        list.innerHTML = asgs.length ? asgs.map(a => {
+            const cls = db.courseInstances.find(c => c.id === a.classId);
+            const total = cls ? cls.students.length : 0;
+            const submitted = Object.keys(a.submissions).length;
+            let ungraded = 0;
+            Object.values(a.submissions).forEach(s => { if (s.score == null) ungraded++; });
+            return `
+            <div class="file-row tpl-row">
+                <span class="kind-chip is-${spaceEsc(a.kind)}">${TEACHER_KIND_LABEL[a.kind] || "Task"}</span>
+                <div class="space-file-info">
+                    <p class="space-file-name-static">${spaceEsc(a.title)}</p>
+                    <p class="space-file-note">${spaceEsc(cls ? cls.title : a.course)} &middot;
+                       ${dueLabel(a)} &middot; ${submitted}/${total} submitted &middot;
+                       ${ungraded} waiting</p>
+                </div>
+                <button type="button" class="admin-kick" data-del-asg="${spaceEsc(a.id)}"
+                        title="Delete assignment">&times;</button>
+            </div>`;
+        }).join("")
+        : '<p class="space-empty-inline">No assignments yet — create one above.</p>';
+    }
+}
+
+function createTeacherAssignment(db, session) {
+    const form = readAsgForm(db);
+    if (!form.title) return spaceToast("Give the assignment a title", "bad");
+    if (!form.classId) return spaceToast("Pick a class", "bad");
+    if (!form.allowed.length) return spaceToast("Pick at least one allowed file type", "bad");
+
+    const cls = db.courseInstances.find(c => c.id === form.classId);
+    const dueInHours = form.unit === "days" ? form.hours * 24 : form.hours;
+
+    db.assignments.push({
+        id: "asg-" + Date.now(),
+        classId: form.classId,
+        kind: form.kind,
+        course: cls ? cls.title : "Course",
+        skill: cls ? cls.skill : "",
+        title: form.title,
+        instructions: form.instructions || "See the attached task.",
+        createdBy: session.id,
+        dueInHours,
+        maxScore: form.maxScore,
+        allowed: form.allowed,
+        maxMB: form.maxMB,
+        submissions: {}
+    });
+
+    spaceSave(db);
+    spaceToast("Assignment created for " + (cls ? cls.title : "class"), "good");
+    renderTeacherAssignments(db, session);
+    renderGradebook(db, session);
+    renderTeacherToday(db, session);
+}
+
+function fillAsgForm(template) {
+    const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value !== undefined) el.value = value;
+    };
+    set("tch-asg-title", template.title);
+    set("tch-asg-kind", template.kind);
+    set("tch-asg-instructions", template.instructions);
+    set("tch-asg-max", template.maxScore);
+    set("tch-asg-maxmb", template.maxMB);
+    document.querySelectorAll('input[name="tch-asg-type"]').forEach(input => {
+        input.checked = template.allowed.includes(input.value);
+    });
+    spaceToast("Template loaded — pick a class and due date", "good");
+}
+
+/* ---------- teacher: STUDENTS (badges + notes) ---------- */
+function renderTeacherStudents(db, session) {
+    const box = document.getElementById("tch-students");
+    if (!box) return;
+    const ids = teacherStudents(db, session);
+
+    box.innerHTML = ids.length ? ids.map(id => {
+        const student = spaceProfile(db, id);
+        const classes = teacherClasses(db, session)
+            .filter(c => c.students.includes(id))
+            .map(c => c.title);
+        const earned = (db.earnedBadges[id] || []).map(e => {
+            const badge = db.badgeCatalog.find(b => b.id === e.id);
+            return badge ? `
+                <span class="badge-chip">${badge.icon} ${spaceEsc(badge.label)}
+                    <button type="button" data-badge-remove="${spaceEsc(badge.id)}"
+                            data-student="${spaceEsc(id)}" title="Remove badge">&times;</button>
+                </span>` : "";
+        }).join("");
+        const unearned = db.badgeCatalog.filter(b =>
+            !(db.earnedBadges[id] || []).some(e => e.id === b.id));
+
+        return `
+        <div class="student-card">
+            <div class="student-head">
+                <span class="msg-avatar" style="background:${student.avatarColor}">${spaceEsc(student.name.trim().charAt(0).toUpperCase())}</span>
+                <div class="student-head-info">
+                    <p class="space-next-course">${spaceEsc(student.name)}</p>
+                    <p class="space-next-meta">${spaceEsc(classes.join(" · "))}</p>
+                </div>
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-msg-student="${spaceEsc(id)}">Message</button>
+            </div>
+            <p class="space-label">Badges</p>
+            <div class="badge-chips">${earned || '<span class="space-empty-inline">No badges yet.</span>'}</div>
+            ${unearned.length ? `
+            <div class="award-row">
+                <select class="mini-select" data-badge-select="${spaceEsc(id)}">
+                    ${unearned.map(b =>
+                        `<option value="${spaceEsc(b.id)}">${b.icon} ${spaceEsc(b.label)}</option>`).join("")}
+                </select>
+                <button type="button" class="btn btn-primary btn-small"
+                        data-badge-award="${spaceEsc(id)}">Award</button>
+            </div>` : ""}
+            <p class="space-label">Private note (students never see this)</p>
+            <textarea class="chat-input space-textarea" rows="2"
+                      data-note="${spaceEsc(id)}">${spaceEsc(db.notes[id] || "")}</textarea>
+            <div class="award-row">
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-note-save="${spaceEsc(id)}">Save note</button>
+            </div>
+        </div>`;
+    }).join("") : '<p class="space-empty-inline">No students yet — create a class first.</p>';
+}
+
+/* ---------- teacher: MATERIALS ---------- */
+function renderTeacherMaterials(db, session) {
+    const courseSel = document.getElementById("tch-mat-course");
+    const list = document.getElementById("tch-materials");
+
+    if (courseSel) {
+        courseSel.innerHTML = teacherClasses(db, session).map(c =>
+            `<option value="${spaceEsc(c.title)}">${spaceEsc(c.title)}</option>`
+        ).join("");
+    }
+
+    if (list) {
+        const mine = db.materials.filter(m => m.teacher === session.id);
+        list.innerHTML = mine.length ? mine.map(m => `
+            <div class="file-row tpl-row">
+                <span class="file-type">${spaceTypeTag(m.fileName)}</span>
+                <div class="space-file-info">
+                    <p class="space-file-name-static">${spaceEsc(m.title)}</p>
+                    <p class="space-file-note">${spaceEsc(m.course)} &middot;
+                       ${spaceSize(m.sizeKB)} &middot; ${spaceAgo(m.minutesAgo)}</p>
+                </div>
+                <button type="button" class="admin-kick" data-del-material="${spaceEsc(m.id)}"
+                        title="Delete material">&times;</button>
+            </div>`).join("")
+        : '<p class="space-empty-inline">Nothing uploaded yet.</p>';
+    }
+}
+
+/* ---------- teacher: panel wiring ---------- */
+function wireTeacherPanels(db, session) {
+    /* class dropdown in the gradebook */
+    const gbSelect = document.getElementById("gb-class");
+    if (gbSelect) {
+        gbSelect.addEventListener("change", () => {
+            gbClassId = gbSelect.value;
+            closeGrader();
+            renderGradebook(db, session);
+        });
+    }
+
+    /* gradebook cells (delegated: the table re-renders a lot) */
+    const gbTable = document.getElementById("gb-table");
+    if (gbTable) {
+        gbTable.addEventListener("click", (event) => {
+            const cell = event.target.closest("[data-stu]");
+            if (!cell) return;
+            openGrader(db, session, cell.dataset.stu, cell.dataset.asg);
+        });
+    }
+
+    /* class cards: "Gradebook" jumps into the table for that class */
+    const classBox = document.getElementById("tch-classes");
+    if (classBox) {
+        classBox.addEventListener("click", (event) => {
+            const btn = event.target.closest("[data-gb-class]");
+            if (!btn) return;
+            gbClassId = btn.dataset.gbClass;
+            renderGradebook(db, session);
+            const navBtn = document.querySelector('.space-nav-btn[data-panel="gradebook"]');
+            if (navBtn) navBtn.click();
+        });
+    }
+
+    /* create a course instance */
+    const createBtn = document.getElementById("tch-new-create");
+    if (createBtn) {
+        createBtn.addEventListener("click", () => createTeacherInstance(db, session));
+    }
+
+    /* today's grading queue: jump straight to the grader */
+    const queue = document.getElementById("tch-ungraded-list");
+    if (queue) {
+        queue.addEventListener("click", (event) => {
+            const btn = event.target.closest("[data-grade-now]");
+            if (!btn) return;
+            const [asgId, stuId] = btn.dataset.gradeNow.split("|");
+            const asg = db.assignments.find(a => a.id === asgId);
+            if (asg) gbClassId = asg.classId;
+            renderGradebook(db, session);
+            const navBtn = document.querySelector('.space-nav-btn[data-panel="gradebook"]');
+            if (navBtn) navBtn.click();
+            openGrader(db, session, stuId, asgId);
+        });
+    }
+
+    /* new-message shortcut from the students list */
+    const studentsBox = document.getElementById("tch-students");
+    if (studentsBox) {
+        studentsBox.addEventListener("click", (event) => {
+            const msg = event.target.closest("[data-msg-student]");
+            if (msg) {
+                const navBtn = document.querySelector('.space-nav-btn[data-panel="inbox"]');
+                if (navBtn) navBtn.click();
+                if (window.spaceInboxOpenWith) {
+                    window.spaceInboxOpenWith(msg.dataset.msgStudent, "");
+                }
+                return;
+            }
+
+            const removeBtn = event.target.closest("[data-badge-remove]");
+            if (removeBtn) {
+                const badgeId = removeBtn.dataset.badgeRemove;
+                const stuId = removeBtn.dataset.student;
+                db.earnedBadges[stuId] = (db.earnedBadges[stuId] || [])
+                    .filter(b => b.id !== badgeId);
+                spaceSave(db);
+                renderTeacherStudents(db, session);
+                spaceToast("Badge removed", "bad");
+                return;
+            }
+
+            const awardBtn = event.target.closest("[data-badge-award]");
+            if (awardBtn) {
+                const stuId = awardBtn.dataset.badgeAward;
+                const sel = studentsBox.querySelector(`[data-badge-select="${stuId}"]`);
+                if (!sel) return;
+                if (unlockBadge(db, stuId, sel.value)) {
+                    spaceSave(db);
+                    renderTeacherStudents(db, session);
+                    const badge = db.badgeCatalog.find(b => b.id === sel.value);
+                    spaceToast("Badge awarded — " + (badge ? badge.label : sel.value), "good");
+                }
+                return;
+            }
+
+            const noteBtn = event.target.closest("[data-note-save]");
+            if (noteBtn) {
+                const stuId = noteBtn.dataset.noteSave;
+                const area = studentsBox.querySelector(`[data-note="${stuId}"]`);
+                db.notes[stuId] = area ? area.value.trim() : "";
+                spaceSave(db);
+                spaceToast("Note saved", "good");
+            }
+        });
+    }
+
+    /* assignments form */
+    const createAsg = document.getElementById("tch-asg-create");
+    if (createAsg) {
+        createAsg.addEventListener("click", () => createTeacherAssignment(db, session));
+    }
+    const tplSave = document.getElementById("tch-asg-template-save");
+    if (tplSave) {
+        tplSave.addEventListener("click", () => {
+            const form = readAsgForm(db);
+            if (!form.title) return spaceToast("Give the template a title", "bad");
+            db.assignmentTemplates.push({
+                id: "tpl-" + Date.now(),
+                kind: form.kind,
+                title: form.title,
+                instructions: form.instructions,
+                allowed: form.allowed.length ? form.allowed : ["pdf"],
+                maxMB: form.maxMB,
+                maxScore: form.maxScore
+            });
+            spaceSave(db);
+            renderTeacherAssignments(db, session);
+            spaceToast("Saved as a reusable template", "good");
+        });
+    }
+    const tplBox = document.getElementById("tch-templates");
+    if (tplBox) {
+        tplBox.addEventListener("click", (event) => {
+            const use = event.target.closest("[data-use-template]");
+            if (use) {
+                const tpl = db.assignmentTemplates.find(t =>
+                    t.id === use.dataset.useTemplate);
+                if (tpl) fillAsgForm(tpl);
+                return;
+            }
+            const del = event.target.closest("[data-del-template]");
+            if (del) {
+                spaceConfirm({
+                    title: "Delete this template?",
+                    text: "The template disappears for every future assignment.",
+                    okLabel: "Delete",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    db.assignmentTemplates = db.assignmentTemplates
+                        .filter(t => t.id !== del.dataset.delTemplate);
+                    spaceSave(db);
+                    renderTeacherAssignments(db, session);
+                    spaceToast("Template deleted", "bad");
+                });
+            }
+        });
+    }
+    const asgList = document.getElementById("tch-asg-list");
+    if (asgList) {
+        asgList.addEventListener("click", (event) => {
+            const del = event.target.closest("[data-del-asg]");
+            if (!del) return;
+            spaceConfirm({
+                title: "Delete this assignment?",
+                text: "It disappears from every student's dashboard, including any grades.",
+                okLabel: "Delete",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                db.assignments = db.assignments.filter(a =>
+                    a.id !== del.dataset.delAsg);
+                spaceSave(db);
+                renderTeacherAssignments(db, session);
+                renderGradebook(db, session);
+                renderTeacherToday(db, session);
+                spaceToast("Assignment deleted", "bad");
+            });
+        });
+    }
+
+    /* materials */
+    const addMat = document.getElementById("tch-mat-add");
+    if (addMat) {
+        addMat.addEventListener("click", () => {
+            const course = document.getElementById("tch-mat-course");
+            const title = document.getElementById("tch-mat-title");
+            const file = document.getElementById("tch-mat-file");
+            if (!file || !file.files || !file.files.length) {
+                return spaceToast("Pick a file first", "bad");
+            }
+            const f = file.files[0];
+            db.materials.push({
+                id: "mat-" + Date.now(),
+                course: course ? course.value : "General",
+                title: title && title.value.trim() ? title.value.trim() : f.name,
+                fileName: f.name,
+                sizeKB: Math.max(1, Math.round(f.size / 1024)),
+                teacher: session.id,
+                minutesAgo: 0
+            });
+            spaceSave(db);
+            if (title) title.value = "";
+            file.value = "";
+            renderTeacherMaterials(db, session);
+            spaceToast("Material added — students can see it now", "good");
+        });
+    }
+    const matList = document.getElementById("tch-materials");
+    if (matList) {
+        matList.addEventListener("click", (event) => {
+            const del = event.target.closest("[data-del-material]");
+            if (!del) return;
+            spaceConfirm({
+                title: "Delete this material?",
+                text: "Students will no longer see it in their Materials panel.",
+                okLabel: "Delete",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                db.materials = db.materials.filter(m =>
+                    m.id !== del.dataset.delMaterial);
+                spaceSave(db);
+                renderTeacherMaterials(db, session);
+                spaceToast("Material deleted", "bad");
+            });
+        });
+    }
 }
 
 /* ============ 11. PUBLIC PROFILE (profile.html) ============

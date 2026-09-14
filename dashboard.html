@@ -129,6 +129,9 @@
                     <button type="button" class="space-nav-btn"
                             data-panel="achievements">Achievements</button>
                     <button type="button" class="space-nav-btn"
+                            data-panel="messages">Messages
+                        <span class="nav-badge" id="stu-inbox-badge" hidden></span></button>
+                    <button type="button" class="space-nav-btn"
                             data-panel="profile">Profile</button>
                 </aside>
 
@@ -263,6 +266,26 @@
                             <div class="space-card">
                                 <h2>Still to unlock</h2>
                                 <div class="badge-grid" id="space-badges-locked"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- MESSAGES (inbox with teachers) ---- -->
+                    <section class="space-panel" data-panel="messages">
+                        <div class="space-card">
+                            <h2>Messages</h2>
+                            <div class="inbox-grid">
+                                <div class="inbox-threads" id="stu-inbox-list"></div>
+                                <div class="inbox-view" id="stu-inbox-view"></div>
+                            </div>
+                            <h3 class="space-subhead">New message</h3>
+                            <div class="inbox-compose">
+                                <select class="mini-select" id="stu-inbox-new-to"></select>
+                                <input type="text" class="chat-input" id="stu-inbox-new-text"
+                                       placeholder="Write a message to your teacher&hellip;"
+                                       autocomplete="off">
+                                <button type="button" class="btn btn-primary btn-small"
+                                        id="stu-inbox-new-send">Send</button>
                             </div>
                         </div>
                     </section>

@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 2;   /* v2: Phase 1 (courses, materials, badges) */
+const SPACE_DB_VERSION = 3;   /* v3: Phase 2 (instances, templates, inbox) */
 
 const SPACE_SEED = {
-    version: 2,
+    version: 3,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -137,6 +137,33 @@ const SPACE_SEED = {
         }
     ],
 
+    /* ============ COURSE INSTANCES (teacher's "classes") ============
+       A course instance = one real group running a level+skill:
+       "B1 · Conversation — Evening Group". Teachers own these,
+       open their rooms, manage rosters and create new ones in the
+       studio. `code` is the join code students type in their
+       Classes panel. */
+    courseInstances: [
+        {
+            id: "cls-1", title: "B1 · Conversation", level: "B1", skill: "Conversation",
+            teacher: "Tch-1001", students: ["Stu-2001", "Stu-2002", "Stu-2003"],
+            meetings: "Mondays & Wednesdays · 18:00", code: "B1-SPEAK",
+            sessionsTotal: 14, progress: 64
+        },
+        {
+            id: "cls-2", title: "B1 · Grammar", level: "B1", skill: "Grammar",
+            teacher: "Tch-1001", students: ["Stu-2001", "Stu-2004"],
+            meetings: "Saturdays · 10:00", code: "B1-GRAM",
+            sessionsTotal: 14, progress: 48
+        },
+        {
+            id: "cls-3", title: "A2 · Writing", level: "A2", skill: "Writing",
+            teacher: "Tch-2002", students: ["Stu-2001", "Stu-2003"],
+            meetings: "Fridays · 16:00", code: "A2-WRIT",
+            sessionsTotal: 20, progress: 82
+        }
+    ],
+
     /* ============ ANNOUNCEMENTS ============ */
     announcements: [
         {
@@ -163,7 +190,8 @@ const SPACE_SEED = {
        enforces them again on the server — always). */
     assignments: [
         {
-            id: "asg-1", course: "B1 · Grammar", skill: "Grammar",
+            id: "asg-1", classId: "cls-2", kind: "worksheet",
+            course: "B1 · Grammar", skill: "Grammar",
             title: "Present Perfect — worksheet 4",
             instructions: "Complete exercises 1–12. Write FULL sentences, not just the verb.",
             createdBy: "Tch-1001", dueInHours: 20, maxScore: 100,
@@ -179,7 +207,8 @@ const SPACE_SEED = {
             }
         },
         {
-            id: "asg-2", course: "B1 · Grammar", skill: "Grammar",
+            id: "asg-2", classId: "cls-2", kind: "worksheet",
+            course: "B1 · Grammar", skill: "Grammar",
             title: "Present Perfect vs Past Simple",
             instructions: "Write 10 pairs of sentences showing the difference.",
             createdBy: "Tch-1001", dueInHours: -30, maxScore: 100,
@@ -212,12 +241,48 @@ const SPACE_SEED = {
             }
         },
         {
-            id: "asg-3", course: "A2 · Writing", skill: "Writing",
+            id: "asg-4", classId: "cls-1", kind: "task",
+            course: "B1 · Conversation", skill: "Conversation",
+            title: "Record a 1-minute self-introduction (write it first)",
+            instructions: "Write 60–90 words you would say out loud. Bring it to class and record it there.",
+            createdBy: "Tch-1001", dueInHours: 6 * 24, maxScore: 50,
+            allowed: ["pdf", "docx", "txt"], maxMB: 5,
+            submissions: {}
+        },
+        {
+            id: "asg-3", classId: "cls-3", kind: "task",
+            course: "A2 · Writing", skill: "Writing",
             title: "A short story about your week",
             instructions: "80–120 words. Use at least five past-simple verbs.",
             createdBy: "Tch-2002", dueInHours: 3 * 24, maxScore: 50,
             allowed: ["pdf", "docx", "txt", "jpg", "png"], maxMB: 5,
             submissions: {}
+        }
+    ],
+
+    /* ============ ASSIGNMENT TEMPLATES ============
+       Pre-made task/worksheet/exam shells. "Use template" fills
+       the create form; "Save as template" stores the current
+       form values here, so a teacher never retypes a standard
+       exam twice. */
+    assignmentTemplates: [
+        {
+            id: "tpl-1", kind: "worksheet",
+            title: "Vocabulary worksheet — unit ___",
+            instructions: "Complete the vocabulary exercises. Write full sentences.",
+            allowed: ["pdf", "docx", "jpg", "png"], maxMB: 5, maxScore: 100
+        },
+        {
+            id: "tpl-2", kind: "task",
+            title: "Short writing task",
+            instructions: "Write 80–120 words. Use the grammar from this week's lesson.",
+            allowed: ["pdf", "docx", "txt"], maxMB: 5, maxScore: 50
+        },
+        {
+            id: "tpl-3", kind: "exam",
+            title: "Monthly progress exam",
+            instructions: "Answer every section. No notes or dictionaries. 45 minutes.",
+            allowed: ["pdf", "docx", "jpg", "png"], maxMB: 10, maxScore: 100
         }
     ],
 
@@ -251,6 +316,47 @@ const SPACE_SEED = {
             teacher: "Tch-1001", minutesAgo: 43 * 60
         }
     ],
+
+    /* ============ INBOX (direct messages) ============
+       One shared thread list for teachers AND students. Each
+       thread has exactly TWO participants; every screen computes
+       "the other person" from the session. readBy[] tracks who
+       has seen each message (a real backend would do this per
+       account, server-side). */
+    messages: [
+        {
+            id: "thr-1", participants: ["Tch-1001", "Stu-2001"],
+            subject: "Present Perfect worksheet",
+            messages: [
+                { by: "Stu-2001", text: "Hi! Can I get a hint for question 4?", minutesAgo: 180, readBy: ["Tch-1001"] },
+                { by: "Tch-1001", text: "Of course — think about 'for' vs 'since'.", minutesAgo: 150, readBy: ["Stu-2001"] },
+                { by: "Stu-2001", text: "Got it, thank you! One more thing — is question 7 like question 4?", minutesAgo: 24, readBy: [] },
+                { by: "Tch-1001", text: "Exactly like it — same pattern, different time word.", minutesAgo: 18, readBy: [] }
+            ]
+        },
+        {
+            id: "thr-2", participants: ["Tch-1001", "Stu-2002"],
+            subject: "Speaking club",
+            messages: [
+                { by: "Tch-1001", text: "Great progress in today's class, Ryan!", minutesAgo: 320, readBy: ["Stu-2002"] },
+                { by: "Stu-2002", text: "Thanks! Is the club open to A2 students too?", minutesAgo: 300, readBy: ["Tch-1001"] }
+            ]
+        },
+        {
+            id: "thr-3", participants: ["Tch-2002", "Stu-2003"],
+            subject: "Essay feedback",
+            messages: [
+                { by: "Stu-2003", text: "Should I rewrite the ending of my story?", minutesAgo: 45, readBy: [] }
+            ]
+        }
+    ],
+
+    /* ============ TEACHER NOTES (private, teacher-only) ============
+       Keyed by student id. Students never see these. */
+    notes: {
+        "Stu-2001": "Strong grammar, needs confidence in speaking. Encourage longer answers.",
+        "Stu-2002": "Very active in chat. Remind about homework deadlines."
+    },
 
     /* ============ ACHIEVEMENTS ============
        badgeCatalog = every badge that exists.

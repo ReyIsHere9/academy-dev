@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 6 — ACCOUNT SPACES: TEACHER STUDIO
+     (academy-dev — generic version)
+     ------------------------------------------------------------
+     EVERYTHING A TEACHER RUNS A CLASS WITH:
+       1. Today      — stats, next class, grading queue, activity
+       2. My classes — course instances + "create a new class"
+       3. Gradebook  — the interactive student × assignment matrix;
+                       click any cell to grade, comment or message
+       4. Assignments— create task/worksheet/exam, save + reuse
+                       templates, assign to a class, delete
+       5. Inbox      — direct messages with students
+       6. Students   — badges (award + remove) and private notes
+       7. Materials  — upload files students can open
+       8. Profile    — avatar, bio, accent color, notifications
+
+     HOW IT WORKS: <body class="role-teacher"> unlocks the teacher
+     sections of js/space.js — one engine shared with the student
+     dashboard. All changes land in the demo store, so students
+     see them immediately on their side.
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teaching | The English Academy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+    <script src="js/session.js"></script>
+</head>
+
+<body class="role-teacher">
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <a href="login.html" class="btn-login">Login / Register</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <section class="section space-section">
+        <div class="container">
+
+            <!-- ========== THE GATE ========== -->
+            <div class="space-gate" id="space-gate">
+                <h1>Teacher studio</h1>
+                <p id="space-gate-msg">Log in to open your studio.</p>
+                <div class="space-quick-row">
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="teacher">Continue as Ms. Demo Teacher</button>
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="student">As Demo Student</button>
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="admin">As Site Admin</button>
+                </div>
+                <div class="space-quick-row space-gate-extra">
+                    <a id="space-gate-go" class="btn btn-primary" href="#" hidden>
+                        Go to my dashboard</a>
+                    <button type="button" class="btn btn-ghost" id="space-gate-logout" hidden>
+                        Log out</button>
+                </div>
+                <p class="muted small">Demo accounts need no password — one click logs you in.</p>
+            </div>
+
+            <!-- ========== THE SHELL ========== -->
+            <div class="space-layout" id="space-shell" hidden>
+
+                <aside class="space-nav">
+                    <p class="space-nav-title" id="space-nav-title">Teacher studio</p>
+                    <button type="button" class="space-nav-btn is-active"
+                            data-panel="today">Today</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="classes">My classes</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="gradebook">Gradebook</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="assignments">Assignments</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="inbox">Inbox
+                        <span class="nav-badge" id="tch-inbox-badge" hidden></span></button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="students">Students</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="materials">Materials</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="profile">Profile</button>
+                </aside>
+
+                <div class="space-main">
+
+                    <!-- greeting bar -->
+                    <div class="space-greeting">
+                        <span class="space-avatar" id="space-avatar">T</span>
+                        <div>
+                            <h1 id="space-greeting-name">Welcome back.</h1>
+                            <p class="space-sub" id="space-role-label">Teacher studio</p>
+                        </div>
+                        <span class="space-date-chip" id="space-date"></span>
+                        <button type="button" class="btn btn-ghost btn-small"
+                                id="space-logout">Log out</button>
+                    </div>
+
+                    <!-- ---- TODAY ---- -->
+                    <section class="space-panel is-active" data-panel="today">
+                        <div class="space-stack">
+                            <div class="space-stat-row">
+                                <div class="space-stat">
+                                    <strong id="tstat-students">0</strong>
+                                    <span>Students</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="tstat-ungraded">0</strong>
+                                    <span>Waiting to grade</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="tstat-unread">0</strong>
+                                    <span>Unread messages</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="tstat-next">&mdash;</strong>
+                                    <span>Next class</span>
+                                </div>
+                            </div>
+
+                            <div class="space-grid-2">
+                                <div class="space-card">
+                                    <h2>Next live class</h2>
+                                    <div id="tch-next-class"></div>
+                                </div>
+                                <div class="space-card">
+                                    <h2>Waiting for a grade</h2>
+                                    <div id="tch-ungraded-list"></div>
+                                </div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Recent activity</h2>
+                                <div id="tch-activity"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- MY CLASSES ---- -->
+                    <section class="space-panel" data-panel="classes">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>My classes</h2>
+                                <div id="tch-classes"></div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Create a new class</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="tch-new-level">Course</label>
+                                        <select class="chat-input" id="tch-new-level"></select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-new-group">Group name (optional)</label>
+                                        <input type="text" class="chat-input" id="tch-new-group"
+                                               placeholder="e.g. Evening Group" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-new-meetings">Meetings</label>
+                                        <input type="text" class="chat-input" id="tch-new-meetings"
+                                               placeholder="e.g. Mondays &middot; 18:00" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-new-sessions">Planned sessions</label>
+                                        <input type="number" class="chat-input" id="tch-new-sessions"
+                                               value="10" min="1">
+                                    </div>
+                                </div>
+                                <p class="space-label">Enroll students</p>
+                                <div class="pick-grid" id="tch-new-students"></div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary"
+                                            id="tch-new-create">Create class</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- GRADEBOOK ---- -->
+                    <section class="space-panel" data-panel="gradebook">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <div class="gb-head">
+                                    <h2>Gradebook</h2>
+                                    <select class="mini-select" id="gb-class"></select>
+                                </div>
+                                <div id="gb-table"></div>
+                            </div>
+
+                            <!-- the grader opens here when a cell is clicked -->
+                            <div class="space-card" id="gb-grader" hidden>
+                                <div id="gb-grader-card"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- ASSIGNMENTS ---- -->
+                    <section class="space-panel" data-panel="assignments">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>Create assignment</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="tch-asg-title">Title</label>
+                                        <input type="text" class="chat-input" id="tch-asg-title"
+                                               placeholder="e.g. Unit 5 review quiz" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-asg-class">Class</label>
+                                        <select class="chat-input" id="tch-asg-class"></select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-asg-kind">Kind</label>
+                                        <select class="chat-input" id="tch-asg-kind">
+                                            <option value="task">Task</option>
+                                            <option value="worksheet">Worksheet</option>
+                                            <option value="exam">Exam</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-asg-due">Due in</label>
+                                        <div class="inline-pair">
+                                            <input type="number" class="chat-input" id="tch-asg-due"
+                                                   value="48" min="1">
+                                            <select class="chat-input" id="tch-asg-due-unit">
+                                                <option value="hours">hours</option>
+                                                <option value="days">days</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-asg-max">Max score</label>
+                                        <input type="number" class="chat-input" id="tch-asg-max"
+                                               value="100" min="1">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="tch-asg-maxmb">Max file size (MB)</label>
+                                        <input type="number" class="chat-input" id="tch-asg-maxmb"
+                                               value="5" min="1">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="tch-asg-instructions">Instructions</label>
+                                    <textarea class="chat-input space-textarea" id="tch-asg-instructions"
+                                              rows="3"
+                                              placeholder="What exactly should students do?"></textarea>
+                                </div>
+                                <p class="space-label">Allowed file types</p>
+                                <div class="check-row">
+                                    <label><input type="checkbox" name="tch-asg-type" value="pdf" checked> PDF</label>
+                                    <label><input type="checkbox" name="tch-asg-type" value="docx" checked> DOCX</label>
+                                    <label><input type="checkbox" name="tch-asg-type" value="txt"> TXT</label>
+                                    <label><input type="checkbox" name="tch-asg-type" value="jpg" checked> JPG</label>
+                                    <label><input type="checkbox" name="tch-asg-type" value="png" checked> PNG</label>
+                                </div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary"
+                                            id="tch-asg-create">Create &amp; assign</button>
+                                    <button type="button" class="btn btn-ghost"
+                                            id="tch-asg-template-save">Save as template</button>
+                                </div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Templates</h2>
+                                <div id="tch-templates"></div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>My assignments</h2>
+                                <div id="tch-asg-list"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- INBOX ---- -->
+                    <section class="space-panel" data-panel="inbox">
+                        <div class="space-card">
+                            <h2>Inbox</h2>
+                            <div class="inbox-grid">
+                                <div class="inbox-threads" id="tch-inbox-list"></div>
+                                <div class="inbox-view" id="tch-inbox-view"></div>
+                            </div>
+                            <h3 class="space-subhead">New message</h3>
+                            <div class="inbox-compose">
+                                <select class="mini-select" id="tch-inbox-new-to"></select>
+                                <input type="text" class="chat-input" id="tch-inbox-new-text"
+                                       placeholder="Write a message to a student&hellip;"
+                                       autocomplete="off">
+                                <button type="button" class="btn btn-primary btn-small"
+                                        id="tch-inbox-new-send">Send</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- STUDENTS ---- -->
+                    <section class="space-panel" data-panel="students">
+                        <div class="space-card">
+                            <h2>Students</h2>
+                            <div class="student-grid" id="tch-students"></div>
+                        </div>
+                    </section>
+
+                    <!-- ---- MATERIALS ---- -->
+                    <section class="space-panel" data-panel="materials">
+                        <div class="space-card">
+                            <h2>Materials</h2>
+                            <div class="form-grid-2">
+                                <div class="field">
+                                    <label class="space-label" for="tch-mat-course">Course</label>
+                                    <select class="chat-input" id="tch-mat-course"></select>
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="tch-mat-title">Title (optional)</label>
+                                    <input type="text" class="chat-input" id="tch-mat-title"
+                                           placeholder="Uses the file name if empty" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="space-submit-row mat-upload-row">
+                                <input type="file" id="tch-mat-file" class="chat-input">
+                                <button type="button" class="btn btn-primary"
+                                        id="tch-mat-add">Add material</button>
+                            </div>
+                            <div class="file-list" id="tch-materials"></div>
+                        </div>
+                    </section>
+
+                    <!-- ---- PROFILE ---- -->
+                    <section class="space-panel" data-panel="profile">
+                        <div class="space-grid-2">
+                            <div class="space-card">
+                                <h2>Public profile</h2>
+                                <div class="field">
+                                    <label class="space-label" for="prof-name">Display name</label>
+                                    <input type="text" class="chat-input" id="prof-name"
+                                           autocomplete="off">
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="prof-bio">Short bio</label>
+                                    <textarea class="chat-input space-textarea" id="prof-bio"
+                                              rows="3"
+                                              placeholder="A line about you - shown on your public profile"></textarea>
+                                </div>
+                                <p class="space-label">Avatar color</p>
+                                <div class="space-swatches" id="prof-avatar-colors"></div>
+                                <a class="btn btn-ghost btn-small" id="prof-public-link"
+                                   href="profile.html" target="_blank" rel="noopener">
+                                   View public profile</a>
+                            </div>
+                            <div class="space-card">
+                                <h2>Personalization</h2>
+                                <p class="space-label">Accent color for your space</p>
+                                <div class="space-swatches" id="prof-accent-colors"></div>
+                                <h3 class="space-subhead">Notifications</h3>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-assignments">
+                                    Email me when students submit work</label>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-announcements">
+                                    Email me class announcements</label>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-chat">
+                                    Ping me on chat mentions</label>
+                            </div>
+                        </div>
+                        <div class="space-card space-save-row">
+                            <button type="button" class="btn btn-primary" id="prof-save">
+                                Save changes</button>
+                            <span class="muted small" id="prof-status"></span>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/auth-data.js"></script>
+    <script src="js/levels-data.js"></script>
+    <script src="js/space-data.js"></script>
+    <script src="js/space.js"></script>
+
+</body>
+</html>

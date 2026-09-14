@@ -186,7 +186,8 @@ Style rules:
 7. If you touched any JS, verify it: `node --check js/<file>.js`
    plus the DOM-stub smoke harnesses in
    `%TEMP%\opencode\` (class-smoke / teach-smoke / admin-smoke /
-   space-student-smoke) — every engine has one.
+   space-student-smoke / space-flows-smoke / space-teach-smoke /
+   space-teach-flows-smoke) — every engine has boot + flows tests.
 8. Update PLAN.md: tick the checkbox.
 9. Commit with a clear message: `git add .` →
    `git commit -m "Add Module 4: about page"` → `git push origin main`
