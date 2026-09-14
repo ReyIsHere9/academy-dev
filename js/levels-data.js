@@ -1,12 +1,12 @@
-﻿/* ============================================================
-   COURSE DATA â€” the A1 to C2 levels of the academy
+/* ============================================================
+   COURSE DATA — the A1 to C2 levels of the academy
    ------------------------------------------------------------
-   LESSON â€” SEPARATING DATA FROM DISPLAY:
+   LESSON — SEPARATING DATA FROM DISPLAY:
    All information about the courses lives HERE, in one file.
-   The pages know NOTHING about this content â€” they only
+   The pages know NOTHING about this content — they only
    display whatever this file contains.
 
-   LESSON â€” ARRAYS & OBJECTS:
+   LESSON — ARRAYS & OBJECTS:
    [ ... ] = an ARRAY  = an ordered list of things
    { ... } = an OBJECT = one thing, with named properties
 
@@ -25,32 +25,47 @@
    THE 4 SKILLS: Speaking, Writing, Reading, Listening.
    ============================================================ */
 
+/* ============================================================
+   [BUGFIX LOG #9] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:  every dash and middle dot in this file showed as
+                mojibake on the site ("A1 Â· Beginner", "â€”").
+   WHY:         the file was saved in the WRONG ENCODING at some
+                point: UTF-8 bytes got re-saved as if they were
+                Windows-1252 characters, so each special character
+                became TWO garbled ones. The browser then showed
+                the garbled pair faithfully.
+   THE FIX:     replaced the garbled pairs with the real
+                characters (— and ·). Files must stay UTF-8.
+   PREVENTION:  keep HTML meta charset UTF-8 + editors on UTF-8;
+                if text suddenly shows "Â" or "â€", it's this bug.
+   ============================================================ */
+
 const LEVELS = [
 
     {
         id: "A1",
-        label: "A1 Â· Beginner",
+        label: "A1 · Beginner",
         tagline: "From zero to your first real sentences.",
         summary: "The perfect starting point. You'll learn the most useful everyday words, understand simple phrases, and build your very first sentences with confidence.",
         grammar: [
-            "Present simple â€” to be & have",
+            "Present simple — to be & have",
             "Articles: a / an / the",
             "Plurals & basic countable nouns",
             "Question words: what / who / where / when",
-            "Present continuous â€” happening now",
+            "Present continuous — happening now",
             "Prepositions: in / on / at (basics)"
         ],
         skills: [
             {
                 name: "Speaking",
-                blurb: "Introduce yourself, greet people and say what you need â€” slowly but surely.",
+                blurb: "Introduce yourself, greet people and say what you need — slowly but surely.",
                 lessons: "10 lessons",
                 points: ["Greetings and introductions", "Introducing yourself", "Simple daily needs"],
                 units: [
-                    "Hello & goodbye â€” greetings that open doors",
-                    "Who am I? â€” name, age, country, job",
-                    "Numbers & prices â€” shopping out loud",
-                    "Asking for things â€” polite questions"
+                    "Hello & goodbye — greetings that open doors",
+                    "Who am I? — name, age, country, job",
+                    "Numbers & prices — shopping out loud",
+                    "Asking for things — polite questions"
                 ]
             },
             {
@@ -59,10 +74,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["The alphabet and spelling", "Short notes and messages", "Filling in simple forms"],
                 units: [
-                    "Letters & sounds â€” spelling your world",
-                    "My name & my day â€” first sentences",
-                    "Short messages â€” texts that communicate",
-                    "Simple forms â€” writing your details"
+                    "Letters & sounds — spelling your world",
+                    "My name & my day — first sentences",
+                    "Short messages — texts that communicate",
+                    "Simple forms — writing your details"
                 ]
             },
             {
@@ -71,10 +86,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Recognising common words", "Signs and labels", "Very short stories"],
                 units: [
-                    "Word spotting â€” the 100 most useful words",
-                    "Signs & labels â€” reading the street",
-                    "Menus & price lists â€” reading to choose",
-                    "Mini-stories â€” your first full texts"
+                    "Word spotting — the 100 most useful words",
+                    "Signs & labels — reading the street",
+                    "Menus & price lists — reading to choose",
+                    "Mini-stories — your first full texts"
                 ]
             },
             {
@@ -83,10 +98,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Numbers and prices", "Slow dialogues", "Understanding simple questions"],
                 units: [
-                    "Ear training â€” sounds of English",
-                    "Numbers in the wild â€” prices, times, dates",
-                    "Slow conversations â€” catching questions",
-                    "Simple stories â€” following the plot"
+                    "Ear training — sounds of English",
+                    "Numbers in the wild — prices, times, dates",
+                    "Slow conversations — catching questions",
+                    "Simple stories — following the plot"
                 ]
             }
         ]
@@ -94,12 +109,12 @@ const LEVELS = [
 
     {
         id: "A2",
-        label: "A2 Â· Elementary",
+        label: "A2 · Elementary",
         tagline: "Everyday situations, handled with confidence.",
         summary: "Step beyond survival English: describe your life, make plans, shop, travel and handle routine situations without panic.",
         grammar: [
-            "Past simple â€” regular & irregular verbs",
-            "Present perfect â€” experiences",
+            "Past simple — regular & irregular verbs",
+            "Present perfect — experiences",
             "Countable vs uncountable: some / any / much / many",
             "Comparatives & superlatives",
             "Future plans: going to vs will",
@@ -112,10 +127,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Talking about routines", "Making plans", "Shopping and ordering"],
                 units: [
-                    "Daily life â€” routines & habits out loud",
-                    "People & places â€” describing what you know",
-                    "Plans & invitations â€” making them happen",
-                    "Orders & requests â€” shops, cafÃ©s, travel"
+                    "Daily life — routines & habits out loud",
+                    "People & places — describing what you know",
+                    "Plans & invitations — making them happen",
+                    "Orders & requests — shops, cafÃ©s, travel"
                 ]
             },
             {
@@ -124,10 +139,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Short paragraphs", "Simple emails", "Describing people and places"],
                 units: [
-                    "Paragraphs â€” one idea, five sentences",
-                    "Emails â€” friendly and clear",
-                    "Describing people â€” look, character, style",
-                    "Describing places â€” your town on paper"
+                    "Paragraphs — one idea, five sentences",
+                    "Emails — friendly and clear",
+                    "Describing people — look, character, style",
+                    "Describing places — your town on paper"
                 ]
             },
             {
@@ -136,10 +151,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Short articles", "Personal messages", "Simple instructions"],
                 units: [
-                    "Short articles â€” news you can use",
-                    "Messages & postcards â€” reading between lines",
-                    "Instructions â€” following directions safely",
-                    "Mini-stories â€” past tense in action"
+                    "Short articles — news you can use",
+                    "Messages & postcards — reading between lines",
+                    "Instructions — following directions safely",
+                    "Mini-stories — past tense in action"
                 ]
             },
             {
@@ -148,10 +163,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Announcements", "Everyday conversations", "Directions and instructions"],
                 units: [
-                    "Announcements â€” stations, airports, shops",
-                    "Directions â€” finding your way by ear",
-                    "Everyday dialogues â€” two people, one story",
-                    "Phone talk â€” understanding without seeing"
+                    "Announcements — stations, airports, shops",
+                    "Directions — finding your way by ear",
+                    "Everyday dialogues — two people, one story",
+                    "Phone talk — understanding without seeing"
                 ]
             }
         ]
@@ -159,15 +174,15 @@ const LEVELS = [
 
     {
         id: "B1",
-        label: "B1 Â· Intermediate",
+        label: "B1 · Intermediate",
         tagline: "Express opinions, plans and experiences.",
         summary: "The breakthrough level. You can handle most travel situations, describe experiences and events, and give reasons and explanations for your opinions.",
         grammar: [
             "Present perfect vs past simple",
             "First & second conditionals",
-            "Reported speech â€” basics",
-            "Passive voice â€” present & past",
-            "Relative clauses â€” who / which / that",
+            "Reported speech — basics",
+            "Passive voice — present & past",
+            "Relative clauses — who / which / that",
             "Modals of advice: should / must / might"
         ],
         skills: [
@@ -177,10 +192,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Opinions and reasons", "Describing experiences", "Handling surprises"],
                 units: [
-                    "Opinions â€” agree, disagree, explain why",
-                    "Storytelling â€” past experiences with life",
-                    "Advice & suggestions â€” helping others speak",
-                    "Handling surprises â€” problems without panic"
+                    "Opinions — agree, disagree, explain why",
+                    "Storytelling — past experiences with life",
+                    "Advice & suggestions — helping others speak",
+                    "Handling surprises — problems without panic"
                 ]
             },
             {
@@ -189,10 +204,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Structured paragraphs", "Informal letters", "Describing a story"],
                 units: [
-                    "Structuring texts â€” intro, body, ending",
-                    "Informal letters â€” writing to friends",
-                    "Describing a story â€” sequence & suspense",
-                    "Reviews â€” opinions on paper that persuade"
+                    "Structuring texts — intro, body, ending",
+                    "Informal letters — writing to friends",
+                    "Describing a story — sequence & suspense",
+                    "Reviews — opinions on paper that persuade"
                 ]
             },
             {
@@ -201,10 +216,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Magazine articles", "Stories and chapters", "Finding key details"],
                 units: [
-                    "Magazine articles â€” interest & information",
-                    "Stories & chapters â€” characters and plots",
-                    "Scanning â€” finding details fast",
-                    "Understanding tone â€” serious, funny, critical"
+                    "Magazine articles — interest & information",
+                    "Stories & chapters — characters and plots",
+                    "Scanning — finding details fast",
+                    "Understanding tone — serious, funny, critical"
                 ]
             },
             {
@@ -213,10 +228,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Radio shows", "Conversations about travel", "Explanations and talks"],
                 units: [
-                    "Radio & podcasts â€” ideas without pictures",
-                    "Travel talk â€” plans, bookings, problems",
-                    "Explanations â€” teachers, guides, how-tos",
-                    "Group conversations â€” three voices and more"
+                    "Radio & podcasts — ideas without pictures",
+                    "Travel talk — plans, bookings, problems",
+                    "Explanations — teachers, guides, how-tos",
+                    "Group conversations — three voices and more"
                 ]
             }
         ]
@@ -224,15 +239,15 @@ const LEVELS = [
 
     {
         id: "B2",
-        label: "B2 Â· Upper-Intermediate",
+        label: "B2 · Upper-Intermediate",
         tagline: "Fluency on familiar AND abstract topics.",
         summary: "Here is where English stops being work and starts being natural: complex texts, abstract ideas, and confident interaction with native speakers.",
         grammar: [
             "Third conditional & mixed conditionals",
-            "Narrative tenses â€” past in motion",
+            "Narrative tenses — past in motion",
             "Advanced passive & causative (have something done)",
-            "Reported speech â€” advanced shifts",
-            "Modals of deduction â€” must have / can't have",
+            "Reported speech — advanced shifts",
+            "Modals of deduction — must have / can't have",
             "Linkers: despite / whereas / as long as"
         ],
         skills: [
@@ -242,10 +257,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Debating ideas", "Explaining complex things", "Natural small talk"],
                 units: [
-                    "Debating â€” structure, evidence, rebuttal",
-                    "Abstract topics â€” ideas without fear",
-                    "Explaining complex things â€” simple again",
-                    "Small talk mastery â€” effortless connection"
+                    "Debating — structure, evidence, rebuttal",
+                    "Abstract topics — ideas without fear",
+                    "Explaining complex things — simple again",
+                    "Small talk mastery — effortless connection"
                 ]
             },
             {
@@ -254,10 +269,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Structured essays", "Formal letters", "Clear arguments"],
                 units: [
-                    "Essays â€” thesis, argument, conclusion",
-                    "Formal letters & emails â€” professional voice",
-                    "Arguing on paper â€” persuasion with logic",
-                    "Editing â€” clarity, flow, word economy"
+                    "Essays — thesis, argument, conclusion",
+                    "Formal letters & emails — professional voice",
+                    "Arguing on paper — persuasion with logic",
+                    "Editing — clarity, flow, word economy"
                 ]
             },
             {
@@ -266,10 +281,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["News articles", "Contemporary fiction", "Reading between the lines"],
                 units: [
-                    "News analysis â€” facts, bias, stance",
-                    "Contemporary fiction â€” style & subtext",
-                    "Opinion pieces â€” spotting persuasion",
-                    "Reading between the lines â€” implication"
+                    "News analysis — facts, bias, stance",
+                    "Contemporary fiction — style & subtext",
+                    "Opinion pieces — spotting persuasion",
+                    "Reading between the lines — implication"
                 ]
             },
             {
@@ -278,10 +293,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["News broadcasts", "Documentaries", "Natural-speed dialogues"],
                 units: [
-                    "News broadcasts â€” fast, dense, factual",
-                    "Documentaries â€” narrative & technical talk",
-                    "Interviews â€” questions and evasions",
-                    "Natural-speed dialogue â€” idioms included"
+                    "News broadcasts — fast, dense, factual",
+                    "Documentaries — narrative & technical talk",
+                    "Interviews — questions and evasions",
+                    "Natural-speed dialogue — idioms included"
                 ]
             }
         ]
@@ -289,16 +304,16 @@ const LEVELS = [
 
     {
         id: "C1",
-        label: "C1 Â· Advanced",
+        label: "C1 · Advanced",
         tagline: "Precision, nuance and natural flow.",
-        summary: "Advanced mastery: complex texts on any topic, flexible and effective use of language for study, work and social life â€” with style and subtlety.",
+        summary: "Advanced mastery: complex texts on any topic, flexible and effective use of language for study, work and social life — with style and subtlety.",
         grammar: [
-            "Inversion for emphasis â€” rarely, no sooner, never",
-            "Cleft sentences â€” what matters is...",
-            "Advanced conditionals â€” unless, otherwise, had I known",
-            "Hedging & nuance â€” tends to, arguably, somewhat",
+            "Inversion for emphasis — rarely, no sooner, never",
+            "Cleft sentences — what matters is...",
+            "Advanced conditionals — unless, otherwise, had I known",
+            "Hedging & nuance — tends to, arguably, somewhat",
             "Collocations & fixed phrases",
-            "Register shifting â€” formal to informal fluidly"
+            "Register shifting — formal to informal fluidly"
         ],
         skills: [
             {
@@ -307,10 +322,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Idioms and nuance", "Persuasion and tone", "Abstract discussion"],
                 units: [
-                    "Idioms & nuance â€” saying it exactly",
-                    "Persuasion â€” rhetoric with a light touch",
-                    "Debate at C1 â€” complex, calm, precise",
-                    "Fluency â€” hesitation-free expression"
+                    "Idioms & nuance — saying it exactly",
+                    "Persuasion — rhetoric with a light touch",
+                    "Debate at C1 — complex, calm, precise",
+                    "Fluency — hesitation-free expression"
                 ]
             },
             {
@@ -319,10 +334,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Persuasive essays", "Reports and reviews", "Stylistic variety"],
                 units: [
-                    "Persuasive essays â€” arguments that land",
-                    "Reports â€” analysis in formal prose",
-                    "Stylistic variety â€” sentences with rhythm",
-                    "Polishing â€” advanced editing craft"
+                    "Persuasive essays — arguments that land",
+                    "Reports — analysis in formal prose",
+                    "Stylistic variety — sentences with rhythm",
+                    "Polishing — advanced editing craft"
                 ]
             },
             {
@@ -331,10 +346,10 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Literary texts", "Specialised articles", "Implied meaning"],
                 units: [
-                    "Literary texts â€” language as art",
-                    "Specialised articles â€” science, law, opinion",
-                    "Satire & irony â€” reading the unsaid",
-                    "Critical reading â€” evaluating sources"
+                    "Literary texts — language as art",
+                    "Specialised articles — science, law, opinion",
+                    "Satire & irony — reading the unsaid",
+                    "Critical reading — evaluating sources"
                 ]
             },
             {
@@ -343,10 +358,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Fast speech and accents", "Interviews and debates", "Listening for tone"],
                 units: [
-                    "Accents of the world â€” ear expansion",
-                    "Debates & interviews â€” layered argument",
-                    "Humour & tone â€” catching the joke",
-                    "Academic listening â€” lectures that teach"
+                    "Accents of the world — ear expansion",
+                    "Debates & interviews — layered argument",
+                    "Humour & tone — catching the joke",
+                    "Academic listening — lectures that teach"
                 ]
             }
         ]
@@ -354,16 +369,16 @@ const LEVELS = [
 
     {
         id: "C2",
-        label: "C2 Â· Proficiency",
+        label: "C2 · Proficiency",
         tagline: "Near-native mastery of expression and style.",
         summary: "The summit. Understand everything heard or read with ease, and express yourself spontaneously, precisely and elegantly on the most complex subjects.",
         grammar: [
-            "Ellipsis & substitution â€” leaving words out naturally",
+            "Ellipsis & substitution — leaving words out naturally",
             "Fronting & thematic structure",
             "Idiomatic & phrasal mastery",
-            "Pragmatics â€” implicature & understatement",
-            "Style â€” rhythm, variation, cohesion",
-            "Register command â€” academic to creative"
+            "Pragmatics — implicature & understatement",
+            "Style — rhythm, variation, cohesion",
+            "Register command — academic to creative"
         ],
         skills: [
             {
@@ -372,10 +387,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["Precision vocabulary", "Humor and wordplay", "Command of style"],
                 units: [
-                    "Precision â€” the exactly-right word",
-                    "Wordplay & wit â€” language as play",
-                    "Impromptu speaking â€” mastery unscripted",
-                    "Command of style â€” from boardroom to stage"
+                    "Precision — the exactly-right word",
+                    "Wordplay & wit — language as play",
+                    "Impromptu speaking — mastery unscripted",
+                    "Command of style — from boardroom to stage"
                 ]
             },
             {
@@ -384,22 +399,22 @@ const LEVELS = [
                 lessons: "8 lessons",
                 points: ["Creative and formal prose", "Complex arguments", "Personal style"],
                 units: [
-                    "Creative prose â€” voice, imagery, flow",
-                    "Academic writing â€” precision at scale",
-                    "Complex arguments â€” layers of reasoning",
-                    "Personal style â€” finding your signature"
+                    "Creative prose — voice, imagery, flow",
+                    "Academic writing — precision at scale",
+                    "Complex arguments — layers of reasoning",
+                    "Personal style — finding your signature"
                 ]
             },
             {
                 name: "Reading",
-                blurb: "Read anything â€” including subtle, literary and academic texts.",
+                blurb: "Read anything — including subtle, literary and academic texts.",
                 lessons: "8 lessons",
                 points: ["Academic texts", "Classic literature", "Subtext and nuance"],
                 units: [
-                    "Classic literature â€” old English made new",
-                    "Academic papers â€” density decoded",
-                    "Subtext â€” everything unsaid matters",
-                    "Style analysis â€” deconstructing great prose"
+                    "Classic literature — old English made new",
+                    "Academic papers — density decoded",
+                    "Subtext — everything unsaid matters",
+                    "Style analysis — deconstructing great prose"
                 ]
             },
             {
@@ -408,10 +423,10 @@ const LEVELS = [
                 lessons: "10 lessons",
                 points: ["All accents and speeds", "Abstract lectures", "Implicit meaning"],
                 units: [
-                    "Every accent, every speed â€” total access",
-                    "Abstract lectures â€” ideas at full speed",
-                    "Implicit meaning â€” hearing what's implied",
-                    "Performance â€” comedy, drama, poetry by ear"
+                    "Every accent, every speed — total access",
+                    "Abstract lectures — ideas at full speed",
+                    "Implicit meaning — hearing what's implied",
+                    "Performance — comedy, drama, poetry by ear"
                 ]
             }
         ]
