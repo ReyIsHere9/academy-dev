@@ -5518,6 +5518,23 @@ html[data-theme="dark"] .danger-card h2 {
     .inbox-compose {
         flex-direction: column;
     }
+
+    .gb-head {
+        flex-wrap: wrap;
+    }
+
+    .admin-filter-row .chat-input {
+        width: 100%;
+    }
+
+    .pay-bar-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .pay-bar-label {
+        font-size: 0.8rem;
+    }
 }
 
 /* ================= POP-OUT CHAT WINDOW ================= */

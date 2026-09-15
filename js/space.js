@@ -2681,6 +2681,11 @@ function renderAdminUsers(db, session) {
         u.name.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
     list.sort((a, b) => a.id.localeCompare(b.id));
 
+    if (!list.length) {
+        box.innerHTML = '<p class="space-empty-inline">No users match that search.</p>';
+        return;
+    }
+
     box.innerHTML = `
     <div class="gb-scroll">
         <table class="gb-table admin-table">
@@ -2882,6 +2887,10 @@ function renderAdminPayments(db, session) {
 
     if (!box) return;
     const sorted = db.payments.slice().sort((a, b) => a.daysAgo - b.daysAgo);
+    if (!sorted.length) {
+        box.innerHTML = '<p class="space-empty-inline">No payment records yet.</p>';
+        return;
+    }
     box.innerHTML = `
     <div class="gb-scroll">
         <table class="gb-table admin-table">
@@ -3072,7 +3081,9 @@ function adminSetMedia(db, key, value, session) {
 function renderAdminClasses(db, session) {
     const box = document.getElementById("adm-classes");
     if (!box) return;
-    box.innerHTML = `
+    box.innerHTML = !db.courseInstances.length
+        ? '<p class="space-empty-inline">No classes yet — create one below.</p>'
+        : `
     <div class="gb-scroll">
         <table class="gb-table admin-table">
             <thead><tr>

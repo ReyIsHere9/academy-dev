@@ -194,6 +194,8 @@ Style rules:
    space-admin-flows-smoke / catalog-smoke / auth-smoke) —
    every engine has boot + flows tests, and overrides have
    their own harnesses.
+   ⚠️ These harnesses deliberately live OUTSIDE the repo —
+   they are development tools, never committed to git.
 8. Run the duplicate-id scanner (`%TEMP%\opencode\dup-id-check.js`)
    after editing ANY page: `getElementById` returns the FIRST
    match, so a repeated id silently paints content into the wrong
