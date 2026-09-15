@@ -28,6 +28,11 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `lesson.html` | Lesson player — video slot, objectives, vocabulary, sections, quiz, unit sidebar with progress (authored lessons + generated outlines for every unit) |
 | `checkout.html` | Demo checkout — subscriptions, lifetime one-course offer, single courses, coupons; orders become admin billing records |
 | `blog.html` / `post.html` | Blog index (featured, categories, live search) + article pages |
+| `test.html` | Free placement test — 12 questions, per-band scoring, recommended level + plan |
+| `register.html` | Create a student account (demo store; login accepts it immediately) |
+| `recordings.html` | Replay library behind the class REC button |
+| `certificate.html` | Course completion certificate (printable, stable serial) |
+| `privacy.html` / `terms.html` / `404.html` | Legal stubs + friendly not-found page |
 | `class.html` | Live class room — student view (chat show/hide drawer, pop-out chat, theater / lights-out / fullscreen modes) |
 | `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat, view modes) |
 | `class-admin.html` | Admin room — everything the teacher has, plus an Admin tab: manage people, broadcast, empty the stage, clear chat, activity log |
@@ -102,6 +107,12 @@ local server (clipboard, some media APIs are stricter on `file://`).
   console's billing records and enroll students automatically.
 - **Blog** — data-driven articles with categories, search, related
   posts and editorial blocks (quotes, tips, lists).
+- **Launch hygiene** — favicon, 404 page, meta/Open Graph tags,
+  robots.txt + sitemap, legal stubs, skip-link, focus rings,
+  reduced-motion support, print styles and a cookie/honesty notice.
+- **Notifications + certificates** — a derived bell (unread messages,
+  due work, grading queue, payment attention) on every dashboard, and
+  a printable certificate issued when a course's units are complete.
 
 ## Demo vs. real
 

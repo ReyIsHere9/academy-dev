@@ -1,28 +1,11 @@
 <!DOCTYPE html>
 <!-- ============================================================
-     MODULE 7 — LESSON PLAYER (lesson.html)
+     CLASS RECORDINGS (recordings.html)
      ------------------------------------------------------------
-     ONE page plays EVERY lesson. The URL asks the question:
-        lesson.html?level=B1&skill=Speaking&unit=2
-
-     WHAT'S HERE:
-       1. The player column — video slot, objectives, vocabulary,
-          lesson sections (text / tip / practice) and a quiz
-          with instant feedback.
-       2. The sidebar — every unit of the course with completion
-          checkmarks, course progress, prev/next navigation.
-       3. "Mark lesson complete" — saves to the demo store and
-          updates the student's course progress on their dashboard.
-
-     TWO KINDS OF LESSON (see js/lessons-data.js):
-       AUTHORED — hand-written showcase lessons.
-       OUTLINE  — units without an authored lesson still open a
-                  real page built from the catalog: goals, grammar
-                  focus and a concrete practice task.
-
-     ⚠️ The video slot is honest: recordings arrive with the
-     backend phase. The lesson text, quiz and progress tracking
-     are all REAL front-end logic.
+     The replay library behind the class room's REC button.
+     Rows come from the demo store (db.recordings in
+     js/space-data.js); playback is honest demo — the player
+     says so. Linked from the student dashboard's Classes panel.
      ============================================================ -->
 
 <html lang="en">
@@ -30,12 +13,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson | The English Academy</title>
+    <title>Class Recordings | The English Academy</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <meta name="description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
-    <meta property="og:title" content="Lesson | The English Academy">
-    <meta property="og:description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
-    <meta property="og:type" content="website">
+    <meta name="description" content="Replay past live classes from The English Academy.">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
@@ -92,8 +72,26 @@
         </div>
     </header>
 
-    <!-- js/lesson.js paints the whole page into #lesson-root -->
-    <div id="lesson-root"></div>
+    <section class="hero hero-sm">
+        <div class="container">
+            <h1>Class Recordings</h1>
+            <p class="hero-subtitle">
+                Missed a class or want to hear it twice? Every recorded
+                session lands here.
+            </p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <!-- player slot appears here when you press play -->
+            <div id="recording-player"></div>
+            <div class="card">
+                <h2>Library</h2>
+                <div id="recordings-root"></div>
+            </div>
+        </div>
+    </section>
 
     <!-- ================= FOOTER ================= -->
     <footer class="site-footer">
@@ -113,12 +111,9 @@
     <!-- ================= SCRIPTS ================= -->
     <script src="js/pricing-data.js"></script>
     <script src="js/pricing.js"></script>
-    <script src="js/levels-data.js"></script>
-    <script src="js/catalog.js"></script>
     <script src="js/space-data.js"></script>
     <script src="js/space.js"></script>
-    <script src="js/lessons-data.js"></script>
-    <script src="js/lesson.js"></script>
+    <script src="js/recordings.js"></script>
 
 </body>
 </html>

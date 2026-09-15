@@ -81,6 +81,24 @@ function demoIsSuspended(userId) {
     }
 }
 
+/* accounts created in the demo store (register.html / admin
+   console) are not in the static DEMO_USERS list — find them by
+   profile, case-insensitively like the demo users */
+function demoStoreUser(rawId) {
+    try {
+        const db = JSON.parse(localStorage.getItem("academySpaceDB"));
+        if (db && db.profiles) {
+            const key = Object.keys(db.profiles).find(k =>
+                k.toLowerCase() === String(rawId).toLowerCase());
+            if (key) {
+                const p = db.profiles[key];
+                return { id: key, password: null, role: p.role, name: p.name };
+            }
+        }
+    } catch { /* no store yet */ }
+    return null;
+}
+
 function saveSession(user) {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({
         id: user.id, role: user.role, name: user.name
@@ -131,9 +149,12 @@ if (loginForm) {
         /* LESSON — GENERIC ERROR MESSAGES:
            Never reveal WHICH part was wrong ("no such user" vs
            "wrong password") — attackers harvest valid user IDs
-           that way. One vague message for both. */
-        const user = DEMO_USERS.find(u =>
+           that way. One vague message for both.
+           Lookup: static demo users FIRST, then store-created
+           accounts (register page / admin console). */
+        let user = DEMO_USERS.find(u =>
             u.id.toLowerCase() === id.toLowerCase());
+        if (!user) user = demoStoreUser(id);
 
         /* demoPasswordFor: store password (admin-reset) if present,
            otherwise the static demo password from auth-data.js */

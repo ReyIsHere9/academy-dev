@@ -363,6 +363,118 @@ function spaceConfirm(options) {
     });
 }
 
+/* ============ 2b. NOTIFICATION BELL ============
+   A tiny DERIVED notification center: nothing is stored — rows
+   are calculated from the store every time you open the bell.
+     student: unread messages, assignments due soon, fresh news
+     teacher: unread messages, submissions waiting for a grade
+     admin:   payments needing attention, fresh orders, signups
+   Clicking a row jumps straight to the right panel. */
+function bellRowsFor(db, session) {
+    const rows = [];
+    const fresh = 24 * 60;   // "fresh" = last 24 hours
+
+    if (SPACE_ROLE === "student") {
+        const unread = unreadTotal(db, session.id);
+        if (unread) rows.push({
+            text: unread + " unread message" + (unread === 1 ? "" : "s"),
+            panel: "messages"
+        });
+        studentAssignments(db, session)
+            .filter(a => {
+                const st = assignmentStatus(a, session.id);
+                return (st === "todo" || st === "overdue") && a.dueInHours <= 48;
+            })
+            .slice(0, 3)
+            .forEach(a => rows.push({
+                text: "\"" + a.title + "\" — " + dueLabel(a),
+                panel: "assignments"
+            }));
+        db.announcements.filter(a => a.minutesAgo <= fresh).slice(0, 2)
+            .forEach(a => rows.push({
+                text: "Announcement: " + a.text,
+                panel: "home"
+            }));
+    } else if (SPACE_ROLE === "teacher") {
+        const unread = unreadTotal(db, session.id);
+        if (unread) rows.push({
+            text: unread + " unread message" + (unread === 1 ? "" : "s"),
+            panel: "inbox"
+        });
+        let waiting = 0;
+        teacherAssignments(db, session).forEach(a =>
+            Object.values(a.submissions).forEach(s => { if (s.score == null) waiting++; }));
+        if (waiting) rows.push({
+            text: waiting + " submission" + (waiting === 1 ? "" : "s") +
+                  " waiting for a grade",
+            panel: "gradebook"
+        });
+    } else if (SPACE_ROLE === "admin") {
+        const attention = db.payments.filter(p => p.status !== "paid").length;
+        if (attention) rows.push({
+            text: attention + " payment" + (attention === 1 ? "" : "s") + " need attention",
+            panel: "payments"
+        });
+        const freshOrders = (db.orders || []).filter(o => o.minutesAgo <= fresh).length;
+        if (freshOrders) rows.push({
+            text: freshOrders + " new order" + (freshOrders === 1 ? "" : "s") + " in 24 h",
+            panel: "payments"
+        });
+    }
+    return rows;
+}
+
+function refreshBell(db, session) {
+    const count = document.getElementById("space-bell-count");
+    if (!count) return;
+    const n = bellRowsFor(db, session).length;
+    count.textContent = n;
+    count.hidden = n === 0;
+}
+
+function setupBell(db, session) {
+    const bell = document.getElementById("space-bell");
+    const panel = document.getElementById("space-bell-panel");
+    if (!bell || !panel) return;
+
+    function renderPanel() {
+        const rows = bellRowsFor(db, session);
+        panel.innerHTML = rows.length
+            ? rows.map(r => `
+                <button type="button" class="bell-row" data-bell-panel="${spaceEsc(r.panel)}">
+                    <span class="activity-dot"></span>
+                    <span>${spaceEsc(r.text)}</span>
+                </button>`).join("")
+            : '<p class="bell-empty">All caught up. 🎉</p>';
+    }
+
+    bell.addEventListener("click", () => {
+        const opening = panel.hidden;
+        if (opening) renderPanel();
+        panel.hidden = !opening;
+        refreshBell(db, session);
+    });
+
+    panel.addEventListener("click", (event) => {
+        const row = event.target.closest("[data-bell-panel]");
+        if (!row) return;
+        panel.hidden = true;
+        const navBtn = document.querySelector('.space-nav-btn[data-panel="' +
+            row.dataset.bellPanel + '"]');
+        if (navBtn) navBtn.click();
+    });
+
+    /* clicking anywhere else closes the panel */
+    document.addEventListener("click", (event) => {
+        if (!panel.hidden && !event.target.closest(".space-bell-wrap")) {
+            panel.hidden = true;
+        }
+    });
+
+    refreshBell(db, session);
+    window.spaceBellRefresh = () => refreshBell(db, session);
+}
+
 /* ============ STUDENT SPACE ====================================
    Everything below renders into dashboard.html's panels. Called
    once when the shell starts; each render function is
@@ -383,6 +495,7 @@ function startStudentSpace(db, session) {
     renderProfile(db, session);
     wireStudentPanels(db, session);
     wireProfilePanel(db, session);
+    setupBell(db, session);
     setupInbox(db, session.id, "stu", studentAudience(db, session));
 }
 
@@ -506,7 +619,11 @@ function renderCourses(db, session) {
                 </div>
                 <p class="space-next-meta space-continue-next">Next: ${spaceEsc(enr.nextLesson)}</p>
             </div>
-            <a class="btn btn-ghost btn-small" href="${href}">Open</a>
+            ${enr.progress >= 100 ? `
+                <a class="btn btn-primary btn-small"
+                   href="certificate.html?level=${encodeURIComponent(enr.level)}&skill=${encodeURIComponent(enr.skill)}">
+                   Certificate</a>` : `
+                <a class="btn btn-ghost btn-small" href="${href}">Open</a>`}
         </div>`;
     }).join("");
 }
@@ -1311,6 +1428,8 @@ function setupInbox(db, meId, prefix, audience) {
         }
         const stat = document.getElementById("tstat-unread");
         if (stat && SPACE_ROLE === "teacher") stat.textContent = n;
+        /* the bell counts unread messages too — keep it honest */
+        if (window.spaceBellRefresh) window.spaceBellRefresh();
     }
 
     function renderList() {
@@ -1518,6 +1637,7 @@ function startTeacherSpace(db, session) {
     renderTeacherMaterials(db, session);
     renderProfile(db, session);
     wireProfilePanel(db, session);
+    setupBell(db, session);
     setupInbox(db, session.id, "tch", teacherStudents(db, session));
     wireTeacherPanels(db, session);
 }
@@ -2569,6 +2689,7 @@ function startAdminSpace(db, session) {
     renderAdminBadges(db, session);
     renderProfile(db, session);
     wireProfilePanel(db, session);
+    setupBell(db, session);
     wireAdminPanels(db, session);
 }
 
@@ -3912,6 +4033,60 @@ function wireAdminPanels(db, session) {
             if (label) label.value = "";
             if (desc) desc.value = "";
             renderAdminBadges(db, session);
+        });
+    }
+
+    /* --- backup & restore --- */
+    const exportBtn = document.getElementById("adm-backup-export");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+            const blob = new Blob([JSON.stringify(db, null, 2)],
+                { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+            a.href = url;
+            a.download = "academy-backup-" + stamp + ".json";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            adminLog(db, "Downloaded a demo database backup");
+            spaceToast("Backup downloaded", "good");
+        });
+    }
+    const importBtn = document.getElementById("adm-backup-import");
+    const importFile = document.getElementById("adm-backup-file");
+    if (importBtn && importFile) {
+        importBtn.addEventListener("click", () => importFile.click());
+        importFile.addEventListener("change", () => {
+            if (!importFile.files || !importFile.files.length) return;
+            const file = importFile.files[0];
+            if (typeof FileReader === "undefined") return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                let parsed = null;
+                try { parsed = JSON.parse(reader.result); } catch { /* below */ }
+                if (!parsed || !parsed.profiles || !parsed.version) {
+                    spaceToast("That file doesn't look like an academy backup", "bad");
+                    return;
+                }
+                spaceConfirm({
+                    title: "Restore this backup?",
+                    text: "The current demo database is replaced by the file's data (" +
+                          Object.keys(parsed.profiles).length + " users, version " +
+                          parsed.version + ").",
+                    okLabel: "Restore backup",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    try {
+                        localStorage.setItem(SPACE_DB_KEY, JSON.stringify(parsed));
+                    } catch { /* storage full */ }
+                    window.location.reload();
+                });
+            };
+            reader.readAsText(file);
         });
     }
 

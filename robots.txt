@@ -1,0 +1,17 @@
+# robots.txt — tells search engines what to crawl.
+# The domain below is a PLACEHOLDER for the dev repo; on the live
+# repo it becomes the real Blue Seashell Academy domain.
+#
+# Everything public is crawlable; the account spaces are marked
+# "noindex" via meta tags on the pages themselves, and here we
+# simply don't advertise them.
+
+User-agent: *
+Allow: /
+Disallow: /dashboard.html
+Disallow: /dashboard-teacher.html
+Disallow: /dashboard-admin.html
+Disallow: /login.html
+Disallow: /recovery.html
+
+Sitemap: https://example-academy.com/sitemap.xml

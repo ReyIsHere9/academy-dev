@@ -32,6 +32,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing | The English Academy</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <meta name="description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
+    <meta property="og:title" content="Pricing | The English Academy">
+    <meta property="og:description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
+    <meta property="og:type" content="website">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
@@ -43,6 +48,8 @@
 </head>
 
 <body>
+
+    <a class="skip-link" href="#main-content">Skip to content</a>
 
     <!-- ================= HEADER (same on every page, now with
          the Pricing dropdown — see js/pricing.js) ================= -->
@@ -209,12 +216,57 @@
         </div>
     </section>
 
+    <!-- ================= FAQ =================
+         Native <details> accordions — zero JavaScript, keyboard
+         accessible for free. -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Questions, Answered</h2>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>Can I switch plans later?</summary>
+                    <p>Yes — upgrade or downgrade any time. The difference is
+                       prorated on your next bill, no phone calls needed.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>What if I miss a live class?</summary>
+                    <p>Re-book once for free, and the recording lands in your
+                       replay library the same day.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Do I need to know my level first?</summary>
+                    <p>No — take the free placement test. Twelve questions,
+                       about five minutes, and it recommends your starting
+                       level with a plan to match.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Is there a refund policy?</summary>
+                    <p>Subscriptions: cancel any time, no questions asked.
+                       Lifetime course purchases: 14 days, if you've completed
+                       fewer than two units.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>What happens when I finish a course?</summary>
+                    <p>Mark the last unit complete in the lesson player and a
+                       printable certificate is issued to your account
+                       automatically.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I pay per course instead of subscribing?</summary>
+                    <p>Yes — a single course is $120 once, or $249 for lifetime
+                       access to one course with all its current units.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
     <!-- ================= CTA BAND ================= -->
     <section class="section section-alt cta-band">
         <div class="container">
             <h2>Still not sure which plan fits?</h2>
             <p>Take the free level assessment — we'll point you to the right starting point.</p>
-            <a href="contact.html" class="btn btn-primary">Talk to Us</a>
+            <a href="test.html" class="btn btn-primary">Take the free level test</a>
+            <a href="contact.html" class="btn btn-ghost">Talk to Us</a>
         </div>
     </section>
 
@@ -227,6 +279,8 @@
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
             </nav>
         </div>
     </footer>

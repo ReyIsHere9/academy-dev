@@ -11,7 +11,9 @@
      LESSON — HTML PAGE ANATOMY (every page follows this):
      1. <!DOCTYPE html>   -> tells the browser "this is HTML5"
      2. <head>            -> invisible settings (title, styles)
-     3. <body>            -> EVERYTHING visible on the page
+     3. <body>
+
+    <a class="skip-link" href="#main-content">Skip to content</a>            -> EVERYTHING visible on the page
      ============================================================ -->
 
 <html lang="en">
@@ -32,6 +34,11 @@
          without thinking — they are mandatory boilerplate. -->
 
     <title>The English Academy | Learn English Your Way</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <meta name="description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
+    <meta property="og:title" content="The English Academy | Learn English Your Way">
+    <meta property="og:description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
+    <meta property="og:type" content="website">
     <!-- <title> = text shown on the BROWSER TAB.
          Also used by Google as the clickable headline. -->
 
@@ -48,6 +55,8 @@
 </head>
 
 <body>
+
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <!-- ============ VISIBLE CONTENT ============ -->
 
     <!-- ================= HEADER =================
@@ -243,6 +252,59 @@
         </div>
     </section>
 
+    <!-- ================= TESTIMONIALS =================
+         Social proof: three voices, one per level band. Static
+         content on purpose — testimonials are copy, not data. -->
+    <section class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">What Students Say</h2>
+            <div class="testimonial-grid">
+
+                <article class="testimonial-card">
+                    <p class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                    <p class="testimonial-quote">"I answered interview questions in
+                       English after nine months — and got the job. The speaking
+                       club did most of it."</p>
+                    <div class="testimonial-person">
+                        <span class="msg-avatar" style="background:#db2777">N</span>
+                        <div>
+                            <p class="testimonial-name">Negar</p>
+                            <p class="testimonial-role">B1 · Writing</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="testimonial-card">
+                    <p class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                    <p class="testimonial-quote">"The three-second rule from the blog
+                       changed everything. I stopped waiting for perfect sentences
+                       and started talking."</p>
+                    <div class="testimonial-person">
+                        <span class="msg-avatar" style="background:#d97706">R</span>
+                        <div>
+                            <p class="testimonial-name">Ryan</p>
+                            <p class="testimonial-role">A2 · Speaking</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="testimonial-card">
+                    <p class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                    <p class="testimonial-quote">"Graded feedback with real comments —
+                       not just points. That's why the worksheets actually stuck."</p>
+                    <div class="testimonial-person">
+                        <span class="msg-avatar" style="background:#059669">D</span>
+                        <div>
+                            <p class="testimonial-name">Demo Student</p>
+                            <p class="testimonial-role">B1 · Grammar</p>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
     <!-- ================= CALL TO ACTION =================
          A little motivational band before the footer. -->
     <section class="section cta-band">
@@ -265,6 +327,8 @@
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
             </nav>
         </div>
     </footer>

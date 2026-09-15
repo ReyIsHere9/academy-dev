@@ -6496,3 +6496,498 @@ html[data-theme="dark"] .quiz-result.is-wrong { color: #fca5a5; }
         padding: 40px 0;
     }
 }
+
+/* ================= SITE HYGIENE (accessibility + launch) =================
+   Skip link, focus rings, reduced motion, cookie bar, legal pages,
+   the 404 look. Everything here makes the site behave like a real
+   launch candidate, not just a pretty demo. */
+
+/* lets keyboard users jump past the header (hidden until focused) */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+    background-color: var(--color-primary);
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 0 0 10px 0;
+    font-weight: bold;
+}
+
+.skip-link:focus {
+    left: 0;
+}
+
+/* one visible focus style for every interactive element */
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* respect "reduce motion" — calm every animation and transition */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* cookie/honesty notice (once per browser, created by js/site.js) */
+.cookie-bar {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 95;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: space-between;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 12px 18px;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.25);
+    animation: lightsFade 0.25s ease;
+}
+
+.cookie-bar p {
+    font-size: 0.85rem;
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
+.cookie-bar a {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* legal placeholder pages */
+.legal-page {
+    max-width: 760px;
+}
+
+.legal-card {
+    margin-bottom: 18px;
+}
+
+.legal-card h2 {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.legal-card ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 8px;
+    font-size: 0.94rem;
+    line-height: 1.6;
+}
+
+/* 404 page */
+.error-code {
+    font-size: 4rem;
+    font-weight: bold;
+    line-height: 1;
+    color: var(--color-primary);
+    margin-bottom: 8px;
+}
+
+.not-found-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+/* ================= TESTIMONIALS + FAQ ================= */
+.testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.testimonial-card {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.testimonial-quote {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    font-style: italic;
+    margin: 0;
+}
+
+.testimonial-stars {
+    color: #f59e0b;
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+}
+
+.testimonial-person {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: auto;
+}
+
+.testimonial-person .msg-avatar {
+    flex: none;
+}
+
+.testimonial-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.testimonial-role {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+.faq-list {
+    display: grid;
+    gap: 10px;
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+.faq-item {
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background-color: var(--color-card-bg);
+}
+
+.faq-item summary {
+    cursor: pointer;
+    padding: 15px 18px;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::after {
+    content: "+";
+    color: var(--color-text-muted);
+    font-weight: normal;
+    flex: none;
+}
+
+.faq-item[open] summary::after {
+    content: "−";
+}
+
+.faq-item p {
+    padding: 0 18px 16px;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+/* ================= PLACEMENT TEST (test.html) ================= */
+.test-layout {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.test-progress-track {
+    height: 8px;
+    border-radius: 999px;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    margin: 10px 0 6px;
+}
+
+.test-progress-fill {
+    height: 100%;
+    width: var(--progress, 0%);
+    background-color: var(--color-primary);
+    transition: width 0.25s ease;
+}
+
+.test-count {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 18px;
+}
+
+.test-band-bars {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.band-row {
+    display: grid;
+    grid-template-columns: 46px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.band-row strong {
+    display: inline-block;
+    min-width: 26px;
+}
+
+.test-result-level {
+    font-size: 2.4rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+/* ================= RECORDINGS (recordings.html) ================= */
+.recording-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.recording-row:last-child {
+    border-bottom: none;
+}
+
+.recording-play {
+    width: 42px;
+    height: 42px;
+    flex: none;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-alt);
+    color: var(--color-primary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 3px;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.recording-play:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.08);
+}
+
+.recording-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.recording-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+/* ================= NOTIFICATION BELL (dashboards) ================= */
+.space-bell-wrap {
+    position: relative;
+}
+
+.space-bell {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-card-bg);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.space-bell:hover {
+    border-color: var(--space-accent, var(--color-primary));
+    color: var(--space-accent, var(--color-primary));
+}
+
+.space-bell svg {
+    width: 18px;
+    height: 18px;
+}
+
+.space-bell-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.66rem;
+    font-weight: bold;
+    border-radius: 999px;
+    padding: 1px 5px;
+    line-height: 1.5;
+}
+
+.space-bell-panel {
+    position: absolute;
+    right: 0;
+    top: 48px;
+    width: min(320px, 86vw);
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
+    padding: 8px;
+    z-index: 70;
+}
+
+.bell-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 0.86rem;
+    color: var(--color-text);
+}
+
+.bell-row:hover {
+    background-color: var(--color-bg-alt);
+}
+
+.bell-row .activity-dot {
+    margin-top: 6px;
+}
+
+.bell-empty {
+    padding: 12px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* ================= CERTIFICATE ================= */
+.certificate-sheet {
+    max-width: 860px;
+    margin: 10px auto;
+    background:
+        radial-gradient(900px 300px at 50% -10%, rgba(37, 99, 235, 0.08), transparent),
+        var(--color-card-bg);
+    border: 2px solid var(--color-border);
+    border-radius: 22px;
+    padding: 46px 54px;
+    text-align: center;
+    position: relative;
+}
+
+.certificate-inner {
+    border: 1px dashed var(--color-border);
+    border-radius: 16px;
+    padding: 36px 28px;
+}
+
+.certificate-kicker {
+    font-size: 0.8rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.certificate-name {
+    font-size: 2.4rem;
+    margin: 18px 0 6px;
+    color: var(--color-primary);
+}
+
+.certificate-course {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.certificate-line {
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    margin-bottom: 22px;
+}
+
+.certificate-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
+    padding-top: 16px;
+    margin-top: 26px;
+}
+
+.certificate-seal {
+    display: inline-flex;
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+    align-items: center;
+    justify-content: center;
+    font-family: Georgia, serif;
+    font-weight: bold;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+}
+
+/* printing: strip the site chrome, keep the certificate clean */
+@media print {
+    .site-header,
+    .site-footer,
+    .cookie-bar,
+    .skip-link,
+    .space-toasts,
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff;
+    }
+
+    .certificate-sheet {
+        border-color: #334155;
+        box-shadow: none;
+        margin: 0 auto;
+    }
+
+    .certificate-name {
+        color: #1d4ed8;
+    }
+}
+
+.not-found-links.is-center {
+    justify-content: center;
+}

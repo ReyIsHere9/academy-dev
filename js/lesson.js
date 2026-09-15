@@ -330,10 +330,26 @@ if (!root) {
                     : skill.units[nextIdx];
             }
 
+            const allDone = !wasDone && skill.units.every((u, i) =>
+                completedList(me.id).includes(level.id + "|" + skill.name + "|" + i));
+
             spaceSave(db);
-            spaceToast(wasDone
-                ? "Marked as not complete"
-                : "Lesson complete — progress updated", wasDone ? "bad" : "good");
+            spaceToast(allDone
+                ? "Course complete — your certificate is ready!"
+                : (wasDone
+                    ? "Marked as not complete"
+                    : "Lesson complete — progress updated"),
+                wasDone ? "bad" : "good");
+
+            /* finishing the LAST unit lands you on the certificate */
+            if (allDone) {
+                setTimeout(() => {
+                    window.location.href = "certificate.html?level=" +
+                        encodeURIComponent(level.id) + "&skill=" +
+                        encodeURIComponent(skill.name);
+                }, 1100);
+                return;
+            }
 
             /* repaint the page state (sidebar + button + meta) */
             window.location.reload();

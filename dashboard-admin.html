@@ -32,6 +32,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | The English Academy</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <meta name="description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
+    <meta property="og:title" content="Admin | The English Academy">
+    <meta property="og:description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="noindex">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
@@ -39,6 +45,8 @@
 </head>
 
 <body class="role-admin">
+
+    <a class="skip-link" href="#main-content">Skip to content</a>
 
     <!-- ================= HEADER (same on every page) ================= -->
     <header class="site-header">
@@ -147,6 +155,18 @@
                             <p class="space-sub" id="space-role-label">Admin console</p>
                         </div>
                         <span class="space-date-chip" id="space-date"></span>
+                        <div class="space-bell-wrap">
+                            <button type="button" class="space-bell" id="space-bell"
+                                    aria-label="Notifications">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                <span class="space-bell-count" id="space-bell-count" hidden></span>
+                            </button>
+                            <div class="space-bell-panel" id="space-bell-panel" hidden></div>
+                        </div>
                         <button type="button" class="btn btn-ghost btn-small"
                                 id="space-logout">Log out</button>
                     </div>
@@ -522,6 +542,21 @@
                                 </div>
                                 <div id="adm-announcements"></div>
                             </div>
+
+                            <div class="space-card">
+                                <h2>Backup &amp; restore</h2>
+                                <p class="space-hint">Download the whole demo database (users,
+                                   classes, assignments, payments, badges, photos&hellip;)
+                                   as a JSON file — or restore a previous backup.</p>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary"
+                                            id="adm-backup-export">Download backup</button>
+                                    <input type="file" id="adm-backup-file"
+                                           accept="application/json,.json" hidden>
+                                    <button type="button" class="btn btn-ghost"
+                                            id="adm-backup-import">Restore from file&hellip;</button>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -636,6 +671,8 @@
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
             </nav>
         </div>
     </footer>

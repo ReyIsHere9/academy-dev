@@ -1,28 +1,12 @@
 <!DOCTYPE html>
 <!-- ============================================================
-     MODULE 7 — LESSON PLAYER (lesson.html)
+     PRIVACY POLICY (demo placeholder)
      ------------------------------------------------------------
-     ONE page plays EVERY lesson. The URL asks the question:
-        lesson.html?level=B1&skill=Speaking&unit=2
-
-     WHAT'S HERE:
-       1. The player column — video slot, objectives, vocabulary,
-          lesson sections (text / tip / practice) and a quiz
-          with instant feedback.
-       2. The sidebar — every unit of the course with completion
-          checkmarks, course progress, prev/next navigation.
-       3. "Mark lesson complete" — saves to the demo store and
-          updates the student's course progress on their dashboard.
-
-     TWO KINDS OF LESSON (see js/lessons-data.js):
-       AUTHORED — hand-written showcase lessons.
-       OUTLINE  — units without an authored lesson still open a
-                  real page built from the catalog: goals, grammar
-                  focus and a concrete practice task.
-
-     ⚠️ The video slot is honest: recordings arrive with the
-     backend phase. The lesson text, quiz and progress tracking
-     are all REAL front-end logic.
+     ⚠️ HONESTY NOTE: this is a placeholder page, not legal advice.
+     It exists so the site has a real, linkable privacy page with
+     the right STRUCTURE. Before launch (live repo), a lawyer or a
+     generator service fills the bracketed details — especially
+     which analytics/provider data is collected.
      ============================================================ -->
 
 <html lang="en">
@@ -30,12 +14,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson | The English Academy</title>
+    <title>Privacy Policy | The English Academy</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <meta name="description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
-    <meta property="og:title" content="Lesson | The English Academy">
-    <meta property="og:description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
-    <meta property="og:type" content="website">
+    <meta name="description" content="How The English Academy handles your data — demo placeholder with the right structure.">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
@@ -92,8 +73,41 @@
         </div>
     </header>
 
-    <!-- js/lesson.js paints the whole page into #lesson-root -->
-    <div id="lesson-root"></div>
+    <section class="hero hero-sm">
+        <div class="container">
+            <h1>Privacy Policy</h1>
+            <p class="hero-subtitle">Plain-language version first, legal version later.</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container legal-page">
+
+            <div class="card legal-card">
+                <h2>The short version</h2>
+                <ul>
+                    <li>This demo site stores everything <strong>in your own browser</strong> (localStorage/sessionStorage). Nothing leaves your machine.</li>
+                    <li>Accounts, passwords, payments and photos in this dev build are <strong>demo data</strong>.</li>
+                    <li>The live version will collect only what a real academy needs: your account details, enrollments and payments.</li>
+                </ul>
+            </div>
+
+            <div class="card legal-card">
+                <h2>When this goes live (checklist)</h2>
+                <ul>
+                    <li><strong>What we collect:</strong> name, email, account activity, payment confirmations (never card numbers — our payment provider handles those).</li>
+                    <li><strong>Why:</strong> to run your account, deliver classes and lessons, and send the messages you asked for.</li>
+                    <li><strong>Where it lives:</strong> our hosting provider [provider name], with data processed under a signed agreement.</li>
+                    <li><strong>How long:</strong> while your account exists, plus [retention period] for billing records.</li>
+                    <li><strong>Your rights:</strong> access, export, correction and deletion — one email to <span data-site="contactEmail">hello@example-academy.com</span>.</li>
+                    <li><strong>Cookies:</strong> only what's needed to keep you logged in; analytics only with consent.</li>
+                </ul>
+            </div>
+
+            <p class="muted small">Last updated: this demo build. Replace this page before
+               launch — it's structure, not legal advice.</p>
+        </div>
+    </section>
 
     <!-- ================= FOOTER ================= -->
     <footer class="site-footer">
@@ -113,12 +127,6 @@
     <!-- ================= SCRIPTS ================= -->
     <script src="js/pricing-data.js"></script>
     <script src="js/pricing.js"></script>
-    <script src="js/levels-data.js"></script>
-    <script src="js/catalog.js"></script>
-    <script src="js/space-data.js"></script>
-    <script src="js/space.js"></script>
-    <script src="js/lessons-data.js"></script>
-    <script src="js/lesson.js"></script>
 
 </body>
 </html>

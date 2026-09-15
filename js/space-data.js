@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 5;   /* v5: Phase 5 (orders, lesson progress) */
+const SPACE_DB_VERSION = 6;   /* v6: recordings, placements, certificates */
 
 const SPACE_SEED = {
-    version: 5,
+    version: 6,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -455,6 +455,30 @@ const SPACE_SEED = {
         "Stu-2001": ["A1|Speaking|0", "A1|Writing|0", "A2|Writing|0", "A2|Writing|2"],
         "Stu-2003": ["A2|Writing|0"]
     },
+
+    /* ============ RECORDINGS (the replay library) ============
+       Behind the class room's REC button. recordings.html lists
+       these; playback itself is honest demo. */
+    recordings: [
+        { id: "rec-1", title: "Present Perfect — full class", course: "B1 · Grammar",
+          teacher: "Tch-1001", minutes: 54, sizeMB: 240, daysAgo: 2 },
+        { id: "rec-2", title: "Conversation practice: travel stories", course: "B1 · Conversation",
+          teacher: "Tch-1001", minutes: 48, sizeMB: 210, daysAgo: 4 },
+        { id: "rec-3", title: "Paragraph structure workshop", course: "A2 · Writing",
+          teacher: "Tch-2002", minutes: 41, sizeMB: 180, daysAgo: 6 },
+        { id: "rec-4", title: "Listening lab: fast speech", course: "B1 · Grammar",
+          teacher: "Tch-1001", minutes: 37, sizeMB: 160, daysAgo: 9 }
+    ],
+
+    /* ============ PLACEMENT TEST RESULTS ============
+       test.html saves here for signed-in students:
+       { "Stu-2001": { level, correct, total, minutesAgo } } */
+    placements: {},
+
+    /* ============ ISSUED CERTIFICATES ============
+       Key: "studentId|level|skill" -> { issuedMinutesAgo, serial }.
+       Written on the FIRST certificate view so the date is stable. */
+    certificates: {},
 
     /* ============ ACTIVITY LOG (admin / teacher overview) ============ */
     activity: [

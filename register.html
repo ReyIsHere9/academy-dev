@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <!-- ============================================================
-     MODULE: LOGIN / ENTRY PAGE  (academy-dev — generic version)
+     REGISTER / ENROLLMENT (register.html)
      ------------------------------------------------------------
-     WHAT'S HERE:
-       1. User ID + Password form (with the blinking-eye reveal)
-       2. "Forgot password?" link -> recovery.html
-       3. Demo session panel (greets you + logout)
-       4. Demo credentials hint box
+     Completes the auth loop: login.html had no "create account"
+     door. This page creates a STUDENT account in the demo store
+     (js/space-data.js):
+       - a unique User ID (Stu-3001, Stu-3002, ...)
+       - the profile (name, email, avatar color, prefs)
+       - the credential (login works immediately after)
+     Then it signs you in and drops you on the dashboard.
 
-     ⚠️ IMPORTANT: this login is FRONT-END THEATRE.
-     The password check happens in the browser, so it is NOT
-     real security — it's the UI + flow, ready for the day we
-     add a real backend. Full explanation in js/auth.js.
+     ⚠️ Demo-level only: validation and storage happen in the
+     browser. A real build posts to the server, which hashes the
+     password and creates the account there. See js/auth.js.
      ============================================================ -->
 
 <html lang="en">
@@ -19,17 +20,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In | The English Academy</title>
+    <title>Create Account | The English Academy</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <meta name="description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
-    <meta property="og:title" content="Log In | The English Academy">
-    <meta property="og:description" content="The English Academy - live English classes, self-paced courses, lessons and a blog. Hand-built demo site.">
-    <meta property="og:type" content="website">
+    <meta name="description" content="Create your free student account at The English Academy.">
     <meta name="robots" content="noindex">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
-          rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
@@ -44,11 +38,7 @@
     <header class="site-header">
         <div class="container header-inner">
             <a href="./" class="logo">The English Academy</a>
-
-            <!-- LOGIN / REGISTER: left side of the header,
-                 distinct blue so it stands out from the bar -->
             <a href="login.html" class="btn-login">Login / Register</a>
-
             <nav class="main-nav">
                 <a href="./">Home</a>
                 <a href="courses.html">Courses</a>
@@ -66,7 +56,6 @@
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
             </nav>
-
             <button type="button" id="theme-toggle" class="theme-toggle"
                     aria-label="Switch to dark mode" aria-pressed="false">
                 <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
@@ -91,36 +80,39 @@
         </div>
     </header>
 
-    <!-- ================= LOGIN CARD ================= -->
+    <!-- ================= REGISTER CARD ================= -->
     <section class="section auth-section">
         <div class="container">
             <div class="card auth-card">
 
-                <h1 class="auth-title">Welcome back</h1>
+                <h1 class="auth-title">Create your account</h1>
                 <p class="auth-sub">
-                    Log in with your User ID — admin, Tch-… (teachers)
-                    or Stu-… (students).
+                    Free to create. Take the placement test, browse the
+                    lessons and join live classes when you enroll.
                 </p>
 
-                <!-- ===== the form (hidden once logged in) ===== -->
-                <form id="login-form" novalidate>
+                <form id="register-form" novalidate>
 
                     <div class="field">
-                        <label for="login-id">User ID</label>
-                        <input type="text" id="login-id" name="userid"
-                               placeholder="admin · Tch-1001 · Stu-2001"
-                               autocomplete="username" required>
+                        <label for="reg-name">Full name</label>
+                        <input type="text" id="reg-name" name="name"
+                               placeholder="e.g. Sara Ahmadi"
+                               autocomplete="name" required>
                     </div>
 
                     <div class="field">
-                        <label for="login-pass">Password</label>
-                        <div class="password-wrap">
-                            <input type="password" id="login-pass" name="password"
-                                   placeholder="Your password"
-                                   autocomplete="current-password" required>
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" name="email"
+                               placeholder="you@example.com"
+                               autocomplete="email" required>
+                    </div>
 
-                            <!-- THE BLINKING EYE: toggles password
-                                 visibility (see js/auth.js) -->
+                    <div class="field">
+                        <label for="reg-pass">Password</label>
+                        <div class="password-wrap">
+                            <input type="password" id="reg-pass" name="password"
+                                   placeholder="At least 8 characters"
+                                   autocomplete="new-password" required>
                             <button type="button" class="password-toggle"
                                     aria-label="Show password" aria-pressed="false">
                                 <svg class="icon icon-eye" viewBox="0 0 24 24" fill="none"
@@ -141,41 +133,42 @@
                         </div>
                     </div>
 
-                    <p class="auth-error" id="login-error" hidden></p>
+                    <div class="field">
+                        <label for="reg-pass2">Confirm password</label>
+                        <input type="password" id="reg-pass2" name="password2"
+                               placeholder="Type it again"
+                               autocomplete="new-password" required>
+                    </div>
 
-                    <button type="submit" class="btn btn-primary btn-block">Log In</button>
+                    <div class="field">
+                        <label for="reg-level">Where do you think you are? (optional)</label>
+                        <select id="reg-level" class="chat-input">
+                            <option value="">Not sure — take the placement test</option>
+                        </select>
+                    </div>
+
+                    <label class="switch-row">
+                        <input type="checkbox" id="reg-terms">
+                        I agree to the <a href="terms.html">terms</a> and
+                        <a href="privacy.html">privacy policy</a>.
+                    </label>
+
+                    <p class="auth-error" id="register-error" hidden></p>
+
+                    <button type="submit" class="btn btn-primary btn-block">Create account</button>
                 </form>
 
-                <!-- ===== session panel (revealed after login) ===== -->
-                <div class="form-success" id="session-panel" hidden>
-                    <h3>Welcome!</h3>
-                    <p id="session-text"></p>
-                    <!-- the button text/href for the right role is set
-                         by js/auth.js via dashboardFor() -->
-                    <div class="session-actions">
-                        <a href="dashboard.html" class="btn btn-primary btn-block"
-                           id="session-dashboard">Open my dashboard</a>
-                        <button type="button" id="logout-btn"
-                                class="btn btn-ghost btn-block">Log out</button>
-                    </div>
+                <div class="form-success" id="register-success" hidden>
+                    <h3>Welcome aboard!</h3>
+                    <p id="register-success-text"></p>
                 </div>
 
                 <p class="auth-alt">
-                    <a href="recovery.html">Forgot your password?</a>
+                    Already have an account? <a href="login.html">Log in</a>.
                 </p>
                 <p class="auth-alt">
-                    New here? Accounts open with enrollment —
-                    <a href="contact.html">talk to us</a>.
+                    Prefer a placement first? <a href="test.html">Take the free level test</a>.
                 </p>
-
-                <!-- ===== demo hint (remove for the live site) ===== -->
-                <div class="demo-hint">
-                    <strong>DEMO credentials</strong> (front-end demo only —
-                    real security arrives with the server):<br>
-                    <code>admin</code> / <code>Admin#2026</code> ·
-                    <code>Tch-1001</code> / <code>Teacher#2026</code> ·
-                    <code>Stu-2001</code> / <code>Student#2026</code>
-                </div>
 
             </div>
         </div>
@@ -199,8 +192,11 @@
     <!-- ================= SCRIPTS ================= -->
     <script src="js/pricing-data.js"></script>
     <script src="js/pricing.js"></script>
-    <script src="js/auth-data.js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/levels-data.js"></script>
+    <script src="js/catalog.js"></script>
+    <script src="js/space-data.js"></script>
+    <script src="js/space.js"></script>
+    <script src="js/register.js"></script>
 
 </body>
 </html>

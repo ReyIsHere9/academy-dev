@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- sitemap.xml — the list of public pages for search engines.
+     PLACEHOLDER domain (example-academy.com) until the live
+     rebrand; then swap every URL for the real domain. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url><loc>https://example-academy.com/</loc></url>
+    <url><loc>https://example-academy.com/courses.html</loc></url>
+    <url><loc>https://example-academy.com/pricing.html</loc></url>
+    <url><loc>https://example-academy.com/blog.html</loc></url>
+    <url><loc>https://example-academy.com/about.html</loc></url>
+    <url><loc>https://example-academy.com/contact.html</loc></url>
+    <url><loc>https://example-academy.com/test.html</loc></url>
+    <url><loc>https://example-academy.com/register.html</loc></url>
+    <url><loc>https://example-academy.com/lesson.html</loc></url>
+    <url><loc>https://example-academy.com/privacy.html</loc></url>
+    <url><loc>https://example-academy.com/terms.html</loc></url>
+</urlset>

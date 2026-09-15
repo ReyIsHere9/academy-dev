@@ -26,6 +26,32 @@ function siteStore() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    /* ---- accessibility: make the skip link work ----
+       Pages don't hand-write id="main-content" on their first
+       section, so we add it here — one line instead of 20 edits. */
+    const firstSection = document.querySelector("section");
+    if (firstSection && !firstSection.id) {
+        firstSection.id = "main-content";
+    }
+
+    /* ---- cookie notice (once per browser, demo-level) ---- */
+    try {
+        if (!localStorage.getItem("academyCookiesOk")) {
+            const bar = document.createElement("div");
+            bar.className = "cookie-bar";
+            bar.innerHTML = `
+                <p>This demo keeps everything in your own browser —
+                   no tracking, no cookies from us.
+                   <a href="privacy.html">Read the privacy page</a>.</p>
+                <button type="button" class="btn btn-ghost btn-small">Got it</button>`;
+            bar.querySelector("button").addEventListener("click", () => {
+                localStorage.setItem("academyCookiesOk", "1");
+                bar.remove();
+            });
+            document.body.appendChild(bar);
+        }
+    } catch { /* storage blocked: skip the notice */ }
+
     const db = siteStore();
     if (!db) return;
 

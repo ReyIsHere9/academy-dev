@@ -29,6 +29,13 @@ in the private academy-live repo.
 - [x] **Lesson player module** — `lesson.html` + `js/lessons-data.js` + `js/lesson.js`: authored showcase lessons (objectives, vocabulary, sections, quizzes with instant feedback) plus a generated outline lesson for EVERY other unit (never a dead link). Course pages link each unit to its lesson; the sidebar tracks completion checkmarks; "mark lesson complete" saves to the demo store and syncs the student's course progress
 - [x] **Pricing / checkout (course selling)** — `checkout.html` + `js/checkout.js`: sells subscriptions (live interval switching), the lifetime single-course offer, and single courses; demo coupon codes; shape-only card validation (never stored); orders create payment records the admin console sees instantly; course purchases auto-enroll logged-in students
 - [x] **Blog module** — `blog.html` / `post.html` + `js/blog-data.js` + `js/blog.js`: featured article, category chips, live search, article pages with paragraphs/lists/quotes/tip boxes, author cards, tags, share button and related posts. Blog link added to every header and footer
+- [x] **Placement test** — `test.html` + `js/test.js`: 12 questions across CEFR bands, per-band scoring, recommended level + matching plan, saved to student accounts (`db.placements`)
+- [x] **Register / enrollment** — `register.html` + `js/register.js`: creates a real student account in the demo store (unique Stu-ID, profile, credential), signs in, lands on the dashboard; login now accepts store-created accounts
+- [x] **Certificates** — `certificate.html` + `js/certificate.js`: issued when every unit of a course is complete (lesson player hands you over on the final unit), stable serial + issue date, print-ready sheet
+- [x] **Recordings library** — `recordings.html` + `js/recordings.js`: replay list behind the class REC button (honest demo player), linked from the student Classes panel
+- [x] **Notification bell** — derived notifications per role (unread messages, due assignments, grading queue, payment attention), count badge + jump-to-panel rows on every dashboard
+- [x] **Admin backup** — export the whole demo database as JSON + restore-from-file with confirmation
+- [x] **Launch hygiene** — favicon, 404 page, meta description + Open Graph, robots.txt, sitemap.xml, privacy + terms stubs, skip-link + focus-visible + reduced-motion, print styles, cookie/honesty notice, Blog link everywhere
 - [ ] Rebrand + polish → finalize into `academy-live` (private)
 
 ## Workflow notes
