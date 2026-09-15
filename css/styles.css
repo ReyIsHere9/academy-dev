@@ -5134,6 +5134,10 @@ html[data-theme="dark"] .gb-key.is-missing   { color: #fca5a5; }
     gap: 8px;
 }
 
+.inbox-new-bar {
+    margin-top: 10px;
+}
+
 .inbox-compose .chat-input {
     flex: 1;
 }

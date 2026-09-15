@@ -152,7 +152,7 @@ const SPACE_SEED = {
         },
         {
             id: "cls-2", title: "B1 · Grammar", level: "B1", skill: "Grammar",
-            teacher: "Tch-1001", students: ["Stu-2001", "Stu-2004"],
+            teacher: "Tch-1001", students: ["Stu-2001", "Stu-2002", "Stu-2003", "Stu-2004"],
             meetings: "Saturdays · 10:00", code: "B1-GRAM",
             sessionsTotal: 14, progress: 48
         },

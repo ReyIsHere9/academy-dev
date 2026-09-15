@@ -1267,9 +1267,29 @@ function setupInbox(db, meId, prefix, audience) {
     const composeTo = document.getElementById(prefix + "-inbox-new-to");
     const composeText = document.getElementById(prefix + "-inbox-new-text");
     const composeBtn = document.getElementById(prefix + "-inbox-new-send");
+    const composeWrap = document.getElementById(prefix + "-inbox-compose");
+    const composeToggle = document.getElementById(prefix + "-inbox-new-toggle");
     if (!listBox || !viewBox) return;
 
     let openId = null;
+
+    /* compose and reply are MUTUALLY EXCLUSIVE — you never see two
+       write bars at once (that confused everyone on the first try) */
+    function showCompose(on) {
+        if (!composeWrap) return;
+        composeWrap.hidden = !on;
+        if (on) {
+            openId = null;          // deselect the thread
+            renderList();
+            renderView();
+            if (composeText) composeText.focus();
+        }
+    }
+    if (composeWrap) composeWrap.hidden = true;
+    if (composeToggle) {
+        composeToggle.addEventListener("click", () =>
+            showCompose(Boolean(composeWrap && composeWrap.hidden)));
+    }
 
     /* audience dropdown for brand-new conversations */
     if (composeTo) {
@@ -1372,6 +1392,7 @@ function setupInbox(db, meId, prefix, audience) {
 
     function openThread(id) {
         openId = id;
+        if (composeWrap) composeWrap.hidden = true;   // one write bar only
         const thread = myThreads().find(t => t.id === id);
         if (thread) {
             /* reading marks the OTHER side's messages as seen */
@@ -1402,6 +1423,7 @@ function setupInbox(db, meId, prefix, audience) {
             spaceSave(db);
         }
         openId = thread.id;
+        if (composeWrap) composeWrap.hidden = true;   // one write bar only
         renderList();
         renderView();
         const input = document.getElementById(prefix + "-inbox-input");
@@ -1438,6 +1460,7 @@ function setupInbox(db, meId, prefix, audience) {
             if (composeText) composeText.value = "";
             openId = thread.id;
             sendThreadMessage(thread, text);
+            if (composeWrap) composeWrap.hidden = true;   // back to one bar
         });
     }
 

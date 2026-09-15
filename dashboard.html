@@ -278,8 +278,11 @@
                                 <div class="inbox-threads" id="stu-inbox-list"></div>
                                 <div class="inbox-view" id="stu-inbox-view"></div>
                             </div>
-                            <h3 class="space-subhead">New message</h3>
-                            <div class="inbox-compose">
+                            <div class="inbox-new-bar">
+                                <button type="button" class="btn btn-ghost btn-small"
+                                        id="stu-inbox-new-toggle">+ New message</button>
+                            </div>
+                            <div class="inbox-compose" id="stu-inbox-compose" hidden>
                                 <select class="mini-select" id="stu-inbox-new-to"></select>
                                 <input type="text" class="chat-input" id="stu-inbox-new-text"
                                        placeholder="Write a message to your teacher&hellip;"
