@@ -1442,6 +1442,26 @@ html[data-theme="dark"] .map-tag {
     font-weight: normal;
 }
 
+/* ============================================================
+   [BUGFIX LOG #10] — READ ME (lesson learned, keep forever)
+   WHAT BROKE:  the active nav item's pill looked lopsided — the
+                nearest "|" sat INSIDE it, so the pill wrapped
+                "| About" instead of just "About".
+   WHY:         the separators are ::before elements of each nav
+                item (a CHILD of the link), so the active link's
+                background painted behind its own separator too.
+   THE FIX:     hide the ::before on the active link and give it
+                the same 37px gap with a margin (18 + pipe + 18).
+                Mobile resets the margin in its media query.
+   ============================================================ */
+.main-nav a.active::before {
+    content: none;
+}
+
+.main-nav a.active:not(:first-child) {
+    margin-left: 37px;
+}
+
 /* the Pricing trigger button matches the link look */
 .dd-btn {
     font-family: inherit;
@@ -6372,6 +6392,11 @@ html[data-theme="dark"] .quiz-result.is-wrong { color: #fca5a5; }
 
     .main-nav a {
         margin: 0;
+    }
+
+    /* the active pill's desktop gap-margin must not survive here */
+    .main-nav a.active:not(:first-child) {
+        margin-left: 0;
     }
 
     /* drop the "|" separators — wrapped chips look cleaner */
