@@ -278,6 +278,47 @@
                                 <h2>All payments</h2>
                                 <div id="adm-payments"></div>
                             </div>
+
+                            <div class="space-card">
+                                <h2>Record a payment</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-pay-student">Student</label>
+                                        <select class="chat-input" id="adm-pay-student"></select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-pay-plan">Plan</label>
+                                        <select class="chat-input" id="adm-pay-plan">
+                                            <option value="monthly">Monthly (subscription)</option>
+                                            <option value="quarterly">3-Monthly (subscription)</option>
+                                            <option value="yearly">Yearly (subscription)</option>
+                                            <option value="lifetime">Lifetime (one-time)</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-pay-amount">Amount ($)</label>
+                                        <input type="number" class="chat-input" id="adm-pay-amount"
+                                               value="80" min="1">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-pay-status">Status</label>
+                                        <select class="chat-input" id="adm-pay-status">
+                                            <option value="paid">Paid</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="failed">Failed</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-pay-method">Method</label>
+                                        <input type="text" class="chat-input" id="adm-pay-method"
+                                               value="card" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-pay-add">
+                                        Record payment</button>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -287,7 +328,11 @@
                             <div class="space-card">
                                 <div class="gb-head">
                                     <h2>Course catalog</h2>
-                                    <select class="mini-select" id="adm-cat-level"></select>
+                                    <div class="admin-filter-row">
+                                        <select class="mini-select" id="adm-cat-level"></select>
+                                        <button type="button" class="btn btn-ghost btn-small"
+                                                id="adm-cat-delete">Delete level</button>
+                                    </div>
                                 </div>
                                 <div class="form-grid-2">
                                     <div class="field">
@@ -314,6 +359,14 @@
                                 <h3 class="space-subhead">Skills &amp; units</h3>
                                 <div id="adm-cat-skills"></div>
 
+                                <div class="award-row">
+                                    <input type="text" class="chat-input" id="adm-skill-new-name"
+                                           placeholder="New skill name (e.g. Pronunciation)"
+                                           autocomplete="off">
+                                    <button type="button" class="btn btn-ghost btn-small"
+                                            id="adm-skill-add">Add skill</button>
+                                </div>
+
                                 <div class="space-submit-row">
                                     <button type="button" class="btn btn-primary" id="adm-cat-save">
                                         Save catalog changes</button>
@@ -322,6 +375,31 @@
                                 </div>
                                 <p class="space-hint">Saved changes override js/levels-data.js on
                                    courses.html and course.html.</p>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Add a level</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-level-id">
+                                            Level ID (goes in links)</label>
+                                        <input type="text" class="chat-input" id="adm-new-level-id"
+                                               placeholder="e.g. D1" maxlength="6" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-level-label">
+                                            Display label</label>
+                                        <input type="text" class="chat-input" id="adm-new-level-label"
+                                               placeholder="e.g. D1 · Expert" autocomplete="off">
+                                    </div>
+                                </div>
+                                <p class="space-hint">Starts with four empty skills
+                                   (Speaking, Writing, Reading, Listening) for you to fill in.
+                                   Custom levels use the generic banner gradient.</p>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-level-add">
+                                        Create level</button>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -345,6 +423,43 @@
                             </div>
                             <div class="space-card" id="adm-class-editor" hidden>
                                 <div id="adm-class-editor-card"></div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Create a class</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-cls-level">Course</label>
+                                        <select class="chat-input" id="adm-new-cls-level"></select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-cls-teacher">Teacher</label>
+                                        <select class="chat-input" id="adm-new-cls-teacher"></select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-cls-group">
+                                            Group name (optional)</label>
+                                        <input type="text" class="chat-input" id="adm-new-cls-group"
+                                               placeholder="e.g. Weekend Group" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-cls-meetings">Meetings</label>
+                                        <input type="text" class="chat-input" id="adm-new-cls-meetings"
+                                               placeholder="e.g. Sundays &middot; 17:00" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-cls-sessions">
+                                            Planned sessions</label>
+                                        <input type="number" class="chat-input" id="adm-new-cls-sessions"
+                                               value="10" min="1">
+                                    </div>
+                                </div>
+                                <p class="space-label">Enroll students</p>
+                                <div class="pick-grid" id="adm-new-cls-students"></div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-new-cls-create">
+                                        Create class</button>
+                                </div>
                             </div>
                         </div>
                     </section>

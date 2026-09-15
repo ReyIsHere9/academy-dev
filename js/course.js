@@ -171,9 +171,14 @@ if (!level || !skill) {
 
     /* Give the banner its level gradient. Same trick as the
        carousel: classes (.grad-a1 ...) not inline styles, so
-       dark mode re-palettes every course banner automatically. */
+       dark mode re-palettes every course banner automatically.
+       Admin-created levels have custom IDs and fall back to the
+       generic .grad-custom gradient. */
     const hero = document.querySelector(".course-hero");
     if (hero) {
-        hero.classList.add("grad-" + level.id.toLowerCase());
+        const KNOWN_GRADS = ["a1", "a2", "b1", "b2", "c1", "c2"];
+        hero.classList.add(KNOWN_GRADS.includes(level.id.toLowerCase())
+            ? "grad-" + level.id.toLowerCase()
+            : "grad-custom");
     }
 }

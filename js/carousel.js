@@ -34,6 +34,11 @@ const nextBtn    = document.querySelector(".arrow-next");
    js/catalog.js must load BEFORE this file. */
 const CATALOG = academyCatalog();
 
+/* levels created in the admin console can have any ID — only the
+   classic six have .grad-* colors, so everything else gets the
+   generic .grad-custom banner instead of an unstyled slide */
+const KNOWN_GRADS = ["a1", "a2", "b1", "b2", "c1", "c2"];
+
 /* "currentIndex" = which slide we are looking at now.
    let = a variable whose VALUE can change later.
    (const = cannot change, let = can. We change this one!) */
@@ -55,7 +60,9 @@ function buildSlides() {
 
         /* 1) make the slide <div> and give it its banner colors */
         const slide = document.createElement("div");
-        slide.classList.add("slide", "grad-" + level.id.toLowerCase());
+        slide.classList.add("slide", KNOWN_GRADS.includes(level.id.toLowerCase())
+            ? "grad-" + level.id.toLowerCase()
+            : "grad-custom");
         /* LESSON — why a CSS class, not an inline style?
            The gradients live in styles.css as .grad-a1 ... .grad-c2,
            each with a LIGHT and a DARK palette. Inline styles can't

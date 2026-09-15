@@ -1339,6 +1339,8 @@ html[data-theme="dark"] .main-nav .dd-btn.active:hover {
 .grad-b2 { background: linear-gradient(135deg, #6366f1, #4338ca); }
 .grad-c1 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
 .grad-c2 { background: linear-gradient(135deg, #475569, #1e1b4b); }
+/* admin-created levels (any custom ID) get this generic banner */
+.grad-custom { background: linear-gradient(135deg, #0ea5e9, #6366f1 55%, #7c3aed); }
 
 /* ================= DARK THEME OVERRIDES =================
    Everything below ONLY applies when js/theme.js switched
@@ -1358,6 +1360,7 @@ html[data-theme="dark"] .grad-b1 { background: linear-gradient(135deg, #1e40af, 
 html[data-theme="dark"] .grad-b2 { background: linear-gradient(135deg, #4338ca, #312e81); }
 html[data-theme="dark"] .grad-c1 { background: linear-gradient(135deg, #6d28d9, #4c1d95); }
 html[data-theme="dark"] .grad-c2 { background: linear-gradient(135deg, #293548, #0b0f24); }
+html[data-theme="dark"] .grad-custom { background: linear-gradient(135deg, #155e75, #312e81 55%, #4c1d95); }
 
 /* Contact page bits that use fixed light colors */
 html[data-theme="dark"] .badge-open {
@@ -5365,6 +5368,17 @@ html[data-theme="dark"] .gb-key.is-missing   { color: #fca5a5; }
 
 .skill-edit .space-label:first-child {
     margin-top: 0;
+}
+
+.skill-edit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.skill-edit-head .space-label {
+    margin: 0;
 }
 
 /* badge editor rows */

@@ -2854,6 +2854,15 @@ function adminViewAs(db, id) {
 function renderAdminPayments(db, session) {
     const box = document.getElementById("adm-payments");
     const summary = document.getElementById("adm-pay-summary");
+
+    /* the "add a payment" student dropdown */
+    const studentSel = document.getElementById("adm-pay-student");
+    if (studentSel) {
+        studentSel.innerHTML = Object.entries(db.profiles)
+            .filter(([, p]) => p.role === "student")
+            .map(([id, p]) => `<option value="${spaceEsc(id)}">${spaceEsc(p.name)}</option>`)
+            .join("");
+    }
     if (summary) {
         const paid = db.payments.filter(p => p.status === "paid");
         const recurring = db.payments.filter(p => p.plan !== "lifetime");
@@ -2902,6 +2911,8 @@ function renderAdminPayments(db, session) {
                             ${["paid", "pending", "failed"].filter(s => s !== p.status).map(s =>
                                 `<button type="button" class="btn btn-ghost btn-small"
                                         data-pay-status="${spaceEsc(p.id)}|${s}">Mark ${s}</button>`).join("")}
+                            <button type="button" class="admin-kick" data-pay-del="${spaceEsc(p.id)}"
+                                    title="Delete this payment">&times;</button>
                         </td>
                     </tr>`;
                 }).join("")}
@@ -2942,7 +2953,11 @@ function renderAdminCatalog(db, session) {
     if (skillsBox) {
         skillsBox.innerHTML = level.skills.map((skill, i) => `
         <div class="skill-edit" data-skill="${i}">
-            <p class="space-label">${spaceEsc(skill.name)}</p>
+            <div class="skill-edit-head">
+                <p class="space-label">${spaceEsc(skill.name)}</p>
+                <button type="button" class="admin-kick" data-skill-del="${i}"
+                        title="Delete this skill">&times;</button>
+            </div>
             <div class="form-grid-2">
                 <div class="field">
                     <label class="space-label">Blurb</label>
@@ -2967,12 +2982,15 @@ function renderAdminCatalog(db, session) {
     }
 }
 
-function saveAdminCatalog(db, session) {
-    const cat = db.catalog;
-    if (!cat) return;
-    const level = cat.find(l => l.id === adminCatLevel);
-    if (!level) return;
+/* the level currently selected in the catalog editor */
+function getAdminCatLevel(db) {
+    return (db.catalog || []).find(l => l.id === adminCatLevel);
+}
 
+/* read every catalog input back into the level object — WITHOUT
+   saving. Structural actions (add/delete skill) call this first,
+   so unsaved edits in the other fields are never lost. */
+function collectCatalogEdits(level) {
     const read = id => {
         const el = document.getElementById(id);
         return el ? el.value : "";
@@ -2997,6 +3015,12 @@ function saveAdminCatalog(db, session) {
         if (points) skill.points = lines(points.value);
         if (units) skill.units = lines(units.value);
     });
+}
+
+function saveAdminCatalog(db, session) {
+    const level = getAdminCatLevel(db);
+    if (!level) return;
+    collectCatalogEdits(level);
 
     spaceSave(db);
     adminLog(db, "Catalog updated — " + level.label + " (courses now show the edited copy)");
@@ -3076,6 +3100,96 @@ function renderAdminClasses(db, session) {
             </tbody>
         </table>
     </div>`;
+
+    /* controls for "Create a class" */
+    const levelSel = document.getElementById("adm-new-cls-level");
+    if (levelSel) {
+        const cat = db.catalog || [];
+        levelSel.innerHTML = cat.map(level =>
+            level.skills.map(skill => {
+                const value = level.id + "|" + skill.name;
+                return `<option value="${spaceEsc(value)}">${spaceEsc(level.label)} · ${spaceEsc(skill.name)}</option>`;
+            }).join("")
+        ).join("");
+    }
+    const teacherSel = document.getElementById("adm-new-cls-teacher");
+    if (teacherSel) {
+        teacherSel.innerHTML = Object.entries(db.profiles)
+            .filter(([, p]) => p.role === "teacher")
+            .map(([id, p]) => `<option value="${spaceEsc(id)}">${spaceEsc(p.name)}</option>`)
+            .join("");
+    }
+    const picker = document.getElementById("adm-new-cls-students");
+    if (picker) {
+        picker.innerHTML = Object.keys(db.profiles)
+            .filter(id => db.profiles[id].role === "student")
+            .map(id => `
+            <label class="pick-row">
+                <input type="checkbox" value="${spaceEsc(id)}">
+                ${spaceEsc(db.profiles[id].name)} <span class="muted small">(${spaceEsc(id)})</span>
+            </label>`).join("");
+    }
+}
+
+/* admin version of "create a class": the teacher is CHOSEN here */
+function createAdminInstance(db, session) {
+    const levelSel = document.getElementById("adm-new-cls-level");
+    const teacherSel = document.getElementById("adm-new-cls-teacher");
+    if (!levelSel || !teacherSel) return;
+
+    const [level, skill] = levelSel.value.split("|");
+    const teacher = teacherSel.value;
+    if (!level || !skill || !teacher) {
+        return spaceToast("Pick a course and a teacher", "bad");
+    }
+
+    const groupEl = document.getElementById("adm-new-cls-group");
+    const meetingsEl = document.getElementById("adm-new-cls-meetings");
+    const sessionsEl = document.getElementById("adm-new-cls-sessions");
+    const group = groupEl ? groupEl.value.trim() : "";
+    const meetings = meetingsEl && meetingsEl.value.trim()
+        ? meetingsEl.value.trim() : "Schedule to be announced";
+    const sessionsTotal = sessionsEl && Number(sessionsEl.value) > 0
+        ? Number(sessionsEl.value) : 10;
+
+    let code = level.toUpperCase() + "-" + skill.slice(0, 4).toUpperCase();
+    let n = 2;
+    while (db.courseInstances.some(c => c.code === code)) {
+        code = level.toUpperCase() + "-" + skill.slice(0, 4).toUpperCase() + "-" + n;
+        n++;
+    }
+
+    const students = [...document.querySelectorAll("#adm-new-cls-students input:checked")]
+        .map(input => input.value);
+    const title = level + " · " + skill + (group ? " — " + group : "");
+
+    db.courseInstances.push({
+        id: "cls-" + Date.now(),
+        title, level, skill,
+        teacher, students, meetings, code,
+        sessionsTotal, progress: 0
+    });
+
+    /* enrolled students get the course on their dashboard too */
+    students.forEach((stuId, i) => {
+        const already = db.enrollments.some(e =>
+            e.student === stuId && e.title === title);
+        if (already) return;
+        db.enrollments.push({
+            id: "enr-" + Date.now() + "-" + i,
+            student: stuId, level, skill, title, teacher,
+            progress: 0, sessionsDone: 0, sessionsTotal,
+            nextLesson: "First lesson — orientation"
+        });
+    });
+
+    spaceSave(db);
+    adminLog(db, "Created class " + title + " (teacher " + teacher + ")");
+    spaceToast("Class created — students see it on their dashboards", "good");
+    if (groupEl) groupEl.value = "";
+    if (meetingsEl) meetingsEl.value = "";
+    renderAdminClasses(db, session);
+    renderAdminOverview(db, session);
 }
 
 function openAdminClass(db, session, id) {
@@ -3369,6 +3483,29 @@ function wireAdminPanels(db, session) {
     const payBox = document.getElementById("adm-payments");
     if (payBox) {
         payBox.addEventListener("click", (e) => {
+            const del = e.target.closest("[data-pay-del]");
+            if (del) {
+                const pay = db.payments.find(p => p.id === del.dataset.payDel);
+                if (!pay) return;
+                spaceConfirm({
+                    title: "Delete this payment?",
+                    text: "The record disappears from billing history for " +
+                          spaceProfile(db, pay.student).name + ".",
+                    okLabel: "Delete payment",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    db.payments = db.payments.filter(p => p.id !== pay.id);
+                    spaceSave(db);
+                    adminLog(db, "Deleted a payment record for " +
+                        spaceProfile(db, pay.student).name);
+                    spaceToast("Payment record deleted", "bad");
+                    renderAdminPayments(db, session);
+                    renderAdminOverview(db, session);
+                });
+                return;
+            }
+
             const btn = e.target.closest("[data-pay-status]");
             if (!btn) return;
             const [payId, status] = btn.dataset.payStatus.split("|");
@@ -3379,6 +3516,35 @@ function wireAdminPanels(db, session) {
             adminLog(db, "Payment " + payId + " (" +
                 spaceProfile(db, pay.student).name + ") marked " + status);
             spaceToast("Payment marked " + status, status === "paid" ? "good" : "bad");
+            renderAdminPayments(db, session);
+            renderAdminOverview(db, session);
+        });
+    }
+
+    const payAdd = document.getElementById("adm-pay-add");
+    if (payAdd) {
+        payAdd.addEventListener("click", () => {
+            const student = document.getElementById("adm-pay-student");
+            const plan = document.getElementById("adm-pay-plan");
+            const amount = document.getElementById("adm-pay-amount");
+            const status = document.getElementById("adm-pay-status");
+            const method = document.getElementById("adm-pay-method");
+            const value = amount ? Number(amount.value) : 0;
+            if (!student || !student.value) return spaceToast("Pick a student", "bad");
+            if (!value || value <= 0) return spaceToast("Enter a positive amount", "bad");
+            db.payments.push({
+                id: "pay-" + Date.now(),
+                student: student.value,
+                plan: plan ? plan.value : "monthly",
+                amount: Math.round(value),
+                status: status ? status.value : "paid",
+                daysAgo: 0,
+                method: method && method.value.trim() ? method.value.trim() : "card"
+            });
+            spaceSave(db);
+            adminLog(db, "Recorded payment for " +
+                spaceProfile(db, student.value).name + " ($" + Math.round(value) + ")");
+            spaceToast("Payment recorded", "good");
             renderAdminPayments(db, session);
             renderAdminOverview(db, session);
         });
@@ -3411,6 +3577,111 @@ function wireAdminPanels(db, session) {
                 spaceToast("Catalog reset to original", "bad");
                 adminCatLevel = null;
                 renderAdminCatalog(db, session);
+            });
+        });
+    }
+
+    /* --- catalog: structure (add/delete skills + levels) --- */
+    const catSkillsBox = document.getElementById("adm-cat-skills");
+    if (catSkillsBox) {
+        catSkillsBox.addEventListener("click", (e) => {
+            const del = e.target.closest("[data-skill-del]");
+            if (!del) return;
+            const level = getAdminCatLevel(db);
+            if (!level) return;
+            const index = Number(del.dataset.skillDel);
+            const skill = level.skills[index];
+            if (!skill) return;
+            spaceConfirm({
+                title: "Delete skill " + skill.name + "?",
+                text: "Its blurb, highlights and unit titles disappear from the catalog.",
+                okLabel: "Delete skill",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                collectCatalogEdits(level);     // keep unsaved edits first
+                level.skills.splice(index, 1);
+                spaceSave(db);
+                adminLog(db, "Deleted skill " + skill.name + " from " + level.label);
+                spaceToast("Skill deleted", "bad");
+                renderAdminCatalog(db, session);
+            });
+        });
+    }
+
+    const skillAdd = document.getElementById("adm-skill-add");
+    if (skillAdd) {
+        skillAdd.addEventListener("click", () => {
+            const level = getAdminCatLevel(db);
+            if (!level) return;
+            collectCatalogEdits(level);
+            const input = document.getElementById("adm-skill-new-name");
+            const name = input ? input.value.trim() : "";
+            if (!name) return spaceToast("Give the skill a name", "bad");
+            if (level.skills.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                return spaceToast("That skill already exists on this level", "bad");
+            }
+            level.skills.push({
+                name, blurb: "", lessons: "0 lessons", points: [], units: []
+            });
+            spaceSave(db);
+            adminLog(db, "Added skill " + name + " to " + level.label);
+            spaceToast("Skill added — fill in its details below", "good");
+            if (input) input.value = "";
+            renderAdminCatalog(db, session);
+        });
+    }
+
+    const levelAdd = document.getElementById("adm-level-add");
+    if (levelAdd) {
+        levelAdd.addEventListener("click", () => {
+            const idEl = document.getElementById("adm-new-level-id");
+            const labelEl = document.getElementById("adm-new-level-label");
+            const id = idEl ? idEl.value.trim() : "";
+            const label = labelEl ? labelEl.value.trim() : "";
+            if (!/^[A-Za-z0-9]{1,6}$/.test(id)) {
+                return spaceToast("Level ID: 1–6 letters/numbers (it goes in links)", "bad");
+            }
+            if (db.catalog.some(l => l.id.toLowerCase() === id.toLowerCase())) {
+                return spaceToast("That level ID already exists", "bad");
+            }
+            if (!label) return spaceToast("Give the level a display label", "bad");
+            db.catalog.push({
+                id, label, tagline: "", summary: "", grammar: [],
+                skills: ["Speaking", "Writing", "Reading", "Listening"].map(sname => ({
+                    name: sname, blurb: "", lessons: "0 lessons", points: [], units: []
+                }))
+            });
+            spaceSave(db);
+            adminLog(db, "Created level " + label + " (" + id + ")");
+            spaceToast("Level created — fill in its skills below", "good");
+            adminCatLevel = id;
+            if (idEl) idEl.value = "";
+            if (labelEl) labelEl.value = "";
+            renderAdminCatalog(db, session);
+            renderAdminOverview(db, session);
+        });
+    }
+
+    const levelDel = document.getElementById("adm-cat-delete");
+    if (levelDel) {
+        levelDel.addEventListener("click", () => {
+            const level = getAdminCatLevel(db);
+            if (!level) return;
+            spaceConfirm({
+                title: "Delete level " + level.label + "?",
+                text: "It disappears from the catalog. Existing classes and enrollments that reference it are not touched.",
+                okLabel: "Delete level",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                db.catalog = db.catalog.filter(l => l.id !== level.id);
+                spaceSave(db);
+                adminLog(db, "Deleted level " + level.label);
+                spaceToast("Level deleted", "bad");
+                adminCatLevel = null;
+                renderAdminCatalog(db, session);
+                renderAdminOverview(db, session);
             });
         });
     }
@@ -3454,6 +3725,10 @@ function wireAdminPanels(db, session) {
             const edit = e.target.closest("[data-class-edit]");
             if (edit) openAdminClass(db, session, edit.dataset.classEdit);
         });
+    }
+    const classCreate = document.getElementById("adm-new-cls-create");
+    if (classCreate) {
+        classCreate.addEventListener("click", () => createAdminInstance(db, session));
     }
     const classEditor = document.getElementById("adm-class-editor");
     if (classEditor) {

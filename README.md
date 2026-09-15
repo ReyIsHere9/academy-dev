@@ -23,7 +23,7 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `login.html` / `recovery.html` | Auth entry UI (demo) |
 | `dashboard.html` | Student space — stats + continue learning, courses with progress, classes + join by code, assignments (drag-&-drop submit with naming rules + comments + grades), materials, badges, inbox with teachers, profile & personalization |
 | `dashboard-teacher.html` | Teacher studio — today overview, class instances, interactive gradebook, assignment creation + templates, grading tools, student inbox, badge awards + notes, materials, profile |
-| `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart, course catalog editor, photo/media manager, classes, site settings + broadcasts, badge catalog, danger zone |
+| `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart + manual records, course catalog editor (add/delete levels & skills), photo/media manager, classes (create/edit/delete), site settings + broadcasts, badge catalog, danger zone |
 | `profile.html` | Public profile (`?id=Stu-2001`) — safe fields only: name, avatar, bio, badges |
 | `class.html` | Live class room — student view (chat show/hide drawer, pop-out chat, theater / lights-out / fullscreen modes) |
 | `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat, view modes) |
