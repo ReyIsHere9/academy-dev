@@ -194,6 +194,11 @@ Style rules:
    space-admin-flows-smoke / catalog-smoke / auth-smoke) —
    every engine has boot + flows tests, and overrides have
    their own harnesses.
+8. Run the duplicate-id scanner (`%TEMP%\opencode\dup-id-check.js`)
+   after editing ANY page: `getElementById` returns the FIRST
+   match, so a repeated id silently paints content into the wrong
+   element (this bit the admin console once — stat `#adm-users`
+   vs table `#adm-users`).
 8. Update PLAN.md: tick the checkbox.
 9. Commit with a clear message: `git add .` →
    `git commit -m "Add Module 4: about page"` → `git push origin main`

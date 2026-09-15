@@ -2602,10 +2602,10 @@ function renderAdminOverview(db, session) {
         if (el) el.textContent = value;
     };
 
-    set("adm-users", profiles.length);
-    set("adm-students", profiles.filter(p => p.role === "student").length);
-    set("adm-teachers", profiles.filter(p => p.role === "teacher").length);
-    set("adm-classes", db.courseInstances.length);
+    set("adm-stat-users", profiles.length);
+    set("adm-stat-students", profiles.filter(p => p.role === "student").length);
+    set("adm-stat-teachers", profiles.filter(p => p.role === "teacher").length);
+    set("adm-stat-classes", db.courseInstances.length);
 
     const paid = db.payments.filter(p => p.status === "paid");
     const pending = db.payments.filter(p => p.status === "pending");
@@ -2613,10 +2613,10 @@ function renderAdminOverview(db, session) {
     const revenue = paid.reduce((sum, p) => sum + p.amount, 0);
     const subs = new Set(paid.filter(p => p.plan !== "lifetime").map(p => p.student));
 
-    set("adm-revenue", "$" + revenue.toLocaleString());
-    set("adm-subs", subs.size);
-    set("adm-pending", pending.length);
-    set("adm-failed", failed.length);
+    set("adm-stat-revenue", "$" + revenue.toLocaleString());
+    set("adm-stat-subs", subs.size);
+    set("adm-stat-pending", pending.length);
+    set("adm-stat-failed", failed.length);
 
     /* simple bar "chart": one row per status, width = share of total */
     const bars = document.getElementById("adm-revenue-bars");
