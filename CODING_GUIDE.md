@@ -33,6 +33,10 @@ academy-dev/
 ├── dashboard-teacher.html  # Teacher studio (role-teacher)
 ├── dashboard-admin.html    # Admin console (role-admin)
 ├── profile.html      # Public profile page
+├── lesson.html       # Module 7: lesson player
+├── checkout.html     # Module 8: demo checkout
+├── blog.html         # Module 9: blog index
+├── post.html         # Module 9: blog article
 ├── PLAN.md           # roadmap + module checklist (update it!)
 ├── CODING_GUIDE.md   # this file
 ├── css/
@@ -191,7 +195,8 @@ Style rules:
    `%TEMP%\opencode\` (class-smoke / teach-smoke / admin-smoke /
    space-student-smoke / space-flows-smoke / space-teach-smoke /
    space-teach-flows-smoke / space-admin-smoke /
-   space-admin-flows-smoke / catalog-smoke / auth-smoke) —
+   space-admin-flows-smoke / catalog-smoke / auth-smoke /
+   lesson-smoke / checkout-smoke / blog-smoke / course-smoke) —
    every engine has boot + flows tests, and overrides have
    their own harnesses.
    ⚠️ These harnesses deliberately live OUTSIDE the repo —

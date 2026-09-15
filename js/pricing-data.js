@@ -119,3 +119,10 @@ const PRICING = {
         note: "The \"pay more once\" option: a full year of Pro costs less — but if you only need one thing, own it instead of renting it."
     }
 };
+
+/* ---------- SINGLE-COURSE PRICE ----------
+   What one course costs on its own (checkout.html?course=...).
+   The lifetime offer above = 249, this = the normal one-time
+   price for a single course. Real builds fetch this per course
+   from the server; the demo keeps one honest number. */
+const COURSE_PRICE_USD = 120;

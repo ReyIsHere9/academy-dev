@@ -76,11 +76,16 @@ if (!level || !skill) {
                class="skill-switch-link">${s.name}</a>
         `).join(" · ");
 
-    /* Build the units list, numbered (index i + 1). */
+    /* Build the units list, numbered (index i + 1).
+       Each unit links into the LESSON PLAYER (module 7) — authored
+       lessons or a generated outline, but always a real page. */
     const unitsHtml = skill.units.map((unit, i) => `
         <li class="unit-row">
             <span class="unit-num">${i + 1}</span>
             <span class="unit-text">${unit}</span>
+            <a class="btn btn-ghost btn-small unit-lesson"
+               href="lesson.html?level=${encodeURIComponent(level.id)}&skill=${encodeURIComponent(skill.name)}&unit=${i}">
+               Start lesson</a>
         </li>
     `).join("");
 
@@ -147,18 +152,24 @@ if (!level || !skill) {
                         <span class="fact-label">Format</span>
                         <span class="fact-value">Self-paced online</span>
                     </div>
+                    <div class="fact-row">
+                        <span class="fact-label">Price</span>
+                        <span class="fact-value">$${typeof COURSE_PRICE_USD !== "undefined" ? COURSE_PRICE_USD : 120} &middot; one-time</span>
+                    </div>
 
                     <div class="other-skills">
                         <p class="fact-label">Other skills at ${level.id}</p>
                         <p>${otherSkills}</p>
                     </div>
 
-                    <!-- Course selling comes in a later upgrade.
-                         Until then, the honest call-to-action is
-                         a conversation, not a checkout. -->
+                    <!-- Course selling (module 8): enroll goes to
+                         checkout with this course in the URL. -->
                     <a class="btn btn-primary btn-block"
+                       href="checkout.html?course=${encodeURIComponent(level.id + "|" + skill.name)}">
+                       Enroll in this course</a>
+                    <a class="btn btn-ghost btn-block"
                        href="contact.html?course=${level.id}%20${skill.name}">
-                       Enquire about this course</a>
+                       Ask a question first</a>
                     <a class="btn btn-ghost btn-block"
                        href="courses.html">Back to all levels</a>
                 </aside>

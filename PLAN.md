@@ -26,9 +26,9 @@ in the private academy-live repo.
 
 ## Later upgrades (v2+)
 
-- [ ] Lesson player module (watch/read lessons per course)
-- [ ] Pricing / checkout (course selling)
-- [ ] Blog module
+- [x] **Lesson player module** — `lesson.html` + `js/lessons-data.js` + `js/lesson.js`: authored showcase lessons (objectives, vocabulary, sections, quizzes with instant feedback) plus a generated outline lesson for EVERY other unit (never a dead link). Course pages link each unit to its lesson; the sidebar tracks completion checkmarks; "mark lesson complete" saves to the demo store and syncs the student's course progress
+- [x] **Pricing / checkout (course selling)** — `checkout.html` + `js/checkout.js`: sells subscriptions (live interval switching), the lifetime single-course offer, and single courses; demo coupon codes; shape-only card validation (never stored); orders create payment records the admin console sees instantly; course purchases auto-enroll logged-in students
+- [x] **Blog module** — `blog.html` / `post.html` + `js/blog-data.js` + `js/blog.js`: featured article, category chips, live search, article pages with paragraphs/lists/quotes/tip boxes, author cards, tags, share button and related posts. Blog link added to every header and footer
 - [ ] Rebrand + polish → finalize into `academy-live` (private)
 
 ## Workflow notes

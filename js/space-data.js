@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 4;   /* v4: Phase 3 (credentials, payments, media) */
+const SPACE_DB_VERSION = 5;   /* v5: Phase 5 (orders, lesson progress) */
 
 const SPACE_SEED = {
-    version: 4,
+    version: 5,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -132,7 +132,7 @@ const SPACE_SEED = {
         {
             id: "enr-3", student: "Stu-2001", level: "A2", skill: "Writing",
             title: "A2 · Writing", teacher: "Tch-2002",
-            progress: 82, sessionsDone: 16, sessionsTotal: 20,
+            progress: 50, sessionsDone: 16, sessionsTotal: 20,
             nextLesson: "Lesson 19 — Opinion paragraphs"
         }
     ],
@@ -423,6 +423,37 @@ const SPACE_SEED = {
         contactMap: "",
         heroImage: "",
         logoImage: ""
+    },
+
+    /* ============ ORDERS (checkout receipts) ============
+       checkout.html writes here; the admin Payments panel shows
+       the matching payment record. `ref` is the human-friendly
+       order reference shown on the receipt. */
+    orders: [
+        {
+            id: "ord-seed-1", ref: "EA-2041",
+            product: "Quarterly plan — 3-Monthly", kind: "plan",
+            plan: "quarterly", interval: "quarterly", course: null,
+            student: "Stu-2001", subtotal: 216, discount: 0, total: 216,
+            method: "card", status: "paid", minutesAgo: 12 * 60
+        },
+        {
+            id: "ord-seed-2", ref: "EA-2087",
+            product: "Course — A2 Writing", kind: "course",
+            plan: "course", interval: null,
+            course: { level: "A2", skill: "Writing" },
+            student: "Stu-2002", subtotal: 120, discount: 12, total: 108,
+            method: "paypal", status: "paid", minutesAgo: 3 * 24 * 60
+        }
+    ],
+
+    /* ============ LESSON PROGRESS ============
+       Keys: "LEVEL|Skill|unitIndex" (0-based). The lesson player
+       flips these on "mark complete" and keeps the matching
+       enrollment's progress % in sync. */
+    completedLessons: {
+        "Stu-2001": ["A1|Speaking|0", "A1|Writing|0", "A2|Writing|0", "A2|Writing|2"],
+        "Stu-2003": ["A2|Writing|0"]
     },
 
     /* ============ ACTIVITY LOG (admin / teacher overview) ============ */

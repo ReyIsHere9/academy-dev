@@ -67,10 +67,12 @@ const ddTiersSlot = document.getElementById("dd-tiers");
 
 if (ddTiersSlot) {
 
-    /* --- render the four mini tier columns --- */
+    /* --- render the four mini tier columns ---
+       "Choose" goes straight to CHECKOUT (module 8) with the plan
+       id in the URL; the checkout page owns quantity/interval. */
     ddTiersSlot.innerHTML = PRICING.tiers.map(tier => `
         <a class="dd-tier ${tier.popular ? "is-popular" : ""}"
-           href="pricing.html#compare">
+           href="checkout.html?plan=${tier.id}">
             <span class="dd-tier-name">${tier.name}
                 ${tier.popular ? `<span class="popular-chip">Most popular</span>` : ""}
             </span>
@@ -172,11 +174,12 @@ if (matrixRoot && billingBar) {
             `).join("")}
         `).join("");
 
-        /* footer: one CTA button per tier */
+        /* footer: one CTA button per tier (goes to checkout with
+           the chosen plan AND the interval currently selected) */
         const footCells = PRICING.tiers.map(tier => `
             <td>
                 <a class="btn btn-primary btn-block"
-                   href="contact.html?course=${tier.name}%20plan">
+                   href="checkout.html?plan=${tier.id}&interval=${intervalId}">
                    Choose ${tier.name}</a>
             </td>
         `).join("");

@@ -1,21 +1,13 @@
 <!DOCTYPE html>
 <!-- ============================================================
-     MODULE 3: COURSE DETAIL PAGE  (academy-dev — generic version)
+     MODULE 9 — BLOG ARTICLE (post.html)
      ------------------------------------------------------------
-     WHAT THIS PAGE IS:
-     The detail page for ONE course. It is NOT a page per
-     course — it's ONE empty template that answers the URL:
-
-        course.html?level=A2&skill=Writing
-
-     ...and paints the matching course. 24 possible courses
-     (6 levels x 4 skills), ONE html file. That's the power
-     of data-driven pages: the "page" is really just a lens.
-
-     The whole visible page is a single slot (#course-root)
-     filled by js/course.js. This file only carries the
-     header, footer and the scripts (order matters again:
-     data first, logic second).
+     One page renders ALMOST every article. The URL asks:
+       post.html?slug=why-english-freezes-in-conversations
+     js/blog.js finds the post in js/blog-data.js and paints:
+       hero banner (its .grad-* color), body blocks (headings,
+       paragraphs, lists, quotes, tips), author card, tags, share
+       row and two related articles from the same category.
      ============================================================ -->
 
 <html lang="en">
@@ -23,18 +15,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course | The English Academy</title>
-
-    <!-- same display font as the courses page (titles) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap"
-          rel="stylesheet">
-
+    <title>Article | The English Academy</title>
     <link rel="stylesheet" href="css/styles.css">
-
-    <!-- Theme engine: must run in <head> so the correct theme is
-         set before the page paints (no flash of wrong colors). -->
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
     <script src="js/site.js"></script>
@@ -42,20 +24,14 @@
 
 <body>
 
-    <!-- ================= HEADER (same on every page) =================
-         Courses stays highlighted: this page IS a course page,
-         but the menu only knows top-level pages. -->
+    <!-- ================= HEADER (same on every page) ================= -->
     <header class="site-header">
         <div class="container header-inner">
             <a href="./" class="logo">The English Academy</a>
-
-            <!-- LOGIN / REGISTER (left cluster, distinct blue) -->
             <a href="login.html" class="btn-login">Login / Register</a>
             <nav class="main-nav">
                 <a href="./">Home</a>
-                <a href="courses.html" class="active">Courses</a>
-
-                <!-- PRICING DROPDOWN (rendered by js/pricing.js) -->
+                <a href="courses.html">Courses</a>
                 <div class="dd" id="dd">
                     <button type="button" class="dd-btn" id="dd-trigger"
                             aria-haspopup="true" aria-expanded="false">
@@ -66,14 +42,10 @@
                         <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
                     </div>
                 </div>
-
-                <a href="blog.html">Blog</a>
+                <a href="blog.html" class="active">Blog</a>
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
             </nav>
-
-            <!-- THEME TOGGLE (sun/moon). js/theme.js remembers the
-                 choice. CSS shows only the relevant icon. -->
             <button type="button" id="theme-toggle" class="theme-toggle"
                     aria-label="Switch to dark mode" aria-pressed="false">
                 <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
@@ -95,18 +67,13 @@
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
-
         </div>
     </header>
 
-    <!-- ================= THE SLOT =================
-         js/course.js paints the whole course page here:
-         colored banner, main content, sidebar — all of it.
-         If the URL has no valid course, it paints a
-         friendly "not found" card instead. -->
-    <div id="course-root"></div>
+    <!-- js/blog.js paints the article into #post-root -->
+    <div id="post-root"></div>
 
-    <!-- ================= FOOTER (same on every page) ================= -->
+    <!-- ================= FOOTER ================= -->
     <footer class="site-footer">
         <div class="container footer-inner">
             <p class="logo">The English Academy</p>
@@ -120,12 +87,10 @@
     </footer>
 
     <!-- ================= SCRIPTS ================= -->
-    <script src="js/levels-data.js"></script>
-    <script src="js/catalog.js"></script>
-    <script src="js/course.js"></script>
-    <!-- pricing scripts power the header Pricing dropdown -->
     <script src="js/pricing-data.js"></script>
     <script src="js/pricing.js"></script>
+    <script src="js/blog-data.js"></script>
+    <script src="js/blog.js"></script>
 
 </body>
 </html>

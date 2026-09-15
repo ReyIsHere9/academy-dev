@@ -25,6 +25,9 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `dashboard-teacher.html` | Teacher studio — today overview, class instances, interactive gradebook, assignment creation + templates, grading tools, student inbox, badge awards + notes, materials, profile |
 | `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart + manual records, course catalog editor (add/delete levels & skills), photo/media manager, classes (create/edit/delete), site settings + broadcasts, badge catalog, danger zone |
 | `profile.html` | Public profile (`?id=Stu-2001`) — safe fields only: name, avatar, bio, badges |
+| `lesson.html` | Lesson player — video slot, objectives, vocabulary, sections, quiz, unit sidebar with progress (authored lessons + generated outlines for every unit) |
+| `checkout.html` | Demo checkout — subscriptions, lifetime one-course offer, single courses, coupons; orders become admin billing records |
+| `blog.html` / `post.html` | Blog index (featured, categories, live search) + article pages |
 | `class.html` | Live class room — student view (chat show/hide drawer, pop-out chat, theater / lights-out / fullscreen modes) |
 | `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat, view modes) |
 | `class-admin.html` | Admin room — everything the teacher has, plus an Admin tab: manage people, broadcast, empty the stage, clear chat, activity log |
@@ -90,6 +93,15 @@ local server (clipboard, some media APIs are stricter on `file://`).
   the static files: `js/catalog.js` (course catalog) and `js/site.js`
   (settings text, photo slots, home banner, brand logo) paint the edited
   versions onto the public pages.
+- **Lesson player** — every unit of every course opens a real lesson:
+  hand-written showcase lessons with quizzes, or a generated outline
+  (goals + grammar + a practice task) for units still to be authored.
+  Completion feeds back into course progress.
+- **Checkout** — subscriptions, the lifetime offer and single courses
+  with coupons and shape-only validation; orders land in the admin
+  console's billing records and enroll students automatically.
+- **Blog** — data-driven articles with categories, search, related
+  posts and editorial blocks (quotes, tips, lists).
 
 ## Demo vs. real
 
