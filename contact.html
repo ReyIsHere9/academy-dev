@@ -30,6 +30,7 @@
          set before the page paints (no flash of wrong colors). -->
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
+    <script src="js/site.js"></script>
 </head>
 
 <body>
@@ -185,7 +186,7 @@
                         </span>
                         <div>
                             <p class="info-label">Email</p>
-                            <p class="info-value">hello@example-academy.com</p>
+                            <p class="info-value" data-site="contactEmail">hello@example-academy.com</p>
                         </div>
                     </div>
 
@@ -200,7 +201,7 @@
                         </span>
                         <div>
                             <p class="info-label">Phone / WhatsApp</p>
-                            <p class="info-value">+1 (555) 010-3456</p>
+                            <p class="info-value" data-site="contactPhone">+1 (555) 010-3456</p>
                         </div>
                     </div>
 
@@ -216,9 +217,10 @@
                         </span>
                         <div>
                             <p class="info-label">Address</p>
-                            <p class="info-value">123 Grammar Lane,<br>Englishville, EV 45000</p>
+                            <p class="info-value" data-site="address">123 Grammar Lane,<br>Englishville, EV 45000</p>
                             <!-- WRITER'S NOTE: replace with the real
-                                 address in the live version -->
+                                 address in the live version — or edit
+                                 it in the ADMIN CONSOLE (Content). -->
                         </div>
                     </div>
 
@@ -341,8 +343,10 @@
 
             <!-- The map placeholder: code-drawn "streets" grid + pin.
                  LESSON: repeating-linear-gradient lets CSS paint
-                 street-grid lines — no image needed. -->
-            <div class="map-frame">
+                 street-grid lines — no image needed.
+                 ADMIN: upload a map photo in the console's Media
+                 panel and js/site.js paints it over this slot. -->
+            <div class="map-frame" id="site-contact-map">
                 <div class="map-pin">
                     <svg class="icon icon-lg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>

@@ -29,6 +29,7 @@
          set before the page paints (no flash of wrong colors). -->
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
+    <script src="js/site.js"></script>
 </head>
 
 <body>
@@ -211,8 +212,10 @@
                 <!-- PHOTO SLOT: put the real photo in
                      assets/images/ and swap this div for:
                      <img src="assets/images/teacher.jpg"
-                          alt="[Name], founder of the academy"> -->
-                <div class="photo-frame">
+                          alt="[Name], founder of the academy">
+                     OR: upload it from the ADMIN CONSOLE — Media
+                     panel. js/site.js paints it in right here. -->
+                <div class="photo-frame" id="site-teacher-photo">
                     <!-- WRITER'S NOTE: replace this whole div with
                          a real <img> tag. Friendly, warm photo —
                          face clearly visible. -->

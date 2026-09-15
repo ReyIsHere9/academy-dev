@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 3;   /* v3: Phase 2 (instances, templates, inbox) */
+const SPACE_DB_VERSION = 4;   /* v4: Phase 3 (credentials, payments, media) */
 
 const SPACE_SEED = {
-    version: 3,
+    version: 4,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -382,6 +382,49 @@ const SPACE_SEED = {
         ]
     },
 
+    /* ============ CREDENTIALS (admin console override) ============
+       WHAT THIS IS: a copy of the demo passwords that the ADMIN
+       CONSOLE can edit ("reset password" tool). js/auth.js checks
+       these FIRST, then falls back to DEMO_USERS in auth-data.js.
+       ⚠️ Plain text in localStorage — same demo-only warning as
+       auth-data.js. Real builds hash passwords on the server. */
+    credentials: {
+        "admin":    "Admin#2026",
+        "Tch-1001": "Teacher#2026",
+        "Tch-2002": "Teacher#2026",
+        "Stu-2001": "Student#2026",
+        "Stu-2002": "Student#2026",
+        "Stu-2003": "Student#2026",
+        "Stu-2004": "Student#2026",
+        "Stu-2005": "Student#2026"
+    },
+
+    /* ============ PAYMENTS / SUBSCRIPTIONS ============
+       The admin billing overview reads this table. plan values:
+       monthly / quarterly / yearly = SUBSCRIPTIONS,
+       lifetime = one-time purchase.
+       status: paid | pending | failed */
+    payments: [
+        { id: "pay-1", student: "Stu-2001", plan: "quarterly", amount: 216, status: "paid",    daysAgo: 12, method: "card" },
+        { id: "pay-2", student: "Stu-2002", plan: "monthly",   amount: 80,  status: "paid",    daysAgo: 3,  method: "paypal" },
+        { id: "pay-3", student: "Stu-2003", plan: "yearly",    amount: 720, status: "pending", daysAgo: 1,  method: "bank" },
+        { id: "pay-4", student: "Stu-2004", plan: "monthly",   amount: 80,  status: "failed",  daysAgo: 5,  method: "card" },
+        { id: "pay-5", student: "Stu-2005", plan: "lifetime",  amount: 990, status: "paid",    daysAgo: 6,  method: "card" },
+        { id: "pay-6", student: "Stu-2002", plan: "monthly",   amount: 80,  status: "paid",    daysAgo: 33, method: "paypal" }
+    ],
+
+    /* ============ SITE MEDIA (photo spots) ============
+       Image values are DATA URLs (the picture stored as text) so
+       the demo can show them without a server. The admin console
+       uploads/clears these; js/site.js paints them into the slots
+       on index.html, about.html and contact.html. */
+    media: {
+        teacherPhoto: "",
+        contactMap: "",
+        heroImage: "",
+        logoImage: ""
+    },
+
     /* ============ ACTIVITY LOG (admin / teacher overview) ============ */
     activity: [
         { id: "act-1", kind: "join",   text: "Demo Student joined the B1 · Conversation room", minutesAgo: 12 },
@@ -399,6 +442,7 @@ const SPACE_SEED = {
         tagline: "Learn English with live teachers and small classes.",
         contactEmail: "hello@example-academy.com",
         contactPhone: "+1 (555) 010-3456",
+        address: "123 Grammar Lane, Englishville, EV 45000",
         homeBanner: "",
         lifetimeOffer: true
     }

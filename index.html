@@ -40,6 +40,7 @@
          set before the page paints (no flash of wrong colors). -->
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
+    <script src="js/site.js"></script>
     <!-- Link to our ONE shared style file (styles.css).
          EVERY page of the site will link to this same file,
          so all pages look consistent. That file lives in the
@@ -114,12 +115,22 @@
         </div>
     </header>
 
+    <!-- ================= ADMIN ANNOUNCEMENT BANNER =================
+         Hidden until the admin console writes a banner text
+         (Content panel). js/site.js fills + reveals it. -->
+    <div class="site-banner" id="site-banner" hidden>
+        <div class="container">
+            <p id="site-banner-text"></p>
+        </div>
+    </div>
+
     <!-- ================= HERO SECTION =================
          The hero = the big first impression block.
          Text + a button. Notice class names like "hero":
          they have NO style by themselves — css/styles.css
-         is what gives them color, size and layout. -->
-    <section class="hero">
+         is what gives them color, size and layout.
+         ADMIN: a hero photo can be uploaded in the Media panel. -->
+    <section class="hero" id="site-hero">
         <div class="container">
 
             <!-- h1 = the MOST important headline on the page.

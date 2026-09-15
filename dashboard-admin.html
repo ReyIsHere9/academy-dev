@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     MODULE 6 — ACCOUNT SPACES: ADMIN CONSOLE
+     (academy-dev — generic version)
+     ------------------------------------------------------------
+     THE "OVERRIDE EVERYTHING" SPACE. Unlike the in-class admin
+     room (class-admin.html), THIS is the site-wide control room:
+       1. Overview  — stats, payment bars, attention list, activity
+       2. Users     — edit, rename IDs, reset passwords, suspend,
+                      view-as (impersonate), delete, create
+       3. Payments  — who paid / pending / failed, subscriptions
+                      vs one-time, status overrides
+       4. Catalog   — edit levels, taglines, summaries, grammar,
+                      skills, points and unit titles
+       5. Media     — upload/edit every photo spot (logo, hero,
+                      teacher photo, map)
+       6. Classes   — reassign teachers, edit codes/meetings,
+                      manage students, delete classes
+       7. Content   — site settings + announcements broadcast
+       8. Badges    — edit/add/delete the badge catalog
+       9. Danger    — reset the whole demo database
+
+     ⚠️ EVERYTHING HERE IS DEMO-LEVEL POWER: client-side checks,
+     plain-text demo passwords, localStorage data. A real build
+     puts every one of these actions behind server-side admin
+     auth and audit logging (see notes in js/space.js §13).
+     ============================================================ -->
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | The English Academy</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/theme.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/site.js"></script>
+</head>
+
+<body class="role-admin">
+
+    <!-- ================= HEADER (same on every page) ================= -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="./" class="logo">The English Academy</a>
+            <a href="login.html" class="btn-login">Login / Register</a>
+            <nav class="main-nav">
+                <a href="./">Home</a>
+                <a href="courses.html">Courses</a>
+                <div class="dd" id="dd">
+                    <button type="button" class="dd-btn" id="dd-trigger"
+                            aria-haspopup="true" aria-expanded="false">
+                        Pricing <span class="dd-caret">&#9662;</span>
+                    </button>
+                    <div class="dd-panel" id="dd-panel">
+                        <div class="dd-tiers" id="dd-tiers"></div>
+                        <a class="dd-compare" href="pricing.html#compare">Compare every feature &rarr;</a>
+                    </div>
+                </div>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle"
+                    aria-label="Switch to dark mode" aria-pressed="false">
+                <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <section class="section space-section">
+        <div class="container">
+
+            <!-- ========== THE GATE ========== -->
+            <div class="space-gate" id="space-gate">
+                <h1>Admin console</h1>
+                <p id="space-gate-msg">Log in to open the console.</p>
+                <div class="space-quick-row">
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="admin">Continue as Site Admin</button>
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="teacher">As Ms. Demo Teacher</button>
+                    <button type="button" class="btn btn-ghost space-quick"
+                            data-role="student">As Demo Student</button>
+                </div>
+                <div class="space-quick-row space-gate-extra">
+                    <a id="space-gate-go" class="btn btn-primary" href="#" hidden>
+                        Go to my dashboard</a>
+                    <button type="button" class="btn btn-ghost" id="space-gate-logout" hidden>
+                        Log out</button>
+                </div>
+                <p class="muted small">Demo accounts need no password — one click logs you in.</p>
+            </div>
+
+            <!-- ========== THE SHELL ========== -->
+            <div class="space-layout" id="space-shell" hidden>
+
+                <aside class="space-nav">
+                    <p class="space-nav-title" id="space-nav-title">Admin console</p>
+                    <button type="button" class="space-nav-btn is-active"
+                            data-panel="overview">Overview</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="users">Users</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="payments">Payments</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="catalog">Catalog</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="media">Media</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="classes">Classes</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="content">Content</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="badges">Badges</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="danger">Danger zone</button>
+                    <button type="button" class="space-nav-btn"
+                            data-panel="profile">Profile</button>
+                </aside>
+
+                <div class="space-main">
+
+                    <!-- greeting bar -->
+                    <div class="space-greeting">
+                        <span class="space-avatar" id="space-avatar">A</span>
+                        <div>
+                            <h1 id="space-greeting-name">Welcome back.</h1>
+                            <p class="space-sub" id="space-role-label">Admin console</p>
+                        </div>
+                        <span class="space-date-chip" id="space-date"></span>
+                        <button type="button" class="btn btn-ghost btn-small"
+                                id="space-logout">Log out</button>
+                    </div>
+
+                    <!-- ---- OVERVIEW ---- -->
+                    <section class="space-panel is-active" data-panel="overview">
+                        <div class="space-stack">
+                            <div class="space-stat-row">
+                                <div class="space-stat">
+                                    <strong id="adm-users">0</strong>
+                                    <span>Total users</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="adm-students">0</strong>
+                                    <span>Students</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="adm-teachers">0</strong>
+                                    <span>Teachers</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="adm-classes">0</strong>
+                                    <span>Classes</span>
+                                </div>
+                            </div>
+                            <div class="space-stat-row">
+                                <div class="space-stat">
+                                    <strong id="adm-revenue">$0</strong>
+                                    <span>Collected (paid)</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="adm-subs">0</strong>
+                                    <span>Active subscriptions</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="adm-pending">0</strong>
+                                    <span>Pending payments</span>
+                                </div>
+                                <div class="space-stat">
+                                    <strong id="adm-failed">0</strong>
+                                    <span>Failed payments</span>
+                                </div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Payments overview</h2>
+                                <div id="adm-revenue-bars"></div>
+                            </div>
+
+                            <div class="space-grid-2">
+                                <div class="space-card">
+                                    <h2>Needs attention</h2>
+                                    <div id="adm-pending-list"></div>
+                                </div>
+                                <div class="space-card">
+                                    <h2>Recent activity</h2>
+                                    <div id="adm-activity"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- USERS ---- -->
+                    <section class="space-panel" data-panel="users">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <div class="gb-head">
+                                    <h2>Users</h2>
+                                    <div class="admin-filter-row">
+                                        <input type="search" class="chat-input" id="adm-user-search"
+                                               placeholder="Search name or ID&hellip;" autocomplete="off">
+                                        <select class="mini-select" id="adm-user-role">
+                                            <option value="all">All roles</option>
+                                            <option value="student">Students</option>
+                                            <option value="teacher">Teachers</option>
+                                            <option value="admin">Admins</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="adm-users"></div>
+                            </div>
+
+                            <div class="space-card" id="adm-user-editor" hidden>
+                                <div id="adm-user-editor-card"></div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Create a user</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-name">Full name</label>
+                                        <input type="text" class="chat-input" id="adm-new-name"
+                                               autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-id">User ID</label>
+                                        <input type="text" class="chat-input" id="adm-new-id"
+                                               placeholder="Stu-3001 / Tch-3001" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-role">Role</label>
+                                        <select class="chat-input" id="adm-new-role">
+                                            <option value="student">Student</option>
+                                            <option value="teacher">Teacher</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-new-pass">Password (demo)</label>
+                                        <input type="text" class="chat-input" id="adm-new-pass"
+                                               value="Welcome#2026" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-user-add">
+                                        Create user</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- PAYMENTS ---- -->
+                    <section class="space-panel" data-panel="payments">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>Summary</h2>
+                                <div id="adm-pay-summary"></div>
+                            </div>
+                            <div class="space-card">
+                                <h2>All payments</h2>
+                                <div id="adm-payments"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- CATALOG ---- -->
+                    <section class="space-panel" data-panel="catalog">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <div class="gb-head">
+                                    <h2>Course catalog</h2>
+                                    <select class="mini-select" id="adm-cat-level"></select>
+                                </div>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-cat-label">Level label</label>
+                                        <input type="text" class="chat-input" id="adm-cat-label">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-cat-tagline">Tagline</label>
+                                        <input type="text" class="chat-input" id="adm-cat-tagline">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="adm-cat-summary">Summary</label>
+                                    <textarea class="chat-input space-textarea" id="adm-cat-summary"
+                                              rows="3"></textarea>
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="adm-cat-grammar">
+                                        Grammar focus — one topic per line</label>
+                                    <textarea class="chat-input space-textarea" id="adm-cat-grammar"
+                                              rows="4"></textarea>
+                                </div>
+
+                                <h3 class="space-subhead">Skills &amp; units</h3>
+                                <div id="adm-cat-skills"></div>
+
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-cat-save">
+                                        Save catalog changes</button>
+                                    <button type="button" class="btn btn-ghost" id="adm-cat-reset">
+                                        Reset to original</button>
+                                </div>
+                                <p class="space-hint">Saved changes override js/levels-data.js on
+                                   courses.html and course.html.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- MEDIA ---- -->
+                    <section class="space-panel" data-panel="media">
+                        <div class="space-card">
+                            <h2>Site photos</h2>
+                            <p class="space-hint">Upload a file or paste an image URL. Photos are
+                               stored as demo data in this browser and painted by js/site.js.</p>
+                            <div class="media-grid" id="adm-media"></div>
+                        </div>
+                    </section>
+
+                    <!-- ---- CLASSES ---- -->
+                    <section class="space-panel" data-panel="classes">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>All classes</h2>
+                                <div id="adm-classes"></div>
+                            </div>
+                            <div class="space-card" id="adm-class-editor" hidden>
+                                <div id="adm-class-editor-card"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- CONTENT ---- -->
+                    <section class="space-panel" data-panel="content">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>Site settings</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-set-name">Site name</label>
+                                        <input type="text" class="chat-input" id="adm-set-name">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-set-tagline">Tagline</label>
+                                        <input type="text" class="chat-input" id="adm-set-tagline">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-set-email">Contact email</label>
+                                        <input type="text" class="chat-input" id="adm-set-email">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-set-phone">Contact phone</label>
+                                        <input type="text" class="chat-input" id="adm-set-phone">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="adm-set-address">Address</label>
+                                    <input type="text" class="chat-input" id="adm-set-address">
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="adm-set-banner">
+                                        Home banner (leave empty to hide)</label>
+                                    <textarea class="chat-input space-textarea" id="adm-set-banner"
+                                              rows="2"
+                                              placeholder="e.g. New speaking club opens Monday!"></textarea>
+                                </div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-set-save">
+                                        Save settings</button>
+                                </div>
+                                <p class="space-hint">Contact info and the banner appear on the
+                                   public pages after a refresh.</p>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Announcements</h2>
+                                <div class="field">
+                                    <label class="space-label" for="adm-broadcast-text">
+                                        Broadcast to every account</label>
+                                    <textarea class="chat-input space-textarea" id="adm-broadcast-text"
+                                              rows="2"
+                                              placeholder="Write the announcement&hellip;"></textarea>
+                                </div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-broadcast-send">
+                                        Send announcement</button>
+                                </div>
+                                <div id="adm-announcements"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- BADGES ---- -->
+                    <section class="space-panel" data-panel="badges">
+                        <div class="space-stack">
+                            <div class="space-card">
+                                <h2>Badge catalog</h2>
+                                <p class="space-hint">Teachers award these to students. Editing a
+                                   badge updates it everywhere it is shown.</p>
+                                <div id="adm-badges"></div>
+                            </div>
+                            <div class="space-card">
+                                <h2>Add a badge</h2>
+                                <div class="form-grid-2">
+                                    <div class="field">
+                                        <label class="space-label" for="adm-badge-icon">Icon (emoji)</label>
+                                        <input type="text" class="chat-input" id="adm-badge-icon"
+                                               value="&#127942;" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-badge-label">Label</label>
+                                        <input type="text" class="chat-input" id="adm-badge-label"
+                                               placeholder="e.g. Debate Champion" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="adm-badge-desc">Description</label>
+                                    <input type="text" class="chat-input" id="adm-badge-desc"
+                                           placeholder="What does it take to earn it?" autocomplete="off">
+                                </div>
+                                <div class="space-submit-row">
+                                    <button type="button" class="btn btn-primary" id="adm-badge-add">
+                                        Add badge</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- DANGER ZONE ---- -->
+                    <section class="space-panel" data-panel="danger">
+                        <div class="space-card danger-card">
+                            <h2>Danger zone</h2>
+                            <p class="space-hint">These actions change EVERYTHING for every demo
+                               account in this browser.</p>
+                            <div class="space-submit-row">
+                                <button type="button" class="btn admin-danger" id="adm-reset">
+                                    Reset the whole demo database</button>
+                            </div>
+                            <p class="space-hint">Resetting re-seeds users, classes, assignments,
+                               payments, catalog edits and photos from js/space-data.js.</p>
+                        </div>
+                    </section>
+
+                    <!-- ---- PROFILE ---- -->
+                    <section class="space-panel" data-panel="profile">
+                        <div class="space-grid-2">
+                            <div class="space-card">
+                                <h2>Public profile</h2>
+                                <div class="field">
+                                    <label class="space-label" for="prof-name">Display name</label>
+                                    <input type="text" class="chat-input" id="prof-name"
+                                           autocomplete="off">
+                                </div>
+                                <div class="field">
+                                    <label class="space-label" for="prof-bio">Short bio</label>
+                                    <textarea class="chat-input space-textarea" id="prof-bio"
+                                              rows="3"
+                                              placeholder="A line about you - shown on your public profile"></textarea>
+                                </div>
+                                <p class="space-label">Avatar color</p>
+                                <div class="space-swatches" id="prof-avatar-colors"></div>
+                                <a class="btn btn-ghost btn-small" id="prof-public-link"
+                                   href="profile.html" target="_blank" rel="noopener">
+                                   View public profile</a>
+                            </div>
+                            <div class="space-card">
+                                <h2>Personalization</h2>
+                                <p class="space-label">Accent color for your space</p>
+                                <div class="space-swatches" id="prof-accent-colors"></div>
+                                <h3 class="space-subhead">Notifications</h3>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-assignments">
+                                    Email me admin reports</label>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-announcements">
+                                    Email me new signups</label>
+                                <label class="switch-row">
+                                    <input type="checkbox" id="pref-chat">
+                                    Ping me on chat mentions</label>
+                            </div>
+                        </div>
+                        <div class="space-card space-save-row">
+                            <button type="button" class="btn btn-primary" id="prof-save">
+                                Save changes</button>
+                            <span class="muted small" id="prof-status"></span>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <p class="logo">The English Academy</p>
+            <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="js/pricing-data.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/auth-data.js"></script>
+    <script src="js/levels-data.js"></script>
+    <script src="js/space-data.js"></script>
+    <script src="js/space.js"></script>
+
+</body>
+</html>

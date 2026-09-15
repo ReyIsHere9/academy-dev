@@ -55,6 +55,32 @@ const sessionPanel = document.getElementById("session-panel");
    server (see security notes below). */
 const SESSION_KEY = "demoSession";
 
+/* ============ PASSWORD CHECK (demo) ============
+   The ADMIN CONSOLE can reset demo passwords; those live in the
+   demo store (js/space-data.js -> localStorage). We check the
+   store FIRST, then fall back to the plain demo password.
+   ⚠️ demo-only: real builds verify a server-side hash. */
+function demoPasswordFor(user) {
+    try {
+        const db = JSON.parse(localStorage.getItem("academySpaceDB"));
+        if (db && db.credentials && db.credentials[user.id]) {
+            return db.credentials[user.id];
+        }
+    } catch { /* no store yet — fall back below */ }
+    return user.password;
+}
+
+/* the admin console can also SUSPEND an account */
+function demoIsSuspended(userId) {
+    try {
+        const db = JSON.parse(localStorage.getItem("academySpaceDB"));
+        return Boolean(db && db.profiles && db.profiles[userId] &&
+                       db.profiles[userId].suspended);
+    } catch {
+        return false;
+    }
+}
+
 function saveSession(user) {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({
         id: user.id, role: user.role, name: user.name
@@ -109,8 +135,17 @@ if (loginForm) {
         const user = DEMO_USERS.find(u =>
             u.id.toLowerCase() === id.toLowerCase());
 
-        if (!user || user.password !== pwInput.value) {
+        /* demoPasswordFor: store password (admin-reset) if present,
+           otherwise the static demo password from auth-data.js */
+        const expected = user ? demoPasswordFor(user) : null;
+        if (!user || pwInput.value !== expected) {
             loginError.textContent = "User ID or password is incorrect.";
+            loginError.hidden = false;
+            return;
+        }
+
+        if (demoIsSuspended(user.id)) {
+            loginError.textContent = "This account is suspended. Contact the academy.";
             loginError.hidden = false;
             return;
         }

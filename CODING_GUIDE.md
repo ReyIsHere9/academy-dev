@@ -30,6 +30,9 @@ academy-dev/
 ├── about.html        # Module: About
 ├── contact.html      # Module: Contact
 ├── dashboard.html    # Module: Account spaces (student; teacher/admin next)
+├── dashboard-teacher.html  # Teacher studio (role-teacher)
+├── dashboard-admin.html    # Admin console (role-admin)
+├── profile.html      # Public profile page
 ├── PLAN.md           # roadmap + module checklist (update it!)
 ├── CODING_GUIDE.md   # this file
 ├── css/
@@ -187,7 +190,10 @@ Style rules:
    plus the DOM-stub smoke harnesses in
    `%TEMP%\opencode\` (class-smoke / teach-smoke / admin-smoke /
    space-student-smoke / space-flows-smoke / space-teach-smoke /
-   space-teach-flows-smoke) — every engine has boot + flows tests.
+   space-teach-flows-smoke / space-admin-smoke /
+   space-admin-flows-smoke / catalog-smoke / auth-smoke) —
+   every engine has boot + flows tests, and overrides have
+   their own harnesses.
 8. Update PLAN.md: tick the checkbox.
 9. Commit with a clear message: `git add .` →
    `git commit -m "Add Module 4: about page"` → `git push origin main`

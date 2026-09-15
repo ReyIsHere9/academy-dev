@@ -32,10 +32,12 @@ const levelId  = params.get("level");
 const skillName = params.get("skill");
 
 /* ============ 2. FIND THE RIGHT DATA ============
-   .find() walks the LEVELS array and returns the FIRST
+   .find() walks the CATALOG array and returns the FIRST
    object where our test is true (or undefined if none).
-   We then find the matching skill inside that level. */
-const level = LEVELS.find(l => l.id === levelId);
+   CATALOG = admin-edited store, or levels-data.js
+   (js/catalog.js makes that choice — it loads first). */
+const CATALOG = academyCatalog();
+const level = CATALOG.find(l => l.id === levelId);
 const skill = level
     ? level.skills.find(s => s.name === skillName)
     : undefined;

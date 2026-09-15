@@ -47,7 +47,7 @@ const SPACE_TITLES = {
 const SPACE_READY = {
     student: true,
     teacher: true,
-    admin: false
+    admin: true
 };
 
 /* the personal color palette (avatar + accent choices) */
@@ -268,9 +268,10 @@ function startSpaceShell(session) {
         });
     });
 
-    /* --- role-specific panels (admin console arrives later) --- */
+    /* --- role-specific panels --- */
     if (SPACE_ROLE === "student") startStudentSpace(db, session);
     else if (SPACE_ROLE === "teacher") startTeacherSpace(db, session);
+    else if (SPACE_ROLE === "admin") startAdminSpace(db, session);
 }
 
 /* paint avatar + accent color from the profile (also reused after
@@ -2517,6 +2518,1130 @@ function wireTeacherPanels(db, session) {
                 spaceSave(db);
                 renderTeacherMaterials(db, session);
                 spaceToast("Material deleted", "bad");
+            });
+        });
+    }
+}
+
+/* ============ ADMIN SPACE (dashboard-admin.html) ============
+   The site-wide control room: users, payments, catalog, media,
+   classes, content, badges, danger zone.
+
+   ⚠️ DEMO POWER WARNING: every "override" here runs in the
+   browser. In a real build each action goes to the server, which
+   re-checks that the caller is an admin AND writes an audit log
+   row. Client-side admin checks are theater, exactly like the
+   class room's.
+
+   HOUSE RULE: every admin action calls adminLog() so the change
+   shows up in the activity feed — the beginning of an audit
+   trail, and great for demos. */
+
+const PLAN_LABEL = {
+    monthly: "Monthly", quarterly: "3-Monthly", yearly: "Yearly",
+    lifetime: "Lifetime (one-time)"
+};
+
+const PAY_STATUS_LABEL = { paid: "Paid", pending: "Pending", failed: "Failed" };
+
+const MEDIA_SLOTS = [
+    { key: "logoImage",    label: "Brand logo",        hint: "Replaces the text logo in the header" },
+    { key: "heroImage",    label: "Home hero photo",   hint: "Behind the headline on the home page" },
+    { key: "teacherPhoto", label: "Teacher photo",     hint: "About page photo spot" },
+    { key: "contactMap",   label: "Map / street photo", hint: "Contact page map slot" }
+];
+
+let adminUserQuery = "";
+let adminUserRole = "all";
+let adminUserOpen = null;     // user id being edited
+let adminClassOpen = null;    // class id being edited
+let adminCatLevel = null;     // selected catalog level id
+
+function startAdminSpace(db, session) {
+    ensureAdminCatalog(db);
+    renderAdminOverview(db, session);
+    renderAdminUsers(db, session);
+    renderAdminPayments(db, session);
+    renderAdminCatalog(db, session);
+    renderAdminMedia(db, session);
+    renderAdminClasses(db, session);
+    renderAdminContent(db, session);
+    renderAdminBadges(db, session);
+    renderProfile(db, session);
+    wireProfilePanel(db, session);
+    wireAdminPanels(db, session);
+}
+
+/* the admin catalog starts as a full copy of levels-data.js, then
+   the admin edits the copy — the original file stays untouched */
+function ensureAdminCatalog(db) {
+    if (Array.isArray(db.catalog) && db.catalog.length) return;
+    if (typeof LEVELS !== "undefined") {
+        db.catalog = JSON.parse(JSON.stringify(LEVELS));
+        spaceSave(db);
+    }
+}
+
+/* every admin action writes one line here (see house rule above) */
+function adminLog(db, text, kind) {
+    db.activity.unshift({
+        id: "act-" + Date.now(),
+        kind: kind || "admin",
+        text,
+        minutesAgo: 0
+    });
+    if (db.activity.length > 40) db.activity.length = 40;   // cap it
+    spaceSave(db);
+}
+
+/* ---------- admin: OVERVIEW ---------- */
+function renderAdminOverview(db, session) {
+    const profiles = Object.entries(db.profiles).map(([id, p]) => ({ id, ...p }));
+    const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+
+    set("adm-users", profiles.length);
+    set("adm-students", profiles.filter(p => p.role === "student").length);
+    set("adm-teachers", profiles.filter(p => p.role === "teacher").length);
+    set("adm-classes", db.courseInstances.length);
+
+    const paid = db.payments.filter(p => p.status === "paid");
+    const pending = db.payments.filter(p => p.status === "pending");
+    const failed = db.payments.filter(p => p.status === "failed");
+    const revenue = paid.reduce((sum, p) => sum + p.amount, 0);
+    const subs = new Set(paid.filter(p => p.plan !== "lifetime").map(p => p.student));
+
+    set("adm-revenue", "$" + revenue.toLocaleString());
+    set("adm-subs", subs.size);
+    set("adm-pending", pending.length);
+    set("adm-failed", failed.length);
+
+    /* simple bar "chart": one row per status, width = share of total */
+    const bars = document.getElementById("adm-revenue-bars");
+    if (bars) {
+        const total = Math.max(1, db.payments.length);
+        bars.innerHTML = ["paid", "pending", "failed"].map(status => {
+            const rows = db.payments.filter(p => p.status === status);
+            const amount = rows.reduce((sum, p) => sum + p.amount, 0);
+            const pct = Math.round(rows.length / total * 100);
+            return `
+            <div class="pay-bar-row">
+                <span class="pay-bar-label">${PAY_STATUS_LABEL[status]}</span>
+                <div class="pay-bar-track">
+                    <div class="pay-bar-fill is-${status}" style="--w:${pct}%"></div>
+                </div>
+                <span class="pay-bar-value">${rows.length} payments · $${amount.toLocaleString()}</span>
+            </div>`;
+        }).join("");
+    }
+
+    const attention = document.getElementById("adm-pending-list");
+    if (attention) {
+        const rows = db.payments.filter(p => p.status !== "paid");
+        attention.innerHTML = rows.length ? rows.map(p => {
+            const student = spaceProfile(db, p.student);
+            return `
+            <div class="today-row">
+                <span class="msg-avatar" style="background:${student.avatarColor}">${spaceEsc(student.name.trim().charAt(0).toUpperCase())}</span>
+                <div class="today-row-main">
+                    <p class="space-next-course">${spaceEsc(student.name)}</p>
+                    <p class="space-next-meta">${PLAN_LABEL[p.plan] || p.plan} · $${p.amount}
+                       · <span class="status-chip is-${p.status === "failed" ? "overdue" : "todo"}">${PAY_STATUS_LABEL[p.status]}</span></p>
+                </div>
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-goto-payments="1">Review</button>
+            </div>`;
+        }).join("") : '<p class="space-empty-inline">Everything is settled. 🎉</p>';
+    }
+
+    const activity = document.getElementById("adm-activity");
+    if (activity) {
+        activity.innerHTML = db.activity.slice(0, 6).map(act => `
+            <div class="today-row">
+                <span class="activity-dot"></span>
+                <div class="today-row-main">
+                    <p class="space-next-meta">${spaceEsc(act.text)}</p>
+                    <p class="space-next-meta muted">${spaceAgo(act.minutesAgo)}</p>
+                </div>
+            </div>`).join("");
+    }
+}
+
+/* ---------- admin: USERS ---------- */
+function renderAdminUsers(db, session) {
+    const box = document.getElementById("adm-users");
+    if (!box) return;
+
+    const q = adminUserQuery.trim().toLowerCase();
+    let list = Object.entries(db.profiles).map(([id, p]) => ({ id, ...p }));
+    if (adminUserRole !== "all") list = list.filter(u => u.role === adminUserRole);
+    if (q) list = list.filter(u =>
+        u.name.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+    list.sort((a, b) => a.id.localeCompare(b.id));
+
+    box.innerHTML = `
+    <div class="gb-scroll">
+        <table class="gb-table admin-table">
+            <thead><tr>
+                <th>User</th><th>ID</th><th>Role</th><th>Status</th>
+                <th>Joined</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+                ${list.map(u => `
+                <tr>
+                    <td class="admin-user-cell">
+                        <span class="msg-avatar" style="background:${spaceEsc(u.avatarColor)}">${spaceEsc(u.name.trim().charAt(0).toUpperCase())}</span>
+                        <span class="gb-name">${spaceEsc(u.name)}</span>
+                    </td>
+                    <td><code>${spaceEsc(u.id)}</code></td>
+                    <td><span class="role-tag role-${spaceEsc(u.role)}">${spaceEsc(u.role)}</span></td>
+                    <td>${u.suspended
+                        ? '<span class="status-chip is-overdue">Suspended</span>'
+                        : '<span class="status-chip is-graded">Active</span>'}</td>
+                    <td class="muted small">${spaceAgo(u.joinedDaysAgo * 24 * 60)}</td>
+                    <td class="admin-actions-cell">
+                        <button type="button" class="btn btn-ghost btn-small"
+                                data-user-edit="${spaceEsc(u.id)}">Edit</button>
+                        <button type="button" class="btn btn-ghost btn-small"
+                                data-user-view="${spaceEsc(u.id)}">View as</button>
+                        <button type="button" class="admin-kick"
+                                data-user-del="${spaceEsc(u.id)}" title="Delete user">&times;</button>
+                    </td>
+                </tr>`).join("")}
+            </tbody>
+        </table>
+    </div>
+    <p class="space-hint">${list.length} of ${Object.keys(db.profiles).length} users shown.</p>`;
+}
+
+function openAdminUser(db, session, id) {
+    const p = db.profiles[id];
+    if (!p) return;
+    adminUserOpen = id;
+
+    const box = document.getElementById("adm-user-editor");
+    const card = document.getElementById("adm-user-editor-card");
+    if (!box || !card) return;
+
+    const cred = (db.credentials && db.credentials[id]) || "—";
+    card.innerHTML = `
+    <div class="asg-head">
+        <div>
+            <h2>Edit ${spaceEsc(p.name)}</h2>
+            <p class="space-next-meta">ID <code>${spaceEsc(id)}</code> · joined
+               ${spaceAgo(p.joinedDaysAgo * 24 * 60)}</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-small" id="adm-user-close">Close</button>
+    </div>
+    <div class="form-grid-2">
+        <div class="field">
+            <label class="space-label" for="adm-ed-name">Full name</label>
+            <input type="text" class="chat-input" id="adm-ed-name" value="${spaceEsc(p.name)}">
+        </div>
+        <div class="field">
+            <label class="space-label" for="adm-ed-id">User ID (renames everywhere)</label>
+            <input type="text" class="chat-input" id="adm-ed-id" value="${spaceEsc(id)}">
+        </div>
+        <div class="field">
+            <label class="space-label" for="adm-ed-role">Role</label>
+            <select class="chat-input" id="adm-ed-role">
+                ${["student", "teacher", "admin"].map(r =>
+                    `<option value="${r}" ${p.role === r ? "selected" : ""}>${r}</option>`).join("")}
+            </select>
+        </div>
+        <div class="field">
+            <label class="space-label" for="adm-ed-pass">New password (demo, plain text: ${spaceEsc(cred)})</label>
+            <input type="text" class="chat-input" id="adm-ed-pass"
+                   placeholder="Leave empty to keep the current one">
+        </div>
+    </div>
+    <div class="space-submit-row">
+        <button type="button" class="btn btn-primary" id="adm-ed-save">Save user</button>
+        <button type="button" class="btn btn-ghost" id="adm-ed-suspend">
+            ${p.suspended ? "Activate account" : "Suspend account"}</button>
+    </div>
+    <p class="space-hint">Rename power: changing the ID rewrites it in classes,
+       submissions, badges, notes, messages and payments. View as signs this
+       browser in as that user (demo impersonation).</p>`;
+    box.hidden = false;
+    if (box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* the big one: rewrite a user id across the whole demo database */
+function renameUser(db, oldId, newId) {
+    if (oldId === newId) return true;
+    if (!newId || db.profiles[newId]) return false;
+
+    db.profiles[newId] = db.profiles[oldId];
+    delete db.profiles[oldId];
+
+    if (db.credentials && db.credentials[oldId] !== undefined) {
+        db.credentials[newId] = db.credentials[oldId];
+        delete db.credentials[oldId];
+    }
+    if (db.earnedBadges[oldId]) {
+        db.earnedBadges[newId] = db.earnedBadges[oldId];
+        delete db.earnedBadges[oldId];
+    }
+    if (db.notes[oldId]) {
+        db.notes[newId] = db.notes[oldId];
+        delete db.notes[oldId];
+    }
+    db.enrollments.forEach(e => { if (e.student === oldId) e.student = newId; });
+    db.courseInstances.forEach(c => {
+        c.students = c.students.map(s => s === oldId ? newId : s);
+        if (c.teacher === oldId) c.teacher = newId;
+    });
+    db.schedule.forEach(s => {
+        s.students = (s.students || []).map(x => x === oldId ? newId : x);
+        if (s.teacher === oldId) s.teacher = newId;
+    });
+    db.assignments.forEach(a => {
+        if (a.createdBy === oldId) a.createdBy = newId;
+        if (a.submissions[oldId]) {
+            a.submissions[newId] = a.submissions[oldId];
+            delete a.submissions[oldId];
+        }
+        Object.values(a.submissions).forEach(sub => {
+            (sub.comments || []).forEach(c => { if (c.by === oldId) c.by = newId; });
+        });
+    });
+    db.messages.forEach(t => {
+        t.participants = t.participants.map(x => x === oldId ? newId : x);
+        t.messages.forEach(m => {
+            if (m.by === oldId) m.by = newId;
+            if (m.readBy) m.readBy = m.readBy.map(x => x === oldId ? newId : x);
+        });
+    });
+    db.payments.forEach(p => { if (p.student === oldId) p.student = newId; });
+
+    return true;
+}
+
+function deleteUser(db, id) {
+    delete db.profiles[id];
+    if (db.credentials) delete db.credentials[id];
+    delete db.earnedBadges[id];
+    delete db.notes[id];
+    db.enrollments = db.enrollments.filter(e => e.student !== id);
+    db.courseInstances.forEach(c => {
+        c.students = c.students.filter(s => s !== id);
+    });
+    db.schedule.forEach(s => {
+        s.students = (s.students || []).filter(x => x !== id);
+    });
+    db.assignments.forEach(a => {
+        delete a.submissions[id];
+        Object.values(a.submissions).forEach(sub => {
+            sub.comments = (sub.comments || []).filter(c => c.by !== id);
+        });
+    });
+    db.messages = db.messages.filter(t => !t.participants.includes(id));
+    db.payments = db.payments.filter(p => p.student !== id);
+}
+
+function adminViewAs(db, id) {
+    const p = db.profiles[id];
+    if (!p) return;
+    sessionSave({ id, role: p.role, name: p.name });
+    spaceToast("Viewing as " + p.name + " — remember to log out", "bad");
+    window.location.href = dashboardFor(p.role);
+}
+
+/* ---------- admin: PAYMENTS ---------- */
+function renderAdminPayments(db, session) {
+    const box = document.getElementById("adm-payments");
+    const summary = document.getElementById("adm-pay-summary");
+    if (summary) {
+        const paid = db.payments.filter(p => p.status === "paid");
+        const recurring = db.payments.filter(p => p.plan !== "lifetime");
+        const subs = new Set(paid.filter(p => p.plan !== "lifetime").map(p => p.student));
+        summary.innerHTML = `
+        <div class="space-stat-row">
+            <div class="space-stat"><strong>$${paid.reduce((s, p) => s + p.amount, 0).toLocaleString()}</strong>
+                <span>Collected</span></div>
+            <div class="space-stat"><strong>${subs.size}</strong>
+                <span>Students on a subscription</span></div>
+            <div class="space-stat"><strong>${db.payments.length - recurring.length}</strong>
+                <span>One-time purchases</span></div>
+            <div class="space-stat"><strong>${db.payments.filter(p => p.status !== "paid").length}</strong>
+                <span>Not completed yet</span></div>
+        </div>`;
+    }
+
+    if (!box) return;
+    const sorted = db.payments.slice().sort((a, b) => a.daysAgo - b.daysAgo);
+    box.innerHTML = `
+    <div class="gb-scroll">
+        <table class="gb-table admin-table">
+            <thead><tr>
+                <th>Student</th><th>Plan</th><th>Type</th><th>Amount</th>
+                <th>Status</th><th>Method</th><th>When</th><th>Override</th>
+            </tr></thead>
+            <tbody>
+                ${sorted.map(p => {
+                    const student = spaceProfile(db, p.student);
+                    const isSub = p.plan !== "lifetime";
+                    return `
+                    <tr>
+                        <td class="admin-user-cell">
+                            <span class="msg-avatar" style="background:${student.avatarColor}">${spaceEsc(student.name.trim().charAt(0).toUpperCase())}</span>
+                            <span class="gb-name">${spaceEsc(student.name)}</span>
+                        </td>
+                        <td>${PLAN_LABEL[p.plan] || p.plan}</td>
+                        <td>${isSub
+                            ? '<span class="kind-chip is-task">Subscription</span>'
+                            : '<span class="kind-chip is-worksheet">One-time</span>'}</td>
+                        <td><strong>$${p.amount}</strong></td>
+                        <td><span class="status-chip is-${p.status === "paid" ? "graded" : p.status === "pending" ? "todo" : "overdue"}">${PAY_STATUS_LABEL[p.status]}</span></td>
+                        <td class="muted small">${spaceEsc(p.method)}</td>
+                        <td class="muted small">${spaceAgo(p.daysAgo * 24 * 60)}</td>
+                        <td class="admin-actions-cell">
+                            ${["paid", "pending", "failed"].filter(s => s !== p.status).map(s =>
+                                `<button type="button" class="btn btn-ghost btn-small"
+                                        data-pay-status="${spaceEsc(p.id)}|${s}">Mark ${s}</button>`).join("")}
+                        </td>
+                    </tr>`;
+                }).join("")}
+            </tbody>
+        </table>
+    </div>`;
+}
+
+/* ---------- admin: CATALOG ---------- */
+function renderAdminCatalog(db, session) {
+    const cat = Array.isArray(db.catalog) && db.catalog.length
+        ? db.catalog
+        : (typeof LEVELS !== "undefined" ? LEVELS : []);
+
+    const select = document.getElementById("adm-cat-level");
+    if (select) {
+        select.innerHTML = cat.map(l =>
+            `<option value="${spaceEsc(l.id)}">${spaceEsc(l.label)}</option>`).join("");
+        if (!adminCatLevel || !cat.some(l => l.id === adminCatLevel)) {
+            adminCatLevel = cat.length ? cat[0].id : null;
+        }
+        if (adminCatLevel) select.value = adminCatLevel;
+    }
+    if (!adminCatLevel) return;
+    const level = cat.find(l => l.id === adminCatLevel);
+    if (!level) return;
+
+    const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    };
+    set("adm-cat-label", level.label || "");
+    set("adm-cat-tagline", level.tagline || "");
+    set("adm-cat-summary", level.summary || "");
+    set("adm-cat-grammar", (level.grammar || []).join("\n"));
+
+    const skillsBox = document.getElementById("adm-cat-skills");
+    if (skillsBox) {
+        skillsBox.innerHTML = level.skills.map((skill, i) => `
+        <div class="skill-edit" data-skill="${i}">
+            <p class="space-label">${spaceEsc(skill.name)}</p>
+            <div class="form-grid-2">
+                <div class="field">
+                    <label class="space-label">Blurb</label>
+                    <input type="text" class="chat-input adm-skill-blurb"
+                           value="${spaceEsc(skill.blurb || "")}">
+                </div>
+                <div class="field">
+                    <label class="space-label">Lessons label</label>
+                    <input type="text" class="chat-input adm-skill-lessons"
+                           value="${spaceEsc(skill.lessons || "")}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="space-label">Highlights — one per line</label>
+                <textarea class="chat-input space-textarea adm-skill-points" rows="3">${spaceEsc((skill.points || []).join("\n"))}</textarea>
+            </div>
+            <div class="field">
+                <label class="space-label">Unit titles — one per line</label>
+                <textarea class="chat-input space-textarea adm-skill-units" rows="4">${spaceEsc((skill.units || []).join("\n"))}</textarea>
+            </div>
+        </div>`).join("");
+    }
+}
+
+function saveAdminCatalog(db, session) {
+    const cat = db.catalog;
+    if (!cat) return;
+    const level = cat.find(l => l.id === adminCatLevel);
+    if (!level) return;
+
+    const read = id => {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    };
+    const lines = text => text.split("\n").map(s => s.trim()).filter(Boolean);
+
+    level.label = read("adm-cat-label").trim() || level.label;
+    level.tagline = read("adm-cat-tagline").trim();
+    level.summary = read("adm-cat-summary").trim();
+    level.grammar = lines(read("adm-cat-grammar"));
+
+    document.querySelectorAll(".skill-edit").forEach(box => {
+        const i = Number(box.dataset.skill);
+        const skill = level.skills[i];
+        if (!skill) return;
+        const blurb = box.querySelector(".adm-skill-blurb");
+        const lessons = box.querySelector(".adm-skill-lessons");
+        const points = box.querySelector(".adm-skill-points");
+        const units = box.querySelector(".adm-skill-units");
+        if (blurb) skill.blurb = blurb.value.trim();
+        if (lessons) skill.lessons = lessons.value.trim();
+        if (points) skill.points = lines(points.value);
+        if (units) skill.units = lines(units.value);
+    });
+
+    spaceSave(db);
+    adminLog(db, "Catalog updated — " + level.label + " (courses now show the edited copy)");
+    spaceToast("Catalog saved — public course pages now use these edits", "good");
+    renderAdminCatalog(db, session);
+    renderAdminOverview(db, session);
+}
+
+/* ---------- admin: MEDIA ---------- */
+function renderAdminMedia(db, session) {
+    const box = document.getElementById("adm-media");
+    if (!box) return;
+    box.innerHTML = MEDIA_SLOTS.map(slot => {
+        const value = db.media[slot.key] || "";
+        return `
+        <div class="media-card">
+            <div class="media-preview ${value ? "" : "is-empty"}">
+                ${value
+                    ? `<img src="${value}" alt="${spaceEsc(slot.label)} preview">`
+                    : "<span>No photo yet</span>"}
+            </div>
+            <p class="space-next-course">${spaceEsc(slot.label)}</p>
+            <p class="space-next-meta">${spaceEsc(slot.hint)}</p>
+            <input type="file" class="adm-media-file" data-slot="${spaceEsc(slot.key)}"
+                   accept="image/*">
+            <div class="media-url-row">
+                <input type="text" class="chat-input adm-media-url"
+                       data-slot="${spaceEsc(slot.key)}"
+                       placeholder="or paste an image URL"
+                       value="${value && !value.startsWith("data:") ? spaceEsc(value) : ""}">
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-media-set="${spaceEsc(slot.key)}">Set</button>
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-media-clear="${spaceEsc(slot.key)}">Clear</button>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function adminSetMedia(db, key, value, session) {
+    db.media[key] = value;
+    spaceSave(db);
+    adminLog(db, value ? `Updated photo: ${key}` : `Cleared photo: ${key}`);
+    spaceToast(value ? "Photo saved — refresh public pages to see it" : "Photo cleared", "good");
+    renderAdminMedia(db, session);
+}
+
+/* ---------- admin: CLASSES ---------- */
+function renderAdminClasses(db, session) {
+    const box = document.getElementById("adm-classes");
+    if (!box) return;
+    box.innerHTML = `
+    <div class="gb-scroll">
+        <table class="gb-table admin-table">
+            <thead><tr>
+                <th>Class</th><th>Teacher</th><th>Code</th><th>Meetings</th>
+                <th>Students</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+                ${db.courseInstances.map(c => {
+                    const teacher = spaceProfile(db, c.teacher);
+                    return `
+                    <tr>
+                        <td><strong>${spaceEsc(c.title)}</strong></td>
+                        <td>${spaceEsc(teacher.name)}</td>
+                        <td><code>${spaceEsc(c.code)}</code></td>
+                        <td class="muted small">${spaceEsc(c.meetings)}</td>
+                        <td>${c.students.length}</td>
+                        <td class="admin-actions-cell">
+                            <button type="button" class="btn btn-ghost btn-small"
+                                    data-class-edit="${spaceEsc(c.id)}">Edit</button>
+                            <a class="btn btn-ghost btn-small" href="class-teacher.html"
+                               target="_blank" rel="noopener">Open room</a>
+                        </td>
+                    </tr>`;
+                }).join("")}
+            </tbody>
+        </table>
+    </div>`;
+}
+
+function openAdminClass(db, session, id) {
+    const cls = db.courseInstances.find(c => c.id === id);
+    if (!cls) return;
+    adminClassOpen = id;
+
+    const box = document.getElementById("adm-class-editor");
+    const card = document.getElementById("adm-class-editor-card");
+    if (!box || !card) return;
+
+    const teachers = Object.entries(db.profiles)
+        .filter(([, p]) => p.role === "teacher")
+        .map(([tid, p]) => ({ id: tid, name: p.name }));
+    const students = Object.keys(db.profiles)
+        .filter(sid => db.profiles[sid].role === "student");
+
+    card.innerHTML = `
+    <div class="asg-head">
+        <div>
+            <h2>Edit ${spaceEsc(cls.title)}</h2>
+            <p class="space-next-meta">${cls.students.length} students ·
+               code <code>${spaceEsc(cls.code)}</code></p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-small" id="adm-class-close">Close</button>
+    </div>
+    <div class="form-grid-2">
+        <div class="field">
+            <label class="space-label" for="adm-cl-teacher">Teacher</label>
+            <select class="chat-input" id="adm-cl-teacher">
+                ${teachers.map(t =>
+                    `<option value="${spaceEsc(t.id)}" ${t.id === cls.teacher ? "selected" : ""}>${spaceEsc(t.name)}</option>`).join("")}
+            </select>
+        </div>
+        <div class="field">
+            <label class="space-label" for="adm-cl-code">Join code</label>
+            <input type="text" class="chat-input" id="adm-cl-code" value="${spaceEsc(cls.code)}">
+        </div>
+        <div class="field">
+            <label class="space-label" for="adm-cl-meetings">Meetings</label>
+            <input type="text" class="chat-input" id="adm-cl-meetings" value="${spaceEsc(cls.meetings)}">
+        </div>
+        <div class="field">
+            <label class="space-label" for="adm-cl-sessions">Planned sessions</label>
+            <input type="number" class="chat-input" id="adm-cl-sessions" min="1"
+                   value="${cls.sessionsTotal || 10}">
+        </div>
+    </div>
+    <p class="space-label">Students</p>
+    <div class="pick-grid">
+        ${students.map(sid => {
+            const p = db.profiles[sid];
+            return `
+            <label class="pick-row">
+                <input type="checkbox" class="adm-cl-student" value="${spaceEsc(sid)}"
+                       ${cls.students.includes(sid) ? "checked" : ""}>
+                ${spaceEsc(p.name)} <span class="muted small">(${spaceEsc(sid)})</span>
+            </label>`;
+        }).join("")}
+    </div>
+    <div class="space-submit-row">
+        <button type="button" class="btn btn-primary" id="adm-cl-save">Save class</button>
+        <button type="button" class="btn admin-danger" id="adm-cl-delete">Delete class</button>
+    </div>`;
+    box.hidden = false;
+    if (box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ---------- admin: CONTENT ---------- */
+function renderAdminContent(db, session) {
+    const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value || "";
+    };
+    set("adm-set-name", db.settings.siteName);
+    set("adm-set-tagline", db.settings.tagline);
+    set("adm-set-email", db.settings.contactEmail);
+    set("adm-set-phone", db.settings.contactPhone);
+    set("adm-set-address", db.settings.address);
+    set("adm-set-banner", db.settings.homeBanner);
+
+    const list = document.getElementById("adm-announcements");
+    if (list) {
+        list.innerHTML = db.announcements.length ? db.announcements.map(a => `
+            <div class="today-row">
+                <span class="activity-dot"></span>
+                <div class="today-row-main">
+                    <p class="space-next-meta">${spaceEsc(a.text)}</p>
+                    <p class="space-next-meta muted">${spaceEsc(spaceProfile(db, a.fromId).name)}
+                       · ${spaceAgo(a.minutesAgo)}</p>
+                </div>
+                <button type="button" class="admin-kick" data-ann-del="${spaceEsc(a.id)}"
+                        title="Delete announcement">&times;</button>
+            </div>`).join("")
+        : '<p class="space-empty-inline">No announcements.</p>';
+    }
+}
+
+/* ---------- admin: BADGES ---------- */
+function renderAdminBadges(db, session) {
+    const box = document.getElementById("adm-badges");
+    if (!box) return;
+    box.innerHTML = db.badgeCatalog.map(b => `
+        <div class="file-row badge-edit" data-badge="${spaceEsc(b.id)}">
+            <input type="text" class="mini-input adm-badge-icon" value="${spaceEsc(b.icon)}"
+                   aria-label="Icon">
+            <div class="space-file-info">
+                <input type="text" class="mini-input adm-badge-label" value="${spaceEsc(b.label)}"
+                       aria-label="Label">
+                <input type="text" class="mini-input adm-badge-desc" value="${spaceEsc(b.desc)}"
+                       aria-label="Description">
+            </div>
+            <button type="button" class="btn btn-ghost btn-small"
+                    data-badge-save="${spaceEsc(b.id)}">Save</button>
+            <button type="button" class="admin-kick" data-badge-del="${spaceEsc(b.id)}"
+                    title="Delete badge">&times;</button>
+        </div>`).join("");
+}
+
+/* ---------- admin: wiring ---------- */
+function wireAdminPanels(db, session) {
+    /* --- overview shortcuts --- */
+    const attention = document.getElementById("adm-pending-list");
+    if (attention) {
+        attention.addEventListener("click", (e) => {
+            if (!e.target.closest("[data-goto-payments]")) return;
+            const navBtn = document.querySelector('.space-nav-btn[data-panel="payments"]');
+            if (navBtn) navBtn.click();
+        });
+    }
+
+    /* --- users --- */
+    const search = document.getElementById("adm-user-search");
+    if (search) {
+        search.addEventListener("input", () => {
+            adminUserQuery = search.value;
+            renderAdminUsers(db, session);
+        });
+    }
+    const roleFilter = document.getElementById("adm-user-role");
+    if (roleFilter) {
+        roleFilter.addEventListener("change", () => {
+            adminUserRole = roleFilter.value;
+            renderAdminUsers(db, session);
+        });
+    }
+
+    const usersBox = document.getElementById("adm-users");
+    if (usersBox) {
+        usersBox.addEventListener("click", (e) => {
+            const edit = e.target.closest("[data-user-edit]");
+            if (edit) return openAdminUser(db, session, edit.dataset.userEdit);
+
+            const view = e.target.closest("[data-user-view]");
+            if (view) {
+                const target = db.profiles[view.dataset.userView];
+                if (!target) return;
+                spaceConfirm({
+                    title: "View the site as " + target.name + "?",
+                    text: "This browser will be signed in as them (demo impersonation). Log out to come back.",
+                    okLabel: "View as " + target.name
+                }).then(ok => { if (ok) adminViewAs(db, view.dataset.userView); });
+                return;
+            }
+
+            const del = e.target.closest("[data-user-del]");
+            if (del) {
+                const id = del.dataset.userDel;
+                const target = db.profiles[id];
+                if (!target) return;
+                spaceConfirm({
+                    title: "Delete " + target.name + "?",
+                    text: "Removes their profile, submissions, messages, badges and payments from the demo.",
+                    okLabel: "Delete user",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    deleteUser(db, id);
+                    if (adminUserOpen === id) adminUserOpen = null;
+                    const box = document.getElementById("adm-user-editor");
+                    if (box) box.hidden = true;
+                    spaceSave(db);
+                    adminLog(db, "Deleted user " + target.name + " (" + id + ")");
+                    spaceToast("User deleted", "bad");
+                    renderAdminUsers(db, session);
+                    renderAdminOverview(db, session);
+                });
+            }
+        });
+    }
+
+    const editorBox = document.getElementById("adm-user-editor");
+    if (editorBox) {
+        editorBox.addEventListener("click", (e) => {
+            if (e.target.closest("#adm-user-close")) {
+                editorBox.hidden = true;
+                adminUserOpen = null;
+                return;
+            }
+            if (e.target.closest("#adm-ed-suspend") && adminUserOpen) {
+                const p = db.profiles[adminUserOpen];
+                if (!p) return;
+                p.suspended = !p.suspended;
+                spaceSave(db);
+                adminLog(db, (p.suspended ? "Suspended " : "Activated ") + p.name);
+                spaceToast(p.suspended ? "Account suspended" : "Account activated", "bad");
+                renderAdminUsers(db, session);
+                openAdminUser(db, session, adminUserOpen);
+                return;
+            }
+            if (e.target.closest("#adm-ed-save") && adminUserOpen) {
+                const oldId = adminUserOpen;
+                const p = db.profiles[oldId];
+                if (!p) return;
+                const nameEl = document.getElementById("adm-ed-name");
+                const idEl = document.getElementById("adm-ed-id");
+                const roleEl = document.getElementById("adm-ed-role");
+                const passEl = document.getElementById("adm-ed-pass");
+
+                const newName = nameEl ? nameEl.value.trim() : p.name;
+                const newId = idEl ? idEl.value.trim() : oldId;
+                if (!newName) return spaceToast("Name can't be empty", "bad");
+                if (!newId) return spaceToast("User ID can't be empty", "bad");
+
+                p.name = newName;
+                if (roleEl) p.role = roleEl.value;
+                if (passEl && passEl.value.trim()) {
+                    db.credentials[oldId] = passEl.value.trim();
+                    adminLog(db, "Reset password for " + newName + " (now " + passEl.value.trim() + ")");
+                }
+                if (newId !== oldId) {
+                    if (!renameUser(db, oldId, newId)) {
+                        return spaceToast("That ID is taken or invalid", "bad");
+                    }
+                    adminLog(db, "Renamed " + oldId + " → " + newId);
+                    adminUserOpen = newId;
+                } else {
+                    adminLog(db, "Updated user " + newName);
+                }
+                spaceSave(db);
+                spaceToast("User saved", "good");
+                renderAdminUsers(db, session);
+                renderAdminOverview(db, session);
+                openAdminUser(db, session, adminUserOpen);
+            }
+        });
+    }
+
+    const addUser = document.getElementById("adm-user-add");
+    if (addUser) {
+        addUser.addEventListener("click", () => {
+            const nameEl = document.getElementById("adm-new-name");
+            const idEl = document.getElementById("adm-new-id");
+            const roleEl = document.getElementById("adm-new-role");
+            const passEl = document.getElementById("adm-new-pass");
+            const name = nameEl ? nameEl.value.trim() : "";
+            const id = idEl ? idEl.value.trim() : "";
+            const role = roleEl ? roleEl.value : "student";
+            const pass = passEl ? passEl.value.trim() : "Welcome#2026";
+
+            if (!name) return spaceToast("Give the user a name", "bad");
+            const prefix = role === "student" ? "Stu-" : role === "teacher" ? "Tch-" : "";
+            if (role !== "admin" && !id.toLowerCase().startsWith(prefix.toLowerCase())) {
+                return spaceToast('ID for this role must start with "' + prefix + '"', "bad");
+            }
+            if (role === "admin" && id.toLowerCase() !== "admin" && id.length < 3) {
+                return spaceToast("Admin IDs need at least 3 characters", "bad");
+            }
+            if (db.profiles[id]) return spaceToast("That ID already exists", "bad");
+
+            db.profiles[id] = {
+                name, role,
+                avatarColor: SPACE_COLORS[Object.keys(db.profiles).length % SPACE_COLORS.length],
+                accent: "#2563eb",
+                bio: "",
+                prefs: { emailAssignments: true, emailAnnouncements: true, pingChat: false },
+                joinedDaysAgo: 0
+            };
+            if (db.credentials) db.credentials[id] = pass || "Welcome#2026";
+            spaceSave(db);
+            adminLog(db, "Created user " + name + " (" + id + ", " + role + ")");
+            spaceToast("User created — password: " + (pass || "Welcome#2026"), "good");
+            if (nameEl) nameEl.value = "";
+            if (idEl) idEl.value = "";
+            renderAdminUsers(db, session);
+            renderAdminOverview(db, session);
+        });
+    }
+
+    /* --- payments --- */
+    const payBox = document.getElementById("adm-payments");
+    if (payBox) {
+        payBox.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-pay-status]");
+            if (!btn) return;
+            const [payId, status] = btn.dataset.payStatus.split("|");
+            const pay = db.payments.find(p => p.id === payId);
+            if (!pay) return;
+            pay.status = status;
+            spaceSave(db);
+            adminLog(db, "Payment " + payId + " (" +
+                spaceProfile(db, pay.student).name + ") marked " + status);
+            spaceToast("Payment marked " + status, status === "paid" ? "good" : "bad");
+            renderAdminPayments(db, session);
+            renderAdminOverview(db, session);
+        });
+    }
+
+    /* --- catalog --- */
+    const catSelect = document.getElementById("adm-cat-level");
+    if (catSelect) {
+        catSelect.addEventListener("change", () => {
+            adminCatLevel = catSelect.value;
+            renderAdminCatalog(db, session);
+        });
+    }
+    const catSave = document.getElementById("adm-cat-save");
+    if (catSave) catSave.addEventListener("click", () => saveAdminCatalog(db, session));
+    const catReset = document.getElementById("adm-cat-reset");
+    if (catReset) {
+        catReset.addEventListener("click", () => {
+            spaceConfirm({
+                title: "Reset the catalog?",
+                text: "All admin edits to courses disappear; the original levels-data.js shows again.",
+                okLabel: "Reset catalog",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                delete db.catalog;
+                ensureAdminCatalog(db);
+                spaceSave(db);
+                adminLog(db, "Catalog reset to the original data file");
+                spaceToast("Catalog reset to original", "bad");
+                adminCatLevel = null;
+                renderAdminCatalog(db, session);
+            });
+        });
+    }
+
+    /* --- media --- */
+    const mediaBox = document.getElementById("adm-media");
+    if (mediaBox) {
+        mediaBox.addEventListener("change", (e) => {
+            const fileInput = e.target.closest(".adm-media-file");
+            if (!fileInput || !fileInput.files || !fileInput.files.length) return;
+            const file = fileInput.files[0];
+            if (file.size > 400 * 1024) {
+                spaceToast("Img over 400 KB — localStorage can't hold it", "bad");
+                return;
+            }
+            if (typeof FileReader === "undefined") return;
+            const reader = new FileReader();
+            reader.onload = () => adminSetMedia(db, fileInput.dataset.slot, reader.result, session);
+            reader.readAsDataURL(file);
+        });
+        mediaBox.addEventListener("click", (e) => {
+            const setBtn = e.target.closest("[data-media-set]");
+            if (setBtn) {
+                const key = setBtn.dataset.mediaSet;
+                const input = mediaBox.querySelector(`.adm-media-url[data-slot="${key}"]`);
+                const url = input ? input.value.trim() : "";
+                if (!url) return spaceToast("Paste an image URL first", "bad");
+                return adminSetMedia(db, key, url, session);
+            }
+            const clearBtn = e.target.closest("[data-media-clear]");
+            if (clearBtn) {
+                adminSetMedia(db, clearBtn.dataset.mediaClear, "", session);
+            }
+        });
+    }
+
+    /* --- classes --- */
+    const classBox = document.getElementById("adm-classes");
+    if (classBox) {
+        classBox.addEventListener("click", (e) => {
+            const edit = e.target.closest("[data-class-edit]");
+            if (edit) openAdminClass(db, session, edit.dataset.classEdit);
+        });
+    }
+    const classEditor = document.getElementById("adm-class-editor");
+    if (classEditor) {
+        classEditor.addEventListener("click", (e) => {
+            if (e.target.closest("#adm-class-close")) {
+                classEditor.hidden = true;
+                adminClassOpen = null;
+                return;
+            }
+            if (e.target.closest("#adm-cl-save") && adminClassOpen) {
+                const cls = db.courseInstances.find(c => c.id === adminClassOpen);
+                if (!cls) return;
+                const teacher = document.getElementById("adm-cl-teacher");
+                const code = document.getElementById("adm-cl-code");
+                const meetings = document.getElementById("adm-cl-meetings");
+                const sessionsEl = document.getElementById("adm-cl-sessions");
+                if (teacher) cls.teacher = teacher.value;
+                if (code && code.value.trim()) cls.code = code.value.trim().toUpperCase();
+                if (meetings && meetings.value.trim()) cls.meetings = meetings.value.trim();
+                if (sessionsEl && Number(sessionsEl.value) > 0) {
+                    cls.sessionsTotal = Number(sessionsEl.value);
+                }
+                cls.students = [...document.querySelectorAll(".adm-cl-student:checked")]
+                    .map(input => input.value);
+                spaceSave(db);
+                adminLog(db, "Updated class " + cls.title);
+                spaceToast("Class saved", "good");
+                renderAdminClasses(db, session);
+                renderAdminOverview(db, session);
+                openAdminClass(db, session, adminClassOpen);
+                return;
+            }
+            if (e.target.closest("#adm-cl-delete") && adminClassOpen) {
+                const cls = db.courseInstances.find(c => c.id === adminClassOpen);
+                if (!cls) return;
+                spaceConfirm({
+                    title: "Delete " + cls.title + "?",
+                    text: "The class disappears from teachers and students. Assignments stay but lose their class link.",
+                    okLabel: "Delete class",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    db.courseInstances = db.courseInstances
+                        .filter(c => c.id !== cls.id);
+                    spaceSave(db);
+                    adminLog(db, "Deleted class " + cls.title);
+                    spaceToast("Class deleted", "bad");
+                    classEditor.hidden = true;
+                    adminClassOpen = null;
+                    renderAdminClasses(db, session);
+                    renderAdminOverview(db, session);
+                });
+            }
+        });
+    }
+
+    /* --- content --- */
+    const setSave = document.getElementById("adm-set-save");
+    if (setSave) {
+        setSave.addEventListener("click", () => {
+            const read = id => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : "";
+            };
+            db.settings.siteName = read("adm-set-name") || db.settings.siteName;
+            db.settings.tagline = read("adm-set-tagline");
+            db.settings.contactEmail = read("adm-set-email");
+            db.settings.contactPhone = read("adm-set-phone");
+            db.settings.address = read("adm-set-address");
+            db.settings.homeBanner = read("adm-set-banner");
+            spaceSave(db);
+            adminLog(db, "Site settings updated (contact info, banner, tagline)");
+            spaceToast("Settings saved — public pages pick them up on refresh", "good");
+            renderAdminContent(db, session);
+        });
+    }
+    const broadcast = document.getElementById("adm-broadcast-send");
+    if (broadcast) {
+        broadcast.addEventListener("click", () => {
+            const input = document.getElementById("adm-broadcast-text");
+            const text = input ? input.value.trim() : "";
+            if (!text) return spaceToast("Write the announcement first", "bad");
+            db.announcements.unshift({
+                id: "ann-" + Date.now(),
+                fromId: "admin",
+                text,
+                minutesAgo: 0
+            });
+            if (input) input.value = "";
+            spaceSave(db);
+            adminLog(db, "Broadcast announcement to every account");
+            spaceToast("Announcement sent to everyone", "good");
+            renderAdminContent(db, session);
+            renderAdminOverview(db, session);
+        });
+    }
+    const annBox = document.getElementById("adm-announcements");
+    if (annBox) {
+        annBox.addEventListener("click", (e) => {
+            const del = e.target.closest("[data-ann-del]");
+            if (!del) return;
+            db.announcements = db.announcements.filter(a => a.id !== del.dataset.annDel);
+            spaceSave(db);
+            adminLog(db, "Deleted an announcement");
+            renderAdminContent(db, session);
+        });
+    }
+
+    /* --- badges --- */
+    const badgeBox = document.getElementById("adm-badges");
+    if (badgeBox) {
+        badgeBox.addEventListener("click", (e) => {
+            const saveBtn = e.target.closest("[data-badge-save]");
+            if (saveBtn) {
+                const row = badgeBox.querySelector(`[data-badge="${saveBtn.dataset.badgeSave}"]`);
+                const badge = db.badgeCatalog.find(b => b.id === saveBtn.dataset.badgeSave);
+                if (!row || !badge) return;
+                const icon = row.querySelector(".adm-badge-icon");
+                const label = row.querySelector(".adm-badge-label");
+                const desc = row.querySelector(".adm-badge-desc");
+                if (icon) badge.icon = icon.value.trim();
+                if (label) badge.label = label.value.trim() || badge.label;
+                if (desc) badge.desc = desc.value.trim();
+                spaceSave(db);
+                adminLog(db, "Edited badge " + badge.label);
+                spaceToast("Badge updated everywhere it appears", "good");
+                renderAdminBadges(db, session);
+                return;
+            }
+            const del = e.target.closest("[data-badge-del]");
+            if (del) {
+                const badge = db.badgeCatalog.find(b => b.id === del.dataset.badgeDel);
+                if (!badge) return;
+                spaceConfirm({
+                    title: "Delete badge " + badge.label + "?",
+                    text: "It disappears from the catalog and from every student who earned it.",
+                    okLabel: "Delete",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    db.badgeCatalog = db.badgeCatalog.filter(b => b.id !== badge.id);
+                    Object.keys(db.earnedBadges).forEach(sid => {
+                        db.earnedBadges[sid] = db.earnedBadges[sid]
+                            .filter(e => e.id !== badge.id);
+                    });
+                    spaceSave(db);
+                    adminLog(db, "Deleted badge " + badge.label);
+                    renderAdminBadges(db, session);
+                });
+            }
+        });
+    }
+    const badgeAdd = document.getElementById("adm-badge-add");
+    if (badgeAdd) {
+        badgeAdd.addEventListener("click", () => {
+            const icon = document.getElementById("adm-badge-icon");
+            const label = document.getElementById("adm-badge-label");
+            const desc = document.getElementById("adm-badge-desc");
+            const labelText = label ? label.value.trim() : "";
+            if (!labelText) return spaceToast("Give the badge a label", "bad");
+            db.badgeCatalog.push({
+                id: "badge-" + Date.now(),
+                label: labelText,
+                icon: icon ? icon.value.trim() || "🏆" : "🏆",
+                desc: desc ? desc.value.trim() : ""
+            });
+            spaceSave(db);
+            adminLog(db, "Added badge " + labelText);
+            spaceToast("Badge added to the catalog", "good");
+            if (label) label.value = "";
+            if (desc) desc.value = "";
+            renderAdminBadges(db, session);
+        });
+    }
+
+    /* --- danger zone --- */
+    const reset = document.getElementById("adm-reset");
+    if (reset) {
+        reset.addEventListener("click", () => {
+            spaceConfirm({
+                title: "Reset the whole demo database?",
+                text: "Every user, class, assignment, payment, badge and photo returns to the seed state. This cannot be undone.",
+                okLabel: "Reset everything",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                spaceResetStore();
+                window.location.reload();
             });
         });
     }

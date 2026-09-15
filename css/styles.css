@@ -5220,6 +5220,198 @@ html[data-theme="dark"] .gb-key.is-missing   { color: #fca5a5; }
     padding: 8px 10px;
 }
 
+/* ---- phase 3: admin console ---- */
+.admin-filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-filter-row .chat-input {
+    width: 220px;
+}
+
+.admin-table td,
+.admin-table th {
+    white-space: normal;
+}
+
+.admin-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-actions-cell {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* payment "chart": one row per status, bar width = share */
+.pay-bar-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 0;
+}
+
+.pay-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.pay-bar-track {
+    height: 10px;
+    border-radius: 999px;
+    background-color: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+}
+
+.pay-bar-fill {
+    height: 100%;
+    width: var(--w, 0%);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.pay-bar-fill.is-paid    { background-color: #16a34a; }
+.pay-bar-fill.is-pending { background-color: #f59e0b; }
+.pay-bar-fill.is-failed  { background-color: #ef4444; }
+
+.pay-bar-value {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+/* media manager */
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.media-card {
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 14px;
+    background-color: var(--color-bg-alt);
+}
+
+.media-preview {
+    height: 130px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-card-bg);
+}
+
+.media-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-preview.is-empty {
+    border-style: dashed;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
+.media-card .adm-media-file {
+    width: 100%;
+    font-size: 0.78rem;
+    margin: 8px 0;
+}
+
+.media-url-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.media-url-row .chat-input {
+    flex: 1;
+    font-size: 0.78rem;
+}
+
+/* catalog skill editor */
+.skill-edit {
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    background-color: var(--color-bg-alt);
+}
+
+.skill-edit .space-label:first-child {
+    margin-top: 0;
+}
+
+/* badge editor rows */
+.badge-edit {
+    margin-top: 8px;
+}
+
+.badge-edit .space-file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.adm-badge-icon {
+    width: 56px;
+    flex: none;
+    text-align: center;
+}
+
+.danger-card {
+    border-color: #ef4444;
+}
+
+.danger-card h2 {
+    color: #ef4444;
+}
+
+html[data-theme="dark"] .danger-card h2 {
+    color: #fca5a5;
+}
+
+/* site-wide bits painted by js/site.js */
+.site-banner {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    padding: 10px 0;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.site-banner p {
+    margin: 0;
+}
+
+.site-photo,
+.site-map-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
+}
+
+.logo-img {
+    height: 34px;
+    display: block;
+}
+
 /* spaces stack on small screens */
 @media (max-width: 768px) {
     .space-layout {

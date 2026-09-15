@@ -3,7 +3,8 @@
    ------------------------------------------------------------
    LESSON — WHAT THIS FILE DOES, STEP BY STEP:
    1. LOAD the page's empty containers (the "slots")
-   2. BUILD the slides from the LEVELS data (see levels-data.js)
+   2. BUILD the slides from the CATALOG (admin-edited store, or
+      the original levels-data.js — js/catalog.js decides)
    3. LISTEN for arrow clicks
    4. MOVE the slide strip (CSS does the smooth sliding)
    5. REFRESH the details section under the banner
@@ -13,8 +14,8 @@
    JS reads the data file, creates HTML elements on the fly,
    and updates the page when the visitor clicks.
 
-   IMPORTANT ORDERING: this file must load AFTER levels-data.js,
-   because it USES the LEVELS variable defined there.
+   IMPORTANT ORDERING: this file must load AFTER levels-data.js
+   AND js/catalog.js, because CATALOG comes from catalog.js.
    (courses.html loads them in that order — check the bottom!)
    ============================================================ */
 
@@ -29,6 +30,10 @@ const counterEl  = document.querySelector(".showcase-counter");
 const prevBtn    = document.querySelector(".arrow-prev");
 const nextBtn    = document.querySelector(".arrow-next");
 
+/* which catalog to show? admin edits (store) win over levels-data.js.
+   js/catalog.js must load BEFORE this file. */
+const CATALOG = academyCatalog();
+
 /* "currentIndex" = which slide we are looking at now.
    let = a variable whose VALUE can change later.
    (const = cannot change, let = can. We change this one!) */
@@ -41,12 +46,12 @@ let currentIndex = 0;
    variables into using ${...}. Notice the BACKTICK
    character (`), not a normal quote (').
 
-   LESSON — LOOP: for (let level of LEVELS) repeats the
+   LESSON — LOOP: for (let level of CATALOG) repeats the
    code inside for each level object in the array.
    We build one slide per level and stack them in the
    track. Each slide is a full-width "page" of the strip. */
 function buildSlides() {
-    for (let level of LEVELS) {
+    for (let level of CATALOG) {
 
         /* 1) make the slide <div> and give it its banner colors */
         const slide = document.createElement("div");
@@ -109,7 +114,7 @@ function buildSlides() {
 function goTo(index) {
     track.style.transform = `translateX(-${index * 100}%)`;
     /* Updating the counter text ("1 / 6") */
-    counterEl.textContent = `${index + 1} / ${LEVELS.length}`;
+    counterEl.textContent = `${index + 1} / ${CATALOG.length}`;
     updateDetails(index);
 }
 
@@ -119,7 +124,7 @@ function changeSlide(direction) {
        If we go past the last slide (index +1 > last),
        jump back to 0. If we go before the first (-1),
        jump to the last one. Endless loop both ways! */
-    const lastIndex = LEVELS.length - 1;
+    const lastIndex = CATALOG.length - 1;
     currentIndex = (direction === "next")
         ? (currentIndex >= lastIndex ? 0 : currentIndex + 1)
         : (currentIndex <= 0 ? lastIndex : currentIndex - 1);
@@ -133,7 +138,7 @@ function changeSlide(direction) {
    data — that's the beauty of data-driven pages: one
    source of truth, many views of it. */
 function updateDetails(index) {
-    const level = LEVELS[index];
+    const level = CATALOG[index];
 
     /* LESSON — innerHTML: replace everything inside the
        section with a fresh HTML string. Fine here because

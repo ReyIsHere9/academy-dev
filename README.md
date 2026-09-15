@@ -23,6 +23,7 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `login.html` / `recovery.html` | Auth entry UI (demo) |
 | `dashboard.html` | Student space — stats + continue learning, courses with progress, classes + join by code, assignments (drag-&-drop submit with naming rules + comments + grades), materials, badges, inbox with teachers, profile & personalization |
 | `dashboard-teacher.html` | Teacher studio — today overview, class instances, interactive gradebook, assignment creation + templates, grading tools, student inbox, badge awards + notes, materials, profile |
+| `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart, course catalog editor, photo/media manager, classes, site settings + broadcasts, badge catalog, danger zone |
 | `profile.html` | Public profile (`?id=Stu-2001`) — safe fields only: name, avatar, bio, badges |
 | `class.html` | Live class room — student view (chat show/hide drawer, pop-out chat, theater / lights-out / fullscreen modes) |
 | `class-teacher.html` | Live class room — teacher view (whiteboard, screen share, censor boxes, annotation toolkit, materials, pop-out chat, view modes) |
@@ -65,8 +66,8 @@ local server (clipboard, some media APIs are stricter on `file://`).
   (`js/space.js`) on top of a demo database (`js/space-data.js`,
   localStorage, relative times so the demo never goes stale). The header
   swaps "Login / Register" for "Dashboard" via `js/session.js` when a
-  session exists. Student space and teacher studio are complete
-  (Phases 1–2); the admin console arrives in Phase 3.
+  session exists. Student space, teacher studio and admin console are
+  all complete (Phases 1–3).
 - **Assignment submissions** — drag-&-drop with per-assignment allowed
   types + size limit, the `StuID_assignmentID_title.ext` naming
   convention (auto-rename + live validation), comment threads and
@@ -79,6 +80,16 @@ local server (clipboard, some media APIs are stricter on `file://`).
 - **Inbox** — threaded direct messages between students and teachers
   (unread badges, reply from either side, "Ask your teacher" from any
   assignment).
+- **Admin console** — the site-wide control room: rename any user ID
+  (rewritten across classes, submissions, badges, messages, payments),
+  reset demo passwords (auth checks the store first), suspend accounts,
+  impersonate ("view as"), override payment statuses, edit the course
+  catalog, upload/replace every photo spot, broadcast announcements and
+  edit contact info — with an activity log for every action.
+- **Overrides layer** — admin edits live in the demo store and win over
+  the static files: `js/catalog.js` (course catalog) and `js/site.js`
+  (settings text, photo slots, home banner, brand logo) paint the edited
+  versions onto the public pages.
 
 ## Demo vs. real
 
