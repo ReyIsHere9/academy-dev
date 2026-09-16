@@ -6991,3 +6991,356 @@ html[data-theme="dark"] .quiz-result.is-wrong { color: #fca5a5; }
 .not-found-links.is-center {
     justify-content: center;
 }
+
+/* ================= RICH TEXT EDITOR (inbox composer + admin broadcast) =================
+   The "Word-lite" toolbar: contenteditable surface + execCommand.
+   Components here: .rich-editor-host (frame), .rich-toolbar,
+   .rich-btn, popovers (colors / highlight / table grid),
+   .rich-surface (the typing area), .rich-attachments chips, and
+   .rich-content — the styles for RENDERED rich messages/tables. */
+.rich-editor-host {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background-color: var(--color-card-bg);
+}
+
+.rich-editor-host:focus-within {
+    border-color: var(--color-primary);
+}
+
+.rich-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+}
+
+.rich-btn {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.12s, color 0.12s;
+}
+
+.rich-btn:hover {
+    background-color: var(--color-bg-alt);
+    color: var(--color-text);
+}
+
+.rich-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.rich-btn b,
+.rich-btn i,
+.rich-btn u,
+.rich-btn s {
+    font-family: Georgia, serif;
+}
+
+.rich-sep {
+    width: 1px;
+    height: 20px;
+    background-color: var(--color-border);
+    margin: 0 5px;
+    flex: none;
+}
+
+.rich-size {
+    font-family: inherit;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 4px 4px;
+    cursor: pointer;
+}
+
+/* popovers: palettes + the table grid */
+.rich-popover {
+    position: absolute;
+    top: 42px;
+    left: 8px;
+    z-index: 60;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.25);
+    padding: 10px 12px;
+}
+
+.rich-pop-title {
+    font-size: 0.72rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+
+.rich-swatches {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    max-width: 220px;
+}
+
+.rich-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--sw);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s;
+}
+
+.rich-swatch:hover {
+    transform: scale(1.15);
+}
+
+.rich-pop-reset {
+    display: block;
+    margin-top: 9px;
+    font-family: inherit;
+    font-size: 0.76rem;
+    color: var(--color-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.rich-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 18px);
+    gap: 3px;
+}
+
+.rich-grid-cell {
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-bg-alt);
+    cursor: pointer;
+    padding: 0;
+}
+
+.rich-grid-cell.is-on {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* the typing surface */
+.rich-surface {
+    padding: 12px 14px;
+    outline: none;
+    font-size: 0.94rem;
+    line-height: 1.65;
+    color: var(--color-text);
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.rich-surface:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+/* attachment chips (composer + rendered messages) */
+.rich-attachments,
+.msg-attachments {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 12px 10px;
+}
+
+.msg-attachments {
+    padding: 6px 0 0;
+}
+
+.attach-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    background-color: var(--color-bg-alt);
+    color: var(--color-text);
+    max-width: 100%;
+}
+
+.attach-size {
+    color: var(--color-text-muted);
+}
+
+.attach-chip button {
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0;
+}
+
+.attach-chip button:hover {
+    color: #ef4444;
+}
+
+/* the compose pane (inbox: one writing area at a time) */
+.compose-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.compose-pane .rich-editor-host {
+    flex: 1;
+}
+
+/* ================= RICH CONTENT (rendered messages + announcements) =================
+   Everything here is the READING side: styles for the HTML that
+   came out of the editor (sanitized, see spaceSanitizeHtml). */
+.rich-content {
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+
+.rich-content > *:first-child {
+    margin-top: 0;
+}
+
+.rich-content > *:last-child {
+    margin-bottom: 0;
+}
+
+.rich-content p {
+    margin: 0 0 8px;
+}
+
+.rich-content ul,
+.rich-content ol {
+    margin: 0 0 8px;
+    padding-left: 22px;
+}
+
+.rich-content li {
+    margin-bottom: 3px;
+}
+
+.rich-content h1 { font-size: 1.25rem; margin: 10px 0 6px; }
+.rich-content h2 { font-size: 1.1rem;  margin: 10px 0 6px; }
+.rich-content h3 { font-size: 1rem;    margin: 10px 0 6px; }
+
+.rich-content blockquote {
+    margin: 8px 0;
+    padding: 8px 14px;
+    border-left: 3px solid var(--color-primary);
+    background-color: var(--color-bg-alt);
+    border-radius: 0 10px 10px 0;
+}
+
+.rich-content mark {
+    background-color: #fde047;
+    color: #1e293b;
+    padding: 0 2px;
+    border-radius: 3px;
+}
+
+html[data-theme="dark"] .rich-content mark {
+    background-color: #a16207;
+    color: #fef9c3;
+}
+
+.rich-content a {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.rich-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+    margin: 6px 0;
+}
+
+.rich-content hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 12px 0;
+}
+
+.rich-content table,
+.rich-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0;
+    font-size: 0.86rem;
+}
+
+.rich-content th,
+.rich-content td,
+.rich-table th,
+.rich-table td {
+    border: 1px solid var(--color-border);
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.rich-content th,
+.rich-table th {
+    background-color: var(--color-bg-alt);
+    font-weight: 600;
+}
+
+/* bubbles that carry rich content need a touch more room */
+.bubble .rich-content {
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .rich-toolbar {
+        gap: 1px;
+    }
+
+    .rich-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .rich-surface {
+        max-height: 260px;
+    }
+}
+
+/* the composer's recipient picker sits at the right edge of its header */
+.inbox-to-select {
+    margin-left: auto;
+    flex: none;
+    max-width: 220px;
+}

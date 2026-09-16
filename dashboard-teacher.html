@@ -346,22 +346,14 @@
                     <!-- ---- INBOX ---- -->
                     <section class="space-panel" data-panel="inbox">
                         <div class="space-card">
-                            <h2>Inbox</h2>
+                            <div class="gb-head">
+                                <h2>Inbox</h2>
+                                <button type="button" class="btn btn-primary btn-small"
+                                        id="tch-inbox-new-toggle">+ New message</button>
+                            </div>
                             <div class="inbox-grid">
                                 <div class="inbox-threads" id="tch-inbox-list"></div>
                                 <div class="inbox-view" id="tch-inbox-view"></div>
-                            </div>
-                            <div class="inbox-new-bar">
-                                <button type="button" class="btn btn-ghost btn-small"
-                                        id="tch-inbox-new-toggle">+ New message</button>
-                            </div>
-                            <div class="inbox-compose" id="tch-inbox-compose" hidden>
-                                <select class="mini-select" id="tch-inbox-new-to"></select>
-                                <input type="text" class="chat-input" id="tch-inbox-new-text"
-                                       placeholder="Write a message to a student&hellip;"
-                                       autocomplete="off">
-                                <button type="button" class="btn btn-primary btn-small"
-                                        id="tch-inbox-new-send">Send</button>
                             </div>
                         </div>
                     </section>
@@ -470,6 +462,7 @@
     <script src="js/auth-data.js"></script>
     <script src="js/levels-data.js"></script>
     <script src="js/space-data.js"></script>
+    <script src="js/space-editor.js"></script>
     <script src="js/space.js"></script>
 
 </body>

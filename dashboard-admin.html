@@ -529,13 +529,9 @@
 
                             <div class="space-card">
                                 <h2>Announcements</h2>
-                                <div class="field">
-                                    <label class="space-label" for="adm-broadcast-text">
-                                        Broadcast to every account</label>
-                                    <textarea class="chat-input space-textarea" id="adm-broadcast-text"
-                                              rows="2"
-                                              placeholder="Write the announcement&hellip;"></textarea>
-                                </div>
+                                <p class="space-label">Broadcast to every account —
+                                   rich text: lists, colors, highlights, tables, attachments</p>
+                                <div id="adm-broadcast-editor"></div>
                                 <div class="space-submit-row">
                                     <button type="button" class="btn btn-primary" id="adm-broadcast-send">
                                         Send announcement</button>
@@ -683,6 +679,7 @@
     <script src="js/auth-data.js"></script>
     <script src="js/levels-data.js"></script>
     <script src="js/space-data.js"></script>
+    <script src="js/space-editor.js"></script>
     <script src="js/space.js"></script>
 
 </body>

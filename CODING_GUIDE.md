@@ -191,17 +191,13 @@ Style rules:
 6. Test BOTH themes: click the header sun/moon toggle on the new
    page — every new component must look right in dark mode.
 7. If you touched any JS, verify it: `node --check js/<file>.js`
-   plus the DOM-stub smoke harnesses in
-   `%TEMP%\opencode\` (class-smoke / teach-smoke / admin-smoke /
-   space-student-smoke / space-flows-smoke / space-teach-smoke /
-   space-teach-flows-smoke / space-admin-smoke /
-   space-admin-flows-smoke / catalog-smoke / auth-smoke /
-   lesson-smoke / checkout-smoke / blog-smoke / course-smoke /
-   extras-smoke) — every engine has boot + flows tests, and
-   overrides have their own harnesses.
+   plus the DOM-stub smoke harnesses kept OUTSIDE the repo in the
+   sibling folder `../test-harness/` (space-smoke / space-flows /
+   editor-smoke / dup-id-check at handoff time; rebuild others as
+   needed with the same pattern).
    ⚠️ These harnesses deliberately live OUTSIDE the repo —
    they are development tools, never committed to git.
-8. Run the duplicate-id scanner (`%TEMP%\opencode\dup-id-check.js`)
+8. Run the duplicate-id scanner (`../test-harness/dup-id-check.js`)
    after editing ANY page: `getElementById` returns the FIRST
    match, so a repeated id silently paints content into the wrong
    element (this bit the admin console once — stat `#adm-users`

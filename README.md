@@ -87,7 +87,9 @@ local server (clipboard, some media APIs are stricter on `file://`).
   badge awarding and private student notes.
 - **Inbox** — threaded direct messages between students and teachers
   (unread badges, reply from either side, "Ask your teacher" from any
-  assignment).
+  assignment). Composing a new message opens a dedicated pane with the
+  **rich text editor** — lists, colors, highlights, tables and
+  attachments — so exactly one writing area is ever on screen.
 - **Admin console** — the site-wide control room: rename any user ID
   (rewritten across classes, submissions, badges, messages, payments),
   reset demo passwords (auth checks the store first), suspend accounts,

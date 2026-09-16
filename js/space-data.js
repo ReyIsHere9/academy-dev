@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 6;   /* v6: recordings, placements, certificates */
+const SPACE_DB_VERSION = 7;   /* v7: rich messages (html + attachments) */
 
 const SPACE_SEED = {
-    version: 6,
+    version: 7,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -174,6 +174,7 @@ const SPACE_SEED = {
         {
             id: "ann-2", fromId: "admin",
             text: "New speaking club opens Monday — free for every student.",
+            html: "<p>New <b>speaking club</b> opens <mark>Monday</mark> — free for every student.</p><ul><li>Mondays, 18:00 — live room</li><li>No booking needed</li><li>All levels welcome</li></ul>",
             minutesAgo: 300
         },
         {
@@ -338,7 +339,15 @@ const SPACE_SEED = {
             id: "thr-2", participants: ["Tch-1001", "Stu-2002"],
             subject: "Speaking club",
             messages: [
-                { by: "Tch-1001", text: "Great progress in today's class, Ryan!", minutesAgo: 320, readBy: ["Stu-2002"] },
+                {
+                    by: "Tch-1001",
+                    text: "Great progress in today's class! Three things to keep working on: past tense endings, pronunciation of comfortable, and slowing down when excited.",
+                    html: "<p>Great progress in today's class, Ryan! Three things to keep working on:</p><ul><li>Past tense endings — <b>nailed them</b></li><li>Pronunciation of <mark>comfortable</mark></li><li>Slow down when you get excited</li></ul>",
+                    attachments: [
+                        { name: "present-perfect-cheat-sheet.pdf", sizeKB: 236 }
+                    ],
+                    minutesAgo: 320, readBy: ["Stu-2002"]
+                },
                 { by: "Stu-2002", text: "Thanks! Is the club open to A2 students too?", minutesAgo: 300, readBy: ["Tch-1001"] }
             ]
         },

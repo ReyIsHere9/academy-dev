@@ -577,17 +577,28 @@ function renderHome(db, session) {
         }
     }
 
-    /* announcements */
+    /* announcements — rich when the admin used the editor */
     const annBox = document.getElementById("space-announcements");
     if (annBox) {
-        annBox.innerHTML = db.announcements.slice(0, 3).map(a => `
+        annBox.innerHTML = db.announcements.slice(0, 3).map(a => {
+            const body = (a.html && typeof spaceSanitizeHtml === "function")
+                ? `<div class="rich-content">${spaceSanitizeHtml(a.html)}</div>`
+                : `<p class="space-ann-text">${spaceEsc(a.text)}</p>`;
+            const attach = (a.attachments && a.attachments.length)
+                ? `<div class="msg-attachments">${a.attachments.map(x => `
+                    <span class="attach-chip">&#128206; ${spaceEsc(x.name)}
+                        <span class="attach-size">${x.sizeKB} KB</span></span>`).join("")}</div>`
+                : "";
+            return `
             <div class="space-ann">
-                <p class="space-ann-text">${spaceEsc(a.text)}</p>
+                ${body}
+                ${attach}
                 <p class="space-ann-meta">
                     ${spaceEsc(spaceProfile(db, a.fromId).name)}
                     &middot; ${spaceAgo(a.minutesAgo)}
                 </p>
-            </div>`).join("");
+            </div>`;
+        }).join("");
     }
 }
 
@@ -1382,42 +1393,53 @@ function unreadTotal(db, meId) {
 function setupInbox(db, meId, prefix, audience) {
     const listBox = document.getElementById(prefix + "-inbox-list");
     const viewBox = document.getElementById(prefix + "-inbox-view");
-    const composeTo = document.getElementById(prefix + "-inbox-new-to");
-    const composeText = document.getElementById(prefix + "-inbox-new-text");
-    const composeBtn = document.getElementById(prefix + "-inbox-new-send");
-    const composeWrap = document.getElementById(prefix + "-inbox-compose");
     const composeToggle = document.getElementById(prefix + "-inbox-new-toggle");
     if (!listBox || !viewBox) return;
 
+    /* THE ONE-WRITING-AREA RULE (learned the hard way):
+       the right pane shows exactly ONE of these at any moment —
+         a THREAD  (read + a single reply bar), or
+         the COMPOSER (recipient + full rich editor), or
+         a calm "pick a conversation" hint.
+       `composing` and `openId` can never be true together. */
     let openId = null;
-
-    /* compose and reply are MUTUALLY EXCLUSIVE — you never see two
-       write bars at once (that confused everyone on the first try) */
-    function showCompose(on) {
-        if (!composeWrap) return;
-        composeWrap.hidden = !on;
-        if (on) {
-            openId = null;          // deselect the thread
-            renderList();
-            renderView();
-            if (composeText) composeText.focus();
-        }
-    }
-    if (composeWrap) composeWrap.hidden = true;
-    if (composeToggle) {
-        composeToggle.addEventListener("click", () =>
-            showCompose(Boolean(composeWrap && composeWrap.hidden)));
-    }
-
-    /* audience dropdown for brand-new conversations */
-    if (composeTo) {
-        composeTo.innerHTML = audience.map(id => {
-            const p = spaceProfile(db, id);
-            return `<option value="${spaceEsc(id)}">${spaceEsc(p.name)}</option>`;
-        }).join("");
-    }
+    let composing = false;
+    let editor = null;      // rich editor instance, alive while composing
 
     const myThreads = () => db.messages.filter(t => t.participants.includes(meId));
+
+    /* one plain-text preview line for the thread list */
+    function previewOf(m) {
+        if (!m) return "";
+        if (m.text) return m.text;
+        if (m.html && typeof spaceHtmlToText === "function") {
+            return spaceHtmlToText(m.html);
+        }
+        return "";
+    }
+
+    /* ONE message bubble — rich when the sender used the editor,
+       plain text otherwise. Rich HTML is ALWAYS sanitized first
+       (see spaceSanitizeHtml in js/space-editor.js). */
+    function bubbleHtml(m) {
+        const mine = m.by === meId;
+        const inner = (m.html && typeof spaceSanitizeHtml === "function")
+            ? `<div class="rich-content">${spaceSanitizeHtml(m.html)}</div>`
+            : `<p>${spaceEsc(m.text)}</p>`;
+        const attach = (m.attachments && m.attachments.length)
+            ? `<div class="msg-attachments">${m.attachments.map(a => `
+                <span class="attach-chip">&#128206; ${spaceEsc(a.name)}
+                    <span class="attach-size">${a.sizeKB} KB</span></span>`).join("")}</div>`
+            : "";
+        return `
+        <div class="bubble-row ${mine ? "is-mine" : ""}">
+            <div class="bubble ${mine ? "is-mine" : ""}">
+                ${inner}
+                ${attach}
+                <span class="bubble-time">${spaceAgo(m.minutesAgo)}</span>
+            </div>
+        </div>`;
+    }
 
     function paintBadges() {
         const n = unreadTotal(db, meId);
@@ -1443,14 +1465,15 @@ function setupInbox(db, meId, prefix, audience) {
             const other = spaceProfile(db, otherOf(t, meId));
             const last = t.messages[t.messages.length - 1];
             const unread = threadUnread(t, meId);
+            const open = !composing && t.id === openId;
             return `
-            <button type="button" class="thread-row ${t.id === openId ? "is-open" : ""}"
+            <button type="button" class="thread-row ${open ? "is-open" : ""}"
                     data-thread="${t.id}">
                 <span class="msg-avatar" style="background:${other.avatarColor}">${spaceEsc(other.name.trim().charAt(0).toUpperCase())}</span>
                 <span class="thread-info">
                     <span class="thread-name">${spaceEsc(other.name)}
                         ${unread ? `<span class="unread-dot">${unread}</span>` : ""}</span>
-                    <span class="thread-preview">${last ? spaceEsc(last.text) : ""}</span>
+                    <span class="thread-preview">${spaceEsc(previewOf(last))}</span>
                 </span>
             </button>`;
         }).join("");
@@ -1458,6 +1481,92 @@ function setupInbox(db, meId, prefix, audience) {
     }
 
     function renderView() {
+
+        /* ---------- COMPOSER MODE: the whole right pane ---------- */
+        if (composing) {
+            viewBox.innerHTML = `
+            <div class="compose-pane">
+                <div class="thread-head">
+                    <span class="msg-avatar" style="background:var(--space-accent, var(--color-primary))">&#9998;</span>
+                    <div>
+                        <p class="thread-name">New message</p>
+                        <p class="thread-subject">Rich text — lists, colors,
+                           highlights, tables and attachments all work.</p>
+                    </div>
+                    <select class="mini-select inbox-to-select" id="${prefix}-inbox-new-to"
+                            aria-label="Recipient"></select>
+                </div>
+                <div id="${prefix}-inbox-editor"></div>
+                <div class="space-submit-row">
+                    <button type="button" class="btn btn-primary"
+                            id="${prefix}-inbox-new-send">Send message</button>
+                    <button type="button" class="btn btn-ghost"
+                            id="${prefix}-inbox-new-cancel">Cancel</button>
+                </div>
+            </div>`;
+
+            const toSel = document.getElementById(prefix + "-inbox-new-to");
+            if (toSel) {
+                toSel.innerHTML = audience.map(id => {
+                    const p = spaceProfile(db, id);
+                    return `<option value="${spaceEsc(id)}">${spaceEsc(p.name)}</option>`;
+                }).join("");
+            }
+
+            const host = document.getElementById(prefix + "-inbox-editor");
+            editor = typeof createRichEditor === "function"
+                ? createRichEditor(host, {
+                    placeholder: "Write the message…"
+                })
+                : null;
+            if (editor) editor.focus();
+
+            const sendBtn = document.getElementById(prefix + "-inbox-new-send");
+            if (sendBtn) {
+                sendBtn.addEventListener("click", () => {
+                    const to = toSel ? toSel.value : null;
+                    if (!to) return spaceToast("Pick a person first", "bad");
+                    if (!editor || editor.isEmpty()) {
+                        return spaceToast("Write something first", "bad");
+                    }
+                    let thread = myThreads().find(t => otherOf(t, meId) === to);
+                    if (!thread) {
+                        thread = {
+                            id: "thr-" + Date.now(),
+                            participants: [meId, to],
+                            subject: "New conversation",
+                            messages: []
+                        };
+                        db.messages.push(thread);
+                    }
+                    thread.messages.push({
+                        by: meId,
+                        text: editor.getText(),
+                        html: editor.getHTML(),
+                        attachments: editor.getAttachments(),
+                        minutesAgo: 0,
+                        readBy: [meId]
+                    });
+                    spaceSave(db);
+                    composing = false;      // hand the pane back to the thread
+                    openId = thread.id;
+                    spaceToast("Message sent", "good");
+                    renderList();
+                    renderView();
+                });
+            }
+
+            const cancelBtn = document.getElementById(prefix + "-inbox-new-cancel");
+            if (cancelBtn) {
+                cancelBtn.addEventListener("click", () => {
+                    composing = false;
+                    renderView();
+                });
+            }
+            return;
+        }
+
+        /* ---------- THREAD MODE ---------- */
         const thread = myThreads().find(t => t.id === openId);
         if (!thread) {
             viewBox.innerHTML = '<p class="space-empty-inline">Pick a conversation to read it here.</p>';
@@ -1473,16 +1582,7 @@ function setupInbox(db, meId, prefix, audience) {
                 </div>
             </div>
             <div class="thread-messages">
-                ${thread.messages.map(m => {
-                    const mine = m.by === meId;
-                    return `
-                    <div class="bubble-row ${mine ? "is-mine" : ""}">
-                        <div class="bubble ${mine ? "is-mine" : ""}">
-                            <p>${spaceEsc(m.text)}</p>
-                            <span class="bubble-time">${spaceAgo(m.minutesAgo)}</span>
-                        </div>
-                    </div>`;
-                }).join("")}
+                ${thread.messages.map(bubbleHtml).join("")}
             </div>
             <form class="comment-form" id="${prefix}-inbox-reply">
                 <input type="text" class="chat-input" id="${prefix}-inbox-input"
@@ -1512,7 +1612,7 @@ function setupInbox(db, meId, prefix, audience) {
 
     function openThread(id) {
         openId = id;
-        if (composeWrap) composeWrap.hidden = true;   // one write bar only
+        composing = false;      // one writing area at a time
         const thread = myThreads().find(t => t.id === id);
         if (thread) {
             /* reading marks the OTHER side's messages as seen */
@@ -1543,7 +1643,7 @@ function setupInbox(db, meId, prefix, audience) {
             spaceSave(db);
         }
         openId = thread.id;
-        if (composeWrap) composeWrap.hidden = true;   // one write bar only
+        composing = false;
         renderList();
         renderView();
         const input = document.getElementById(prefix + "-inbox-input");
@@ -1554,35 +1654,20 @@ function setupInbox(db, meId, prefix, audience) {
     }
     window.spaceInboxOpenWith = openWith;
 
+    /* the header button flips the right pane between thread and composer */
+    if (composeToggle) {
+        composeToggle.addEventListener("click", () => {
+            composing = !composing;
+            if (composing) openId = null;
+            renderList();
+            renderView();
+        });
+    }
+
     listBox.addEventListener("click", (event) => {
         const row = event.target.closest("[data-thread]");
         if (row) openThread(row.dataset.thread);
     });
-
-    if (composeBtn) {
-        composeBtn.addEventListener("click", () => {
-            const to = composeTo ? composeTo.value : null;
-            const text = composeText ? composeText.value.trim() : "";
-            if (!to || !text) {
-                spaceToast("Pick a person and write a message", "bad");
-                return;
-            }
-            let thread = myThreads().find(t => otherOf(t, meId) === to);
-            if (!thread) {
-                thread = {
-                    id: "thr-" + Date.now(),
-                    participants: [meId, to],
-                    subject: "New conversation",
-                    messages: []
-                };
-                db.messages.push(thread);
-            }
-            if (composeText) composeText.value = "";
-            openId = thread.id;
-            sendThreadMessage(thread, text);
-            if (composeWrap) composeWrap.hidden = true;   // back to one bar
-        });
-    }
 
     renderList();
     renderView();
@@ -2690,6 +2775,16 @@ function startAdminSpace(db, session) {
     renderProfile(db, session);
     wireProfilePanel(db, session);
     setupBell(db, session);
+
+    /* the broadcast box is the rich editor (same one the inbox
+       composer uses) — announcements are documents, not chat lines */
+    const broadcastHost = document.getElementById("adm-broadcast-editor");
+    if (broadcastHost && typeof createRichEditor === "function") {
+        createRichEditor(broadcastHost, {
+            placeholder: "Write the announcement… bullets, colors, a table of dates, attachments — the works"
+        });
+    }
+
     wireAdminPanels(db, session);
 }
 
@@ -3409,9 +3504,11 @@ function renderAdminContent(db, session) {
             <div class="today-row">
                 <span class="activity-dot"></span>
                 <div class="today-row-main">
-                    <p class="space-next-meta">${spaceEsc(a.text)}</p>
+                    ${a.html && typeof spaceSanitizeHtml === "function"
+                        ? `<div class="rich-content">${spaceSanitizeHtml(a.html)}</div>`
+                        : `<p class="space-next-meta">${spaceEsc(a.text)}</p>`}
                     <p class="space-next-meta muted">${spaceEsc(spaceProfile(db, a.fromId).name)}
-                       · ${spaceAgo(a.minutesAgo)}</p>
+                       &middot; ${spaceAgo(a.minutesAgo)}</p>
                 </div>
                 <button type="button" class="admin-kick" data-ann-del="${spaceEsc(a.id)}"
                         title="Delete announcement">&times;</button>
@@ -3940,16 +4037,20 @@ function wireAdminPanels(db, session) {
     const broadcast = document.getElementById("adm-broadcast-send");
     if (broadcast) {
         broadcast.addEventListener("click", () => {
-            const input = document.getElementById("adm-broadcast-text");
-            const text = input ? input.value.trim() : "";
-            if (!text) return spaceToast("Write the announcement first", "bad");
+            const host = document.getElementById("adm-broadcast-editor");
+            const editor = host ? host._richEditor : null;
+            if (!editor || editor.isEmpty()) {
+                return spaceToast("Write the announcement first", "bad");
+            }
             db.announcements.unshift({
                 id: "ann-" + Date.now(),
                 fromId: "admin",
-                text,
+                text: editor.getText(),
+                html: editor.getHTML(),
+                attachments: editor.getAttachments(),
                 minutesAgo: 0
             });
-            if (input) input.value = "";
+            editor.clear();
             spaceSave(db);
             adminLog(db, "Broadcast announcement to every account");
             spaceToast("Announcement sent to everyone", "good");
