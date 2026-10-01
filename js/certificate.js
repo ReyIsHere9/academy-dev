@@ -98,10 +98,14 @@ if (certRoot) {
                         <span>Serial ${spaceEsc(cert.serial)}</span>
                         <span>The English Academy</span>
                     </div>
+                    <p class="certificate-verify-note">Verify this certificate at
+                       verify.html — serial ${spaceEsc(cert.serial)}</p>
                 </div>
             </div>
             <div class="not-found-links is-center no-print">
                 <button type="button" class="btn btn-primary" id="cert-print">Print certificate</button>
+                <a class="btn btn-ghost"
+                   href="verify.html?serial=${encodeURIComponent(cert.serial)}">Verify</a>
                 <a class="btn btn-ghost" href="dashboard.html">Back to dashboard</a>
             </div>`;
 

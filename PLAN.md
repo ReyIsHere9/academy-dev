@@ -39,6 +39,8 @@ in the private academy-live repo.
 - [x] **Notification bell** — derived notifications per role (unread messages, due assignments, grading queue, payment attention), count badge + jump-to-panel rows on every dashboard
 - [x] **Admin backup** — export the whole demo database as JSON + restore-from-file with confirmation
 - [x] **Launch hygiene** — favicon, 404 page, meta description + Open Graph, robots.txt, sitemap.xml, privacy + terms stubs, skip-link + focus-visible + reduced-motion, print styles, cookie/honesty notice, Blog link everywhere
+- [x] **Attendance, verification, class announcements + phone pass** — **attendance marking per session** (teacher/admin sessions editor: Present/Late/Absent toggles per student, "All present", counts on the row, activity log on Done; students see their own status on past classes), **public `verify.html`** serial lookup (linked from every certificate and noted for printing; demo serial `EA-A2-WR-2003`), **teacher class announcements** (rich editor, targets ONE class; students only see global + their own classes' posts, admin list labels the class) — plus **`MOBILE_QA.md`**: the Samsung / Xiaomi / Apple phone checklist and the cross-brand hardening (viewport-fit=cover, 16px inputs to stop iOS zoom, safe-area insets, dvh popup height, touch-action, bigger tap targets, contained overscroll)
+
 - [ ] Rebrand + polish → finalize into `academy-live` (private)
 
 ## Future candidates (not scheduled — ideas from build + reviews)
@@ -46,15 +48,13 @@ in the private academy-live repo.
 None of these are promises; they're the running wish-list so nothing
 gets lost:
 
-- **Attendance marking per session** (teacher) — dated sessions exist; marking who showed up is the natural next step
-- **Public certificate verification** — a page that looks up a serial (EA-A1-SP-2001)
-- **Teacher class announcements** — today only the admin broadcasts globally; teachers announce via chat/inbox
 - **Newsletter → mailing service** — currently a local demo list; live build wires Mailchimp/Buttondown
 - **Payment search/filter + user email column** in the admin tables
 - **Course finder** — filter the catalog by level × skill on `courses.html`
 - **Pricing copy vs reality** — "downloadable audio lessons" and the "AI conversation partner" are promises in the pricing matrix that need the backend phase
-- **Full Persian / RTL version** — chat and inbox messages are already RTL-aware (`dir="auto"`); the rest of the site would need a language layer
+- **Full Persian / RTL version** — decided: no full translation; support only. Chat, inbox and announcements already render RTL correctly (`dir="auto"`); a language layer can come later
 - **Lesson checkpoints** — resume a video lesson where you stopped (needs real recordings)
+- **Recordings polish** — per-course filtering once the library grows
 
 ## Workflow notes
 

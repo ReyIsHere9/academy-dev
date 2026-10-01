@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <!-- ============================================================
-     CLASS RECORDINGS (recordings.html)
+     CERTIFICATE VERIFICATION (verify.html)
      ------------------------------------------------------------
-     The replay library behind the class room's REC button.
-     Rows come from the demo store (db.recordings in
-     js/space-data.js); playback is honest demo — the player
-     says so. Linked from the student dashboard's Classes panel.
+     Anyone can check a certificate serial (e.g. EA-A2-WR-2003):
+       verify.html?serial=EA-A2-WR-2003
+     Looks the serial up in the demo store's issued certificates
+     and reports Valid / Not found with name, course and date.
+     ⚠️ structural demo: verifies against this browser's store —
+     the live build queries the server so ANY device can verify.
      ============================================================ -->
 
 <html lang="en">
@@ -13,9 +15,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Class Recordings | The English Academy</title>
+    <title>Verify a Certificate | The English Academy</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <meta name="description" content="Replay past live classes from The English Academy.">
+    <meta name="description" content="Verify an English Academy certificate by its serial number.">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/theme.js"></script>
     <script src="js/session.js"></script>
@@ -74,22 +76,18 @@
 
     <section class="hero hero-sm">
         <div class="container">
-            <h1>Class Recordings</h1>
+            <h1>Verify a Certificate</h1>
             <p class="hero-subtitle">
-                Missed a class or want to hear it twice? Every recorded
-                session lands here.
+                Type the serial printed on the certificate — we'll tell you
+                who earned it, for which course, and when.
             </p>
         </div>
     </section>
 
     <section class="section">
-        <div class="container">
-            <!-- player slot appears here when you press play -->
-            <div id="recording-player"></div>
-            <div class="card">
-                <h2>Library</h2>
-                <div id="recordings-root"></div>
-            </div>
+        <div class="container verify-layout">
+            <!-- js/verify.js paints the form + result here -->
+            <div id="verify-root"></div>
         </div>
     </section>
 
@@ -115,9 +113,12 @@
     <!-- ================= SCRIPTS ================= -->
     <script src="js/pricing-data.js"></script>
     <script src="js/pricing.js"></script>
+    <script src="js/levels-data.js"></script>
+    <script src="js/catalog.js"></script>
     <script src="js/space-data.js"></script>
+    <script src="js/space-editor.js"></script>
     <script src="js/space.js"></script>
-    <script src="js/recordings.js"></script>
+    <script src="js/verify.js"></script>
 
 </body>
 </html>

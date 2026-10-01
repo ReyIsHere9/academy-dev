@@ -390,7 +390,12 @@ function bellRowsFor(db, session) {
                 text: "\"" + a.title + "\" — " + dueLabel(a),
                 panel: "assignments"
             }));
-        db.announcements.filter(a => a.minutesAgo <= fresh).slice(0, 2)
+        const myClassIds = db.courseInstances
+            .filter(c => c.students.includes(session.id)).map(c => c.id);
+        db.announcements
+            .filter(a => (!a.classId || myClassIds.includes(a.classId)) &&
+                         a.minutesAgo <= fresh)
+            .slice(0, 2)
             .forEach(a => rows.push({
                 text: "Announcement: " + a.text,
                 panel: "home"
@@ -632,10 +637,15 @@ function renderHome(db, session) {
         }
     }
 
-    /* announcements — rich when the admin used the editor */
+    /* announcements — rich when the admin/teacher used the editor.
+       Students see GLOBAL ones plus their own classes' announcements. */
     const annBox = document.getElementById("space-announcements");
     if (annBox) {
-        annBox.innerHTML = db.announcements.slice(0, 3).map(a => {
+        const myClassIds = db.courseInstances
+            .filter(c => c.students.includes(session.id)).map(c => c.id);
+        annBox.innerHTML = db.announcements
+            .filter(a => !a.classId || myClassIds.includes(a.classId))
+            .slice(0, 3).map(a => {
             const body = (a.html && typeof spaceSanitizeHtml === "function")
                 ? `<div class="rich-content" dir="auto">${spaceSanitizeHtml(a.html)}</div>`
                 : `<p class="space-ann-text">${spaceEsc(a.text)}</p>`;
@@ -724,6 +734,7 @@ function renderClasses(db, session) {
     if (pastBox) {
         pastBox.innerHTML = past.length ? past.map(s => {
             const teacher = spaceProfile(db, s.teacher);
+            const attendance = s.attendance && s.attendance[session.id];
             return `
             <div class="class-row is-past">
                 <div>
@@ -731,7 +742,12 @@ function renderClasses(db, session) {
                     <p class="space-next-meta">${spaceEsc(teacher.name)} &middot;
                        ${spaceAgo(-s.startsInMinutes)}</p>
                 </div>
-                <span class="status-chip is-done">Attended</span>
+                ${attendance
+                    ? `<span class="status-chip is-${attendance === "present" ? "graded"
+                        : attendance === "late" ? "todo" : "overdue"}">${
+                        attendance === "present" ? "Present"
+                        : attendance === "late" ? "Late" : "Absent"}</span>`
+                    : '<span class="status-chip is-done">Attended</span>'}
             </div>`;
         }).join("") : '<p class="space-empty-inline">No past classes yet.</p>';
     }
@@ -1789,7 +1805,10 @@ function renderSessionsEditor(db, session, classId, hostId) {
         <button type="button" class="btn btn-ghost btn-small"
                 data-ses-close="1">Close</button>
     </div>
-    ${sessions.length ? sessions.map(s => `
+    <div id="${hostId}-att"></div>
+    ${sessions.length ? sessions.map(s => { 
+        const marked = s.attendance ? Object.keys(s.attendance).length : 0;
+        return `
         <div class="ses-row" data-ses="${spaceEsc(s.id)}">
             <input type="datetime-local" class="chat-input ses-when"
                    value="${sessionToInputValue(s.startsInMinutes)}">
@@ -1798,10 +1817,14 @@ function renderSessionsEditor(db, session, classId, hostId) {
             <span class="status-chip is-${s.startsInMinutes >= 0 ? "submitted" : "done"}">
                 ${s.startsInMinutes >= 0 ? "upcoming" : "past"}</span>
             <button type="button" class="btn btn-ghost btn-small"
+                    data-ses-att="${spaceEsc(s.id)}">&#10003; Attendance${
+                    marked ? " (" + marked + "/" + cls.students.length + ")" : ""}</button>
+            <button type="button" class="btn btn-ghost btn-small"
                     data-ses-save="${spaceEsc(s.id)}">Save</button>
             <button type="button" class="admin-kick" data-ses-del="${spaceEsc(s.id)}"
                     title="Delete session">&times;</button>
-        </div>`).join("")
+        </div>`;
+    }).join("")
     : '<p class="space-empty-inline">No sessions yet — add the first one below.</p>'}
     <div class="space-submit-row">
         <input type="datetime-local" class="chat-input" id="${hostId}-new-when">
@@ -1811,7 +1834,127 @@ function renderSessionsEditor(db, session, classId, hostId) {
                 data-ses-add="${spaceEsc(classId)}">Add session</button>
     </div>`;
 
+    /* ---- attendance: mark who showed up, per session ----
+       A student with no status simply hasn't been marked yet. */
+    let attSessionId = null;
+
+    function renderAttendanceArea() {
+        const box = document.getElementById(hostId + "-att");
+        if (!box) return;
+        if (!attSessionId) { box.innerHTML = ""; return; }
+        const s = db.schedule.find(x => x.id === attSessionId);
+        if (!s) { attSessionId = null; box.innerHTML = ""; return; }
+        s.attendance = s.attendance || {};
+        const roster = (s.students && s.students.length) ? s.students : cls.students;
+
+        box.innerHTML = `
+        <div class="att-panel">
+            <div class="asg-head">
+                <div>
+                    <p class="space-next-course">Attendance — ${
+                        sessionToInputValue(s.startsInMinutes).replace("T", " &middot; ")}</p>
+                    <p class="space-next-meta">${roster.length} students &middot;
+                       click a status for each, then Done</p>
+                </div>
+                <div class="admin-actions-cell">
+                    <button type="button" class="btn btn-ghost btn-small"
+                            data-att-all="${spaceEsc(s.id)}">All present</button>
+                    <button type="button" class="btn btn-primary btn-small"
+                            data-att-done="1">Done</button>
+                </div>
+            </div>
+            ${roster.map(stuId => {
+                const person = spaceProfile(db, stuId);
+                const status = s.attendance[stuId] || "";
+                const btn = (st, label) => `
+                    <button type="button"
+                            class="att-btn ${status === st ? "is-on is-" + st : ""}"
+                            data-att="${spaceEsc(s.id)}|${spaceEsc(stuId)}|${st}">${label}</button>`;
+                return `
+                <div class="att-row">
+                    <span class="msg-avatar" style="background:${person.avatarColor}">${spaceEsc(person.name.trim().charAt(0).toUpperCase())}</span>
+                    <span class="att-name">${spaceEsc(person.name)}</span>
+                    <span class="att-btns">
+                        ${btn("present", "Present")}
+                        ${btn("late", "Late")}
+                        ${btn("absent", "Absent")}
+                    </span>
+                </div>`;
+            }).join("")}
+        </div>`;
+    }
+
+    /* keep the row's "Attendance (2/4)" counter honest */
+    function refreshAttRow(sesId) {
+        const s = db.schedule.find(x => x.id === sesId);
+        const btn = host.querySelector(`[data-ses-att="${sesId}"]`);
+        if (s && btn) {
+            const marked = s.attendance ? Object.keys(s.attendance).length : 0;
+            btn.innerHTML = "&#10003; Attendance" +
+                (marked ? " (" + marked + "/" + cls.students.length + ")" : "");
+        }
+    }
+
     host.addEventListener("click", (event) => {
+        /* ---- attendance controls ---- */
+        const attOpen = event.target.closest("[data-ses-att]");
+        if (attOpen) {
+            attSessionId = attOpen.dataset.sesAtt;
+            renderAttendanceArea();
+            return;
+        }
+
+        const attMark = event.target.closest("[data-att]");
+        if (attMark) {
+            const [sesId, stuId, status] = attMark.dataset.att.split("|");
+            const s = db.schedule.find(x => x.id === sesId);
+            if (s) {
+                s.attendance = s.attendance || {};
+                if (s.attendance[stuId] === status) {
+                    delete s.attendance[stuId];   // clicking again clears it
+                } else {
+                    s.attendance[stuId] = status;
+                }
+                spaceSave(db);
+                renderAttendanceArea();
+                refreshAttRow(sesId);
+            }
+            return;
+        }
+
+        const attAll = event.target.closest("[data-att-all]");
+        if (attAll) {
+            const s = db.schedule.find(x => x.id === attAll.dataset.attAll);
+            if (s) {
+                s.attendance = s.attendance || {};
+                (s.students && s.students.length ? s.students : cls.students)
+                    .forEach(stuId => { s.attendance[stuId] = "present"; });
+                spaceSave(db);
+                adminLog(db, "Marked everyone present for " + cls.title);
+                spaceToast("Everyone marked present", "good");
+                renderAttendanceArea();
+                refreshAttRow(s.id);
+            }
+            return;
+        }
+
+        const attDone = event.target.closest("[data-att-done]");
+        if (attDone) {
+            const s = db.schedule.find(x => x.id === attSessionId);
+            if (s && s.attendance) {
+                const counts = Object.values(s.attendance);
+                const present = counts.filter(c => c === "present").length;
+                const late = counts.filter(c => c === "late").length;
+                const absent = counts.filter(c => c === "absent").length;
+                adminLog(db, "Attendance for " + cls.title + ": " +
+                    present + " present, " + late + " late, " + absent + " absent");
+            }
+            attSessionId = null;
+            renderAttendanceArea();
+            spaceToast("Attendance saved — students see it in Classes", "good");
+            return;
+        }
+
         /* add */
         const add = event.target.closest("[data-ses-add]");
         if (add) {            const whenEl = document.getElementById(hostId + "-new-when");
@@ -2033,10 +2176,12 @@ function startTeacherSpace(db, session) {
     renderTeacherAssignments(db, session);
     renderTeacherStudents(db, session);
     renderTeacherMaterials(db, session);
+    renderTeacherAnnouncements(db, session);
     renderProfile(db, session);
     wireProfilePanel(db, session);
     setupBell(db, session);
     setupInbox(db, session.id, "tch", teacherStudents(db, session));
+    setupTeacherAnnounceBox(db, session);
     wireTeacherPanels(db, session);
 }
 
@@ -2887,6 +3032,91 @@ function renderTeacherMaterials(db, session) {
                         title="Delete material">&times;</button>
             </div>`).join("")
         : '<p class="space-empty-inline">Nothing uploaded yet.</p>';
+    }
+}
+
+/* ---------- teacher: CLASS ANNOUNCEMENTS ----------
+   Teachers post to ONE of their classes (the admin broadcasts
+   globally). Students only see announcements for classes they're
+   enrolled in — see the filter in renderHome + bellRowsFor. */
+function renderTeacherAnnouncements(db, session) {
+    const sel = document.getElementById("tch-ann-class");
+    if (sel) {
+        sel.innerHTML = teacherClasses(db, session).map(c =>
+            `<option value="${spaceEsc(c.id)}">${spaceEsc(c.title)}</option>`).join("");
+    }
+
+    const list = document.getElementById("tch-ann-list");
+    if (!list) return;
+    const mine = db.announcements
+        .filter(a => a.fromId === session.id && a.classId)
+        .slice(0, 5);
+
+    list.innerHTML = mine.length ? mine.map(a => {
+        const cls = db.courseInstances.find(c => c.id === a.classId);
+        return `
+        <div class="today-row">
+            <span class="activity-dot"></span>
+            <div class="today-row-main">
+                ${a.html && typeof spaceSanitizeHtml === "function"
+                    ? `<div class="rich-content" dir="auto">${spaceSanitizeHtml(a.html)}</div>`
+                    : `<p class="space-next-meta" dir="auto">${spaceEsc(a.text)}</p>`}
+                <p class="space-next-meta muted">${spaceEsc(cls ? cls.title : "class")}
+                   &middot; ${spaceAgo(a.minutesAgo)}</p>
+            </div>
+            <button type="button" class="admin-kick" data-ann-t-del="${spaceEsc(a.id)}"
+                    title="Delete announcement">&times;</button>
+        </div>`;
+    }).join("") : '<p class="space-empty-inline">No class announcements yet.</p>';
+}
+
+function setupTeacherAnnounceBox(db, session) {
+    const host = document.getElementById("tch-ann-editor");
+    if (!host) return;
+    const editor = typeof createRichEditor === "function"
+        ? createRichEditor(host, {
+            placeholder: "Write to this class… lists, highlights and tables work"
+        })
+        : null;
+
+    const sendBtn = document.getElementById("tch-ann-send");
+    if (sendBtn) {
+        sendBtn.addEventListener("click", () => {
+            const sel = document.getElementById("tch-ann-class");
+            const classId = sel ? sel.value : null;
+            if (!classId) return spaceToast("Create a class first", "bad");
+            if (!editor || editor.isEmpty()) {
+                return spaceToast("Write the announcement first", "bad");
+            }
+            db.announcements.unshift({
+                id: "ann-" + Date.now(),
+                fromId: session.id,
+                classId,
+                text: editor.getText(),
+                html: editor.getHTML(),
+                attachments: editor.getAttachments(),
+                minutesAgo: 0
+            });
+            editor.clear();
+            spaceSave(db);
+            const cls = db.courseInstances.find(c => c.id === classId);
+            adminLog(db, "Posted a class announcement for " + (cls ? cls.title : classId));
+            spaceToast("Announcement posted — students see it on their home panel", "good");
+            renderTeacherAnnouncements(db, session);
+        });
+    }
+
+    const list = document.getElementById("tch-ann-list");
+    if (list) {
+        list.addEventListener("click", (event) => {
+            const del = event.target.closest("[data-ann-t-del]");
+            if (!del) return;
+            db.announcements = db.announcements
+                .filter(a => a.id !== del.dataset.annTDel);
+            spaceSave(db);
+            renderTeacherAnnouncements(db, session);
+            spaceToast("Announcement deleted", "bad");
+        });
     }
 }
 
@@ -3950,6 +4180,7 @@ function renderAdminContent(db, session) {
                         ? `<div class="rich-content" dir="auto">${spaceSanitizeHtml(a.html)}</div>`
                         : `<p class="space-next-meta">${spaceEsc(a.text)}</p>`}
                     <p class="space-next-meta muted">${spaceEsc(spaceProfile(db, a.fromId).name)}
+                       ${a.classId ? "&middot; class: " + spaceEsc((db.courseInstances.find(c => c.id === a.classId) || {}).title || a.classId) : ""}
                        &middot; ${spaceAgo(a.minutesAgo)}</p>
                 </div>
                 <button type="button" class="admin-kick" data-ann-del="${spaceEsc(a.id)}"

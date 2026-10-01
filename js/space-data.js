@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 8;   /* v8: contact inbox, billing, sessions */
+const SPACE_DB_VERSION = 9;   /* v9: attendance, seeded certificate, class announcements */
 
 const SPACE_SEED = {
-    version: 8,
+    version: 9,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -108,7 +108,10 @@ const SPACE_SEED = {
         {
             id: "ses-3", classId: "cls-3", course: "A2 · Writing", skill: "Writing",
             teacher: "Tch-2002", students: ["Stu-2001", "Stu-2003"],
-            startsInMinutes: -20 * 60, durationMin: 60, code: "A2-WRIT"
+            startsInMinutes: -20 * 60, durationMin: 60, code: "A2-WRIT",
+            /* attendance: per-student status set by the teacher
+               (missing key = not marked yet) */
+            attendance: { "Stu-2001": "present", "Stu-2003": "late" }
         }
     ],
 
@@ -164,8 +167,16 @@ const SPACE_SEED = {
         }
     ],
 
-    /* ============ ANNOUNCEMENTS ============ */
+    /* ============ ANNOUNCEMENTS ============
+       No classId + fromId admin = a GLOBAL broadcast.
+       A classId = a teacher's announcement for THAT class only;
+       students see it when they're enrolled in the class. */
     announcements: [
+        {
+            id: "ann-4", fromId: "Tch-1001", classId: "cls-1",
+            text: "Bring your introduction drafts to Monday's class — we'll record them.",
+            minutesAgo: 45
+        },
         {
             id: "ann-1", fromId: "Tch-1001",
             text: "Bring your Present Perfect worksheet to the next class.",
@@ -486,8 +497,12 @@ const SPACE_SEED = {
 
     /* ============ ISSUED CERTIFICATES ============
        Key: "studentId|level|skill" -> { issuedMinutesAgo, serial }.
-       Written on the FIRST certificate view so the date is stable. */
-    certificates: {},
+       Written on the FIRST certificate view so the date is stable.
+       verify.html looks serials up here (structural demo — the live
+       build verifies against the server so ANY device can check). */
+    certificates: {
+        "Stu-2003|A2|Writing": { issuedMinutesAgo: 24 * 60, serial: "EA-A2-WR-2003" }
+    },
 
     /* ============ WEBSITE MESSAGES (contact form) ============
        What visitors send through contact.html lands here so the

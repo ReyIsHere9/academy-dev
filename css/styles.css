@@ -7534,3 +7534,201 @@ html[data-theme="dark"] .trial-note {
         min-width: 100%;
     }
 }
+
+/* ================= MOBILE HARDENING (Samsung / Xiaomi / Apple) =================
+   Cross-brand phone rules. Everything here exists because phone
+   browsers disagree with desktops — see MOBILE_QA.md for the manual
+   checklist the team runs on real devices. */
+html {
+    -webkit-text-size-adjust: 100%;
+    /* iOS landscape: stop text from being inflated */
+}
+
+body {
+    -webkit-tap-highlight-color: transparent;
+    /* no grey tap flash on iOS/Android */
+}
+
+.btn,
+button,
+.mode-btn,
+.ctrl-btn {
+    touch-action: manipulation;
+    /* kills the old 300ms tap delay + double-tap zoom on tool buttons */
+}
+
+/* 16px inputs on phones: iOS Safari ZOOMS the page when a focused
+   input is under 16px — the #1 "looks broken on iPhone" bug */
+@media (max-width: 768px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    /* fingers are bigger than mice: grow the smallest tap targets */
+    .mode-btn { width: 40px; height: 40px; }
+    .rich-btn { width: 36px; height: 36px; }
+    .icon-btn { width: 40px; height: 40px; }
+}
+
+/* notched iPhones: keep floating UI above the home bar */
+.wa-float {
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.space-toasts {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+.cookie-bar {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+body.is-controls-open .controls {
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+/* inner scroll areas should not bounce the whole page away
+   (pull-to-refresh on Android feels like a bug inside a chat) */
+.chat-messages,
+.thread-messages,
+.rich-surface,
+.gb-scroll,
+.file-list {
+    overscroll-behavior: contain;
+}
+
+/* the pop-out window: vh is unreliable on mobile Safari; dvh is right */
+.popup-wrap {
+    height: 100vh;
+    height: 100dvh;
+}
+
+/* ================= ATTENDANCE MARKING =================
+   The sessions editor's attendance panel (teacher/admin). */
+.att-panel {
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin: 10px 0 14px;
+    background-color: var(--color-bg-alt);
+}
+
+.att-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.att-row:last-child {
+    border-bottom: none;
+}
+
+.att-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.att-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.att-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-card-bg);
+    color: var(--color-text-muted);
+    border-radius: 999px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.att-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.att-btn.is-on.is-present { background-color: #16a34a; border-color: #16a34a; color: #ffffff; }
+.att-btn.is-on.is-late    { background-color: #f59e0b; border-color: #f59e0b; color: #1c1917; }
+.att-btn.is-on.is-absent  { background-color: #ef4444; border-color: #ef4444; color: #ffffff; }
+
+/* ================= CERTIFICATE VERIFICATION ================= */
+.verify-layout {
+    max-width: 720px;
+}
+
+.verify-card h2 {
+    margin-bottom: 6px;
+}
+
+.verify-card .muted {
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+}
+
+.verify-result {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-alt);
+}
+
+.verify-result.is-valid {
+    border-color: rgba(22, 163, 74, 0.55);
+    background-color: rgba(22, 163, 74, 0.10);
+}
+
+.verify-result.is-invalid {
+    border-color: rgba(239, 68, 68, 0.55);
+    background-color: rgba(239, 68, 68, 0.08);
+}
+
+.verify-result .success-check {
+    margin-bottom: 0;
+    flex: none;
+}
+
+.verify-x {
+    display: inline-flex;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    flex: none;
+}
+
+.verify-line {
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.verify-line.muted {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
+/* printed hint on the certificate itself */
+.certificate-verify-note {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-top: 8px;
+}
