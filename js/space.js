@@ -505,10 +505,14 @@ function startStudentSpace(db, session) {
     setupInbox(db, session.id, "stu", studentAudience(db, session));
 }
 
-/* who may a student message? The teachers of their classes. */
+/* who may a student message? The teachers of their classes.
+   Brand-new accounts have no classes yet — they fall back to every
+   teacher so "+ New message" never dead-ends. */
 function studentAudience(db, session) {
     const mine = db.courseInstances.filter(c => c.students.includes(session.id));
-    return [...new Set(mine.map(c => c.teacher))];
+    const teachers = [...new Set(mine.map(c => c.teacher))];
+    if (teachers.length) return teachers;
+    return Object.keys(db.profiles).filter(id => db.profiles[id].role === "teacher");
 }
 
 /* ---------- §4 HOME ---------- */
@@ -557,7 +561,8 @@ function renderHome(db, session) {
         }
         if (!enr) enr = unfinished[0] || enrolled[0];
         if (!enr) {
-            contBox.innerHTML = '<p class="space-empty-inline">No courses yet — browse the catalog to enroll.</p>';
+            contBox.innerHTML = '<p class="space-empty-inline">No courses yet — ' +
+                '<a href="courses.html">browse the catalog</a> to enroll.</p>';
         } else {
             const teacher = spaceProfile(db, enr.teacher);
 
@@ -632,7 +637,7 @@ function renderHome(db, session) {
     if (annBox) {
         annBox.innerHTML = db.announcements.slice(0, 3).map(a => {
             const body = (a.html && typeof spaceSanitizeHtml === "function")
-                ? `<div class="rich-content">${spaceSanitizeHtml(a.html)}</div>`
+                ? `<div class="rich-content" dir="auto">${spaceSanitizeHtml(a.html)}</div>`
                 : `<p class="space-ann-text">${spaceEsc(a.text)}</p>`;
             const attach = (a.attachments && a.attachments.length)
                 ? `<div class="msg-attachments">${a.attachments.map(x => `
@@ -1186,14 +1191,27 @@ function renderMaterials(db, session) {
     const box = document.getElementById("space-materials");
     if (!box) return;
 
+    /* students see the materials for THEIR courses only */
+    const mine = db.enrollments.filter(e => e.student === session.id);
+
     const q = spaceMatQuery.trim().toLowerCase();
-    const list = db.materials.filter(m =>
-        !q || m.title.toLowerCase().includes(q) ||
-        m.fileName.toLowerCase().includes(q) ||
-        m.course.toLowerCase().includes(q));
+    const list = db.materials.filter(m => {
+        const enrolled = mine.some(e => {
+            if (m.course === e.title) return true;
+            const skillWords = String(e.skill || "").toLowerCase().split(/\s+/);
+            return m.course.toLowerCase().startsWith(String(e.level).toLowerCase()) &&
+                skillWords.some(w => w && m.course.toLowerCase().includes(w));
+        });
+        if (!enrolled) return false;
+        return !q || m.title.toLowerCase().includes(q) ||
+            m.fileName.toLowerCase().includes(q) ||
+            m.course.toLowerCase().includes(q);
+    });
 
     if (!list.length) {
-        box.innerHTML = '<p class="space-empty-inline">No files match.</p>';
+        box.innerHTML = mine.length
+            ? '<p class="space-empty-inline">No files match.</p>'
+            : '<p class="space-empty-inline">Enroll in a course and its materials appear here.</p>';
         return;
     }
 
@@ -1509,7 +1527,7 @@ function setupInbox(db, meId, prefix, audience) {
     function renderList() {
         const threads = myThreads();
         if (!threads.length) {
-            listBox.innerHTML = '<p class="space-empty-inline">No conversations yet.</p>';
+            listBox.innerHTML = '<p class="space-empty-inline">No conversations yet — start one with “+ New message”.</p>';
             paintBadges();
             return;
         }
@@ -1744,6 +1762,12 @@ function inputValueToMinutes(value) {
     return isNaN(t) ? null : Math.round((t - Date.now()) / 60000);
 }
 
+/* after a session change, the teacher's Today countdown should
+   update immediately — no reload needed */
+function refreshSessionHosts(db, session) {
+    if (SPACE_ROLE === "teacher") renderTeacherToday(db, session);
+}
+
 function renderSessionsEditor(db, session, classId, hostId) {
     const host = document.getElementById(hostId);
     if (!host) return;
@@ -1790,8 +1814,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
     host.addEventListener("click", (event) => {
         /* add */
         const add = event.target.closest("[data-ses-add]");
-        if (add) {
-            const whenEl = document.getElementById(hostId + "-new-when");
+        if (add) {            const whenEl = document.getElementById(hostId + "-new-when");
             const durEl = document.getElementById(hostId + "-new-dur");
             const minutes = whenEl ? inputValueToMinutes(whenEl.value) : null;
             if (minutes === null) return spaceToast("Pick a date and time first", "bad");
@@ -1810,6 +1833,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
             adminLog(db, "Scheduled a session for " + cls.title);
             spaceToast("Session added — students see it in Classes", "good");
             renderSessionsEditor(db, session, classId, hostId);
+            refreshSessionHosts(db, session);
             return;
         }
 
@@ -1827,6 +1851,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
                 spaceSave(db);
                 spaceToast("Session updated", "good");
                 renderSessionsEditor(db, session, classId, hostId);
+            refreshSessionHosts(db, session);
             }
             return;
         }
@@ -1845,6 +1870,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
                 spaceSave(db);
                 spaceToast("Session deleted", "bad");
                 renderSessionsEditor(db, session, classId, hostId);
+            refreshSessionHosts(db, session);
             });
             return;
         }
@@ -1913,6 +1939,11 @@ function renderStudentBilling(db, session) {
        payment provider in the live build.</p>`;
 }
 
+/* "guest" checkouts have no profile — label them politely instead
+   of showing the raw id in admin tables and logs */
+const personLabel = (db, id) =>
+    id === "guest" ? "Guest purchase" : spaceProfile(db, id).name;
+
 /* ============ ADMIN: WEBSITE MESSAGES (contact form inbox) ============
    Every contact.html submission lands here (a copy also opens in the
    visitor's email app). Unread ones light up the notification bell. */
@@ -1978,6 +2009,7 @@ const TEACHER_KIND_LABEL = { task: "Task", worksheet: "Worksheet", exam: "Exam" 
 
 let gbClassId = null;   // gradebook: which class is selected
 let gbGrader = null;    // { stuId, asgId } while the grader is open
+let editingAsgId = null; // assignment currently loaded into the form (edit mode)
 
 function teacherClasses(db, session) {
     return db.courseInstances.filter(c => c.teacher === session.id);
@@ -2640,6 +2672,8 @@ function renderTeacherAssignments(db, session) {
                        ${dueLabel(a)} &middot; ${submitted}/${total} submitted &middot;
                        ${ungraded} waiting</p>
                 </div>
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-edit-asg="${spaceEsc(a.id)}">Edit</button>
                 <button type="button" class="admin-kick" data-del-asg="${spaceEsc(a.id)}"
                         title="Delete assignment">&times;</button>
             </div>`;
@@ -2657,27 +2691,104 @@ function createTeacherAssignment(db, session) {
     const cls = db.courseInstances.find(c => c.id === form.classId);
     const dueInHours = form.unit === "days" ? form.hours * 24 : form.hours;
 
-    db.assignments.push({
-        id: "asg-" + Date.now(),
-        classId: form.classId,
-        kind: form.kind,
-        course: cls ? cls.title : "Course",
-        skill: cls ? cls.skill : "",
-        title: form.title,
-        instructions: form.instructions || "See the attached task.",
-        createdBy: session.id,
-        dueInHours,
-        maxScore: form.maxScore,
-        allowed: form.allowed,
-        maxMB: form.maxMB,
-        submissions: {}
-    });
+    if (editingAsgId) {
+        /* ---- EDIT MODE: update in place ----
+           The existing submissions, comments and grades STAY on the
+           assignment — only the rules/text change (e.g. extend a
+           deadline without losing anyone's work). */
+        const asg = db.assignments.find(a => a.id === editingAsgId);
+        if (asg) {
+            Object.assign(asg, {
+                title: form.title,
+                classId: form.classId,
+                kind: form.kind,
+                course: cls ? cls.title : asg.course,
+                skill: cls ? cls.skill : asg.skill,
+                instructions: form.instructions || asg.instructions,
+                dueInHours,
+                maxScore: form.maxScore,
+                allowed: form.allowed,
+                maxMB: form.maxMB
+            });
+            spaceSave(db);
+            adminLog(db, "Updated assignment " + form.title);
+            spaceToast("Assignment updated — submissions and grades kept", "good");
+        }
+        exitAsgEditMode();
+    } else {
+        db.assignments.push({
+            id: "asg-" + Date.now(),
+            classId: form.classId,
+            kind: form.kind,
+            course: cls ? cls.title : "Course",
+            skill: cls ? cls.skill : "",
+            title: form.title,
+            instructions: form.instructions || "See the attached task.",
+            createdBy: session.id,
+            dueInHours,
+            maxScore: form.maxScore,
+            allowed: form.allowed,
+            maxMB: form.maxMB,
+            submissions: {}
+        });
+        spaceSave(db);
+        spaceToast("Assignment created for " + (cls ? cls.title : "class"), "good");
+    }
 
-    spaceSave(db);
-    spaceToast("Assignment created for " + (cls ? cls.title : "class"), "good");
     renderTeacherAssignments(db, session);
     renderGradebook(db, session);
     renderTeacherToday(db, session);
+}
+
+/* load an assignment into the create form and switch to edit mode */
+function loadAsgIntoForm(db, session, id) {
+    const asg = db.assignments.find(a => a.id === id);
+    if (!asg) return;
+    editingAsgId = id;
+
+    const set = (elId, value) => {
+        const el = document.getElementById(elId);
+        if (el && value !== undefined) el.value = value;
+    };
+    set("tch-asg-title", asg.title);
+    set("tch-asg-class", asg.classId);
+    set("tch-asg-kind", asg.kind);
+    set("tch-asg-instructions", asg.instructions);
+
+    /* due date: whole days stay days; anything else shows as hours */
+    if (asg.dueInHours >= 24 && asg.dueInHours % 24 === 0) {
+        set("tch-asg-due", asg.dueInHours / 24);
+        set("tch-asg-due-unit", "days");
+    } else {
+        set("tch-asg-due", Math.max(1, Math.round(asg.dueInHours)));
+        set("tch-asg-due-unit", "hours");
+    }
+    set("tch-asg-max", asg.maxScore);
+    set("tch-asg-maxmb", asg.maxMB);
+    document.querySelectorAll('input[name="tch-asg-type"]').forEach(input => {
+        input.checked = (asg.allowed || []).includes(input.value);
+    });
+
+    const createBtn = document.getElementById("tch-asg-create");
+    if (createBtn) {
+        createBtn.textContent = "Save changes";
+        if (createBtn.scrollIntoView) {
+            createBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+    const cancelBtn = document.getElementById("tch-asg-cancel-edit");
+    if (cancelBtn) cancelBtn.hidden = false;
+
+    spaceToast("Editing “" + asg.title + "” — submissions stay safe", "good");
+}
+
+/* back to create mode */
+function exitAsgEditMode() {
+    editingAsgId = null;
+    const createBtn = document.getElementById("tch-asg-create");
+    if (createBtn) createBtn.textContent = "Create & assign";
+    const cancelBtn = document.getElementById("tch-asg-cancel-edit");
+    if (cancelBtn) cancelBtn.hidden = true;
 }
 
 function fillAsgForm(template) {
@@ -2904,6 +3015,13 @@ function wireTeacherPanels(db, session) {
     if (createAsg) {
         createAsg.addEventListener("click", () => createTeacherAssignment(db, session));
     }
+    const cancelAsgEdit = document.getElementById("tch-asg-cancel-edit");
+    if (cancelAsgEdit) {
+        cancelAsgEdit.addEventListener("click", () => {
+            exitAsgEditMode();
+            spaceToast("Back to create mode", "bad");
+        });
+    }
     const tplSave = document.getElementById("tch-asg-template-save");
     if (tplSave) {
         tplSave.addEventListener("click", () => {
@@ -2954,17 +3072,23 @@ function wireTeacherPanels(db, session) {
     const asgList = document.getElementById("tch-asg-list");
     if (asgList) {
         asgList.addEventListener("click", (event) => {
+            const edit = event.target.closest("[data-edit-asg]");
+            if (edit) {
+                loadAsgIntoForm(db, session, edit.dataset.editAsg);
+                return;
+            }
             const del = event.target.closest("[data-del-asg]");
             if (!del) return;
-            spaceConfirm({
-                title: "Delete this assignment?",
-                text: "It disappears from every student's dashboard, including any grades.",
-                okLabel: "Delete",
-                danger: true
-            }).then(ok => {
-                if (!ok) return;
-                db.assignments = db.assignments.filter(a =>
-                    a.id !== del.dataset.delAsg);
+                spaceConfirm({
+                    title: "Delete this assignment?",
+                    text: "It disappears from every student's dashboard, including any grades.",
+                    okLabel: "Delete",
+                    danger: true
+                }).then(ok => {
+                    if (!ok) return;
+                    if (editingAsgId === del.dataset.delAsg) exitAsgEditMode();
+                    db.assignments = db.assignments.filter(a =>
+                        a.id !== del.dataset.delAsg);
                 spaceSave(db);
                 renderTeacherAssignments(db, session);
                 renderGradebook(db, session);
@@ -3823,7 +3947,7 @@ function renderAdminContent(db, session) {
                 <span class="activity-dot"></span>
                 <div class="today-row-main">
                     ${a.html && typeof spaceSanitizeHtml === "function"
-                        ? `<div class="rich-content">${spaceSanitizeHtml(a.html)}</div>`
+                        ? `<div class="rich-content" dir="auto">${spaceSanitizeHtml(a.html)}</div>`
                         : `<p class="space-next-meta">${spaceEsc(a.text)}</p>`}
                     <p class="space-next-meta muted">${spaceEsc(spaceProfile(db, a.fromId).name)}
                        &middot; ${spaceAgo(a.minutesAgo)}</p>
@@ -4037,7 +4161,7 @@ function wireAdminPanels(db, session) {
                 spaceConfirm({
                     title: "Delete this payment?",
                     text: "The record disappears from billing history for " +
-                          spaceProfile(db, pay.student).name + ".",
+                          personLabel(db, pay.student) + ".",
                     okLabel: "Delete payment",
                     danger: true
                 }).then(ok => {
@@ -4045,7 +4169,7 @@ function wireAdminPanels(db, session) {
                     db.payments = db.payments.filter(p => p.id !== pay.id);
                     spaceSave(db);
                     adminLog(db, "Deleted a payment record for " +
-                        spaceProfile(db, pay.student).name);
+                        personLabel(db, pay.student));
                     spaceToast("Payment record deleted", "bad");
                     renderAdminPayments(db, session);
                     renderAdminOverview(db, session);
@@ -4061,7 +4185,7 @@ function wireAdminPanels(db, session) {
             pay.status = status;
             spaceSave(db);
             adminLog(db, "Payment " + payId + " (" +
-                spaceProfile(db, pay.student).name + ") marked " + status);
+                personLabel(db, pay.student) + ") marked " + status);
             spaceToast("Payment marked " + status, status === "paid" ? "good" : "bad");
             renderAdminPayments(db, session);
             renderAdminOverview(db, session);
@@ -4090,7 +4214,7 @@ function wireAdminPanels(db, session) {
             });
             spaceSave(db);
             adminLog(db, "Recorded payment for " +
-                spaceProfile(db, student.value).name + " ($" + Math.round(value) + ")");
+                personLabel(db, student.value) + " ($" + Math.round(value) + ")");
             spaceToast("Payment recorded", "good");
             renderAdminPayments(db, session);
             renderAdminOverview(db, session);

@@ -25,6 +25,20 @@ function siteStore() {
     }
 }
 
+/* FALLBACK SETTINGS — used on the VERY FIRST visit, before the demo
+   store exists in this browser (nothing seeds it on public pages).
+   The moment a store exists, admin console edits override these.
+   Keep in sync with the seed in js/space-data.js. */
+const SITE_FALLBACK_SETTINGS = {
+    siteName: "The English Academy",
+    tagline: "Learn English with live teachers and small classes.",
+    contactEmail: "hello@example-academy.com",
+    contactPhone: "+1 (555) 010-3456",
+    whatsapp: "+1 (555) 010-3456",
+    address: "123 Grammar Lane, Englishville, EV 45000",
+    homeBanner: ""
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     /* ---- accessibility: make the skip link work ----
        Pages don't hand-write id="main-content" on their first
@@ -87,10 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const db = siteStore();
-    if (!db) return;
 
-    const settings = db.settings || {};
-    const media = db.media || {};
+    /* settings + media work with or without a store: fallbacks
+       first, stored admin edits on top */
+    const settings = Object.assign({}, SITE_FALLBACK_SETTINGS,
+        (db && db.settings) || {});
+    const media = (db && db.media) || {};
 
     /* ---- floating WhatsApp button (public pages only) ----
        The standard academy furniture: one tap to chat. Skipped on
