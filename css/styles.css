@@ -2250,6 +2250,11 @@ html[data-theme="dark"] .demo-hint code {
     stroke: #fde68a;
 }
 
+/* hamburger for the mobile control sheet — desktop never shows it */
+.controls-menu-btn {
+    display: none;
+}
+
 /* --- chat show/hide (the toggle button in the status row) ---
    Like collapsing YouTube comments: the chat column disappears
    and the player takes every pixel. */
@@ -6426,9 +6431,45 @@ html[data-theme="dark"] .quiz-result.is-wrong { color: #fca5a5; }
         height: 300px;
     }
 
+    /* the control row would eat half a phone screen — it lives in a
+       bottom sheet behind a hamburger button (created in classroom.js §6c) */
+    .controls-menu-btn {
+        display: flex;
+    }
+
     .controls {
+        display: none;
         gap: 8px;
     }
+
+    body.is-controls-open .controls {
+        display: flex;
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        z-index: 78;
+        flex-wrap: wrap;
+        background-color: var(--color-card-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 18px 44px rgba(2, 6, 23, 0.4);
+        animation: lightsFade 0.15s ease;
+    }
+
+    /* MOBILE READING ORDER: the chat belongs right under the video,
+       not after the whole classroom list. display:contents lets the
+       main column's children join the one-column grid so order can
+       interleave them with the chat. */
+    .class-main {
+        display: contents;
+    }
+
+    .stage-shell        { order: 1; }
+    .class-side         { order: 2; }
+    .class-subtitle     { order: 3; }
+    .participants-strip { order: 4; }
 
     /* chips + mode buttons need to wrap on narrow screens instead
        of pushing off the edge (class-room mobile audit) */

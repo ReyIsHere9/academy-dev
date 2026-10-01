@@ -645,6 +645,52 @@ if (endClassBtn) {
     });
 }
 
+/* ============ 6c. MOBILE CONTROLS MENU ============
+   On phones the control row (mic / cam / hand / share / leave…)
+   would eat half the screen, so it moves into a bottom sheet
+   behind a hamburger button in the status row. The button is
+   visible ≤768px only (CSS decides) — desktop ignores all of
+   this. The sheet closes on outside-click; the button toggles. */
+const stageStatusBox = document.querySelector(".stage-status");
+const controlsRow = document.querySelector(".controls");
+
+if (stageStatusBox && controlsRow) {
+    const menuBtn = document.createElement("button");
+    menuBtn.type = "button";
+    menuBtn.className = "mode-btn controls-menu-btn";
+    menuBtn.id = "controls-menu-btn";
+    menuBtn.title = "Class controls";
+    menuBtn.setAttribute("aria-label", "Open class controls");
+    menuBtn.setAttribute("aria-pressed", "false");
+    menuBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>`;
+    stageStatusBox.appendChild(menuBtn);
+
+    function closeControlsMenu() {
+        document.body.classList.remove("is-controls-open");
+        menuBtn.setAttribute("aria-pressed", "false");
+    }
+
+    menuBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const open = document.body.classList.toggle("is-controls-open");
+        menuBtn.setAttribute("aria-pressed", String(open));
+    });
+
+    /* clicking anywhere outside the sheet or the button closes it */
+    document.addEventListener("click", (event) => {
+        if (!document.body.classList.contains("is-controls-open")) return;
+        if (event.target.closest(".controls")) return;
+        if (event.target.closest("#controls-menu-btn")) return;
+        closeControlsMenu();
+    });
+}
+
 /* ============ 7. TEACHER TOOLS (guarded by teacher-mode) ============ */
 if (IS_TEACHER && !IS_POPUP) {
 
