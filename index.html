@@ -198,9 +198,10 @@
     </section>
 
     <!-- ================= FEATURED COURSES =================
-         A sneak peek of 3 courses. The full list lives on
-         courses.html (Module 2). Prices are PLACEHOLDERS —
-         course selling comes in a later upgrade. -->
+         Three hand-picked courses from the catalog. Prices shown
+         here are PLACEHOLDER numbers (demo copy) — the real price
+         logic lives in pricing-data.js + checkout. Links point at
+         real catalog courses so nothing dead-ends. -->
     <section class="section section-alt">
         <div class="container">
 
@@ -215,12 +216,10 @@
                     <h3>English for Beginners</h3>
                     <p>Start from zero: alphabet, everyday words,
                        and your first real sentences.</p>
-                    <!-- A price + a link to the course DETAIL page
-                         (Module 3: course.html). We use one template
-                         course.html with a #part name for now. -->
                     <div class="course-footer">
                         <span class="price">$29</span>
-                        <a href="course.html" class="btn btn-small">View Course</a>
+                        <a href="course.html?level=A1&skill=Speaking"
+                           class="btn btn-small">View Course</a>
                     </div>
                 </article>
 
@@ -232,7 +231,8 @@
                        and expressing opinions with ease.</p>
                     <div class="course-footer">
                         <span class="price">$39</span>
-                        <a href="course.html" class="btn btn-small">View Course</a>
+                        <a href="course.html?level=B1&skill=Speaking"
+                           class="btn btn-small">View Course</a>
                     </div>
                 </article>
 
@@ -244,7 +244,8 @@
                        the English of the professional world.</p>
                     <div class="course-footer">
                         <span class="price">$49</span>
-                        <a href="course.html" class="btn btn-small">View Course</a>
+                        <a href="course.html?level=C1&skill=Writing"
+                           class="btn btn-small">View Course</a>
                     </div>
                 </article>
 
@@ -310,8 +311,10 @@
     <section class="section cta-band">
         <div class="container">
             <h2>Ready to start speaking?</h2>
-            <p>Pick a course and take your first step today.</p>
+            <p>Pick a course and take your first step today —
+               or try a class before you commit.</p>
             <a href="courses.html" class="btn btn-primary">See All Courses</a>
+            <a href="contact.html?topic=trial" class="btn btn-ghost">Book a free trial lesson</a>
         </div>
     </section>
 
@@ -323,6 +326,10 @@
             <p class="logo">The English Academy</p>
             <p>&copy; 2026 The English Academy. All rights reserved.</p>
             <!-- &copy; = the © symbol written safely as HTML code -->
+            <form class="newsletter-form" novalidate>
+                <input type="email" placeholder="Your email" aria-label="Email for the newsletter" required>
+                <button type="submit" class="btn btn-small">Subscribe</button>
+            </form>
             <nav class="footer-nav">
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>

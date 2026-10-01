@@ -420,6 +420,11 @@ function bellRowsFor(db, session) {
             text: freshOrders + " new order" + (freshOrders === 1 ? "" : "s") + " in 24 h",
             panel: "payments"
         });
+        const unreadMsgs = db.contactMessages.filter(m => !m.read).length;
+        if (unreadMsgs) rows.push({
+            text: unreadMsgs + " new website message" + (unreadMsgs === 1 ? "" : "s"),
+            panel: "messages"
+        });
     }
     return rows;
 }
@@ -492,6 +497,7 @@ function startStudentSpace(db, session) {
     renderAssignments(db, session);
     renderMaterials(db, session);
     renderAchievements(db, session);
+    renderStudentBilling(db, session);
     renderProfile(db, session);
     wireStudentPanels(db, session);
     wireProfilePanel(db, session);
@@ -532,15 +538,61 @@ function renderHome(db, session) {
     const statNext = document.getElementById("stat-next");
     if (statNext) statNext.textContent = next ? spaceWhen(next.startsInMinutes) : "—";
 
-    /* continue learning = first unfinished course */
-    const cont = document.getElementById("space-continue");
-    if (cont) {
-        const enr = enrolled.find(e => e.progress < 100) || enrolled[0];
+    /* continue learning = first unfinished course; when the catalog
+       knows a course we can deep-link, prefer one of those so the
+       button lands INSIDE the right lesson */
+    const contBox = document.getElementById("space-continue");
+    if (contBox) {
+        const unfinished = enrolled.filter(e => e.progress < 100);
+        let enr = null;
+        if (typeof academyCatalog === "function") {
+            const cat = academyCatalog();
+            enr = unfinished.find(e => {
+                const lvl = cat.find(l => l.id === e.level);
+                return lvl && lvl.skills.some(s =>
+                    s.name === e.skill ||
+                    String(e.title || "").toLowerCase()
+                        .includes(s.name.toLowerCase()));
+            }) || null;
+        }
+        if (!enr) enr = unfinished[0] || enrolled[0];
         if (!enr) {
-            cont.innerHTML = '<p class="space-empty-inline">No courses yet — browse the catalog to enroll.</p>';
+            contBox.innerHTML = '<p class="space-empty-inline">No courses yet — browse the catalog to enroll.</p>';
         } else {
             const teacher = spaceProfile(db, enr.teacher);
-            cont.innerHTML = `
+
+            /* deep-link: straight into the next unfinished unit when
+               the catalog knows this course ("continue where you
+               left off"); otherwise the course page itself */
+            let actionHref = "course.html?level=" + encodeURIComponent(enr.level) +
+                             "&skill=" + encodeURIComponent(enr.skill);
+            let actionLabel = "Open course";
+            if (typeof academyCatalog === "function") {
+                const lvl = academyCatalog().find(l => l.id === enr.level);
+                const skl = lvl ? lvl.skills.find(s =>
+                    s.name === enr.skill ||
+                    String(enr.title || "").toLowerCase()
+                        .includes(s.name.toLowerCase())) : null;
+                if (lvl && skl) {
+                    const done = (db.completedLessons &&
+                                  db.completedLessons[session.id]) || [];
+                    const nextIdx = skl.units.findIndex((u, i) =>
+                        !done.includes(lvl.id + "|" + skl.name + "|" + i));
+                    if (nextIdx >= 0) {
+                        actionHref = "lesson.html?level=" + encodeURIComponent(lvl.id) +
+                            "&skill=" + encodeURIComponent(skl.name) +
+                            "&unit=" + nextIdx;
+                        actionLabel = "Continue lesson";
+                    } else {
+                        actionHref = "certificate.html?level=" +
+                            encodeURIComponent(lvl.id) + "&skill=" +
+                            encodeURIComponent(skl.name);
+                        actionLabel = "View certificate";
+                    }
+                }
+            }
+
+            contBox.innerHTML = `
                 <p class="space-next-course">${spaceEsc(enr.title)}</p>
                 <p class="space-next-meta">${spaceEsc(teacher.name)} &middot;
                    ${enr.sessionsDone}/${enr.sessionsTotal} classes</p>
@@ -548,9 +600,7 @@ function renderHome(db, session) {
                     <div class="progress-fill" style="--progress:${enr.progress}%"></div>
                 </div>
                 <p class="space-next-meta space-continue-next">${spaceEsc(enr.nextLesson)}</p>
-                <a class="btn btn-primary btn-small"
-                   href="course.html?level=${encodeURIComponent(enr.level)}&skill=${encodeURIComponent(enr.skill)}">
-                   Open course</a>`;
+                <a class="btn btn-primary btn-small" href="${actionHref}">${actionLabel}</a>`;
         }
     }
 
@@ -1423,9 +1473,11 @@ function setupInbox(db, meId, prefix, audience) {
        (see spaceSanitizeHtml in js/space-editor.js). */
     function bubbleHtml(m) {
         const mine = m.by === meId;
+        /* dir="auto": the browser detects Farsi/Arabic/Hebrew and
+           right-aligns automatically — same trick as the class chat */
         const inner = (m.html && typeof spaceSanitizeHtml === "function")
-            ? `<div class="rich-content">${spaceSanitizeHtml(m.html)}</div>`
-            : `<p>${spaceEsc(m.text)}</p>`;
+            ? `<div class="rich-content" dir="auto">${spaceSanitizeHtml(m.html)}</div>`
+            : `<p dir="auto">${spaceEsc(m.text)}</p>`;
         const attach = (m.attachments && m.attachments.length)
             ? `<div class="msg-attachments">${m.attachments.map(a => `
                 <span class="attach-chip">&#128206; ${spaceEsc(a.name)}
@@ -1473,7 +1525,7 @@ function setupInbox(db, meId, prefix, audience) {
                 <span class="thread-info">
                     <span class="thread-name">${spaceEsc(other.name)}
                         ${unread ? `<span class="unread-dot">${unread}</span>` : ""}</span>
-                    <span class="thread-preview">${spaceEsc(previewOf(last))}</span>
+                    <span class="thread-preview" dir="auto">${spaceEsc(previewOf(last))}</span>
                 </span>
             </button>`;
         }).join("");
@@ -1585,7 +1637,7 @@ function setupInbox(db, meId, prefix, audience) {
                 ${thread.messages.map(bubbleHtml).join("")}
             </div>
             <form class="comment-form" id="${prefix}-inbox-reply">
-                <input type="text" class="chat-input" id="${prefix}-inbox-input"
+                <input type="text" class="chat-input" id="${prefix}-inbox-input" dir="auto"
                        placeholder="Write a reply…" autocomplete="off">
                 <button type="submit" class="btn btn-primary btn-small">Send</button>
             </form>`;
@@ -1671,6 +1723,235 @@ function setupInbox(db, meId, prefix, audience) {
 
     renderList();
     renderView();
+}
+
+/* ============ CLASS SESSIONS EDITOR (teacher + admin) ============
+   Individual DATED sessions — the things dashboards count down to
+   and join by code. The demo store keeps times relative
+   (`startsInMinutes`); teachers pick real dates/times and we
+   convert. Shared by the teacher's "Sessions" button and the
+   admin console's class editor. ⚠️ structural demo: sessions live
+   in this browser only; the live build syncs them from a server. */
+function sessionToInputValue(startsInMinutes) {
+    const d = new Date(Date.now() + startsInMinutes * 60000);
+    const pad = n => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+           "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+
+function inputValueToMinutes(value) {
+    const t = new Date(value).getTime();
+    return isNaN(t) ? null : Math.round((t - Date.now()) / 60000);
+}
+
+function renderSessionsEditor(db, session, classId, hostId) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const cls = db.courseInstances.find(c => c.id === classId);
+    if (!cls) return;
+
+    host.hidden = false;
+    const sessions = db.schedule
+        .filter(s => s.classId === classId)
+        .sort((a, b) => a.startsInMinutes - b.startsInMinutes);
+
+    host.innerHTML = `
+    <div class="asg-head">
+        <div>
+            <h2>Sessions — ${spaceEsc(cls.title)}</h2>
+            <p class="space-next-meta">What the countdowns use. Past sessions
+               stay as history; students join with the class code.</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-small"
+                data-ses-close="1">Close</button>
+    </div>
+    ${sessions.length ? sessions.map(s => `
+        <div class="ses-row" data-ses="${spaceEsc(s.id)}">
+            <input type="datetime-local" class="chat-input ses-when"
+                   value="${sessionToInputValue(s.startsInMinutes)}">
+            <input type="number" class="chat-input ses-dur" min="15" step="15"
+                   value="${s.durationMin}" title="Minutes">
+            <span class="status-chip is-${s.startsInMinutes >= 0 ? "submitted" : "done"}">
+                ${s.startsInMinutes >= 0 ? "upcoming" : "past"}</span>
+            <button type="button" class="btn btn-ghost btn-small"
+                    data-ses-save="${spaceEsc(s.id)}">Save</button>
+            <button type="button" class="admin-kick" data-ses-del="${spaceEsc(s.id)}"
+                    title="Delete session">&times;</button>
+        </div>`).join("")
+    : '<p class="space-empty-inline">No sessions yet — add the first one below.</p>'}
+    <div class="space-submit-row">
+        <input type="datetime-local" class="chat-input" id="${hostId}-new-when">
+        <input type="number" class="chat-input" id="${hostId}-new-dur"
+               min="15" step="15" value="60" title="Minutes">
+        <button type="button" class="btn btn-primary btn-small"
+                data-ses-add="${spaceEsc(classId)}">Add session</button>
+    </div>`;
+
+    host.addEventListener("click", (event) => {
+        /* add */
+        const add = event.target.closest("[data-ses-add]");
+        if (add) {
+            const whenEl = document.getElementById(hostId + "-new-when");
+            const durEl = document.getElementById(hostId + "-new-dur");
+            const minutes = whenEl ? inputValueToMinutes(whenEl.value) : null;
+            if (minutes === null) return spaceToast("Pick a date and time first", "bad");
+            db.schedule.push({
+                id: "ses-" + Date.now(),
+                classId,
+                course: cls.title,
+                skill: cls.skill,
+                teacher: cls.teacher,
+                students: cls.students.slice(),
+                startsInMinutes: minutes,
+                durationMin: durEl && Number(durEl.value) > 0 ? Number(durEl.value) : 60,
+                code: cls.code
+            });
+            spaceSave(db);
+            adminLog(db, "Scheduled a session for " + cls.title);
+            spaceToast("Session added — students see it in Classes", "good");
+            renderSessionsEditor(db, session, classId, hostId);
+            return;
+        }
+
+        /* save one */
+        const save = event.target.closest("[data-ses-save]");
+        if (save) {
+            const row = save.closest(".ses-row");
+            const s = db.schedule.find(x => x.id === save.dataset.sesSave);
+            const whenEl = row ? row.querySelector(".ses-when") : null;
+            const durEl = row ? row.querySelector(".ses-dur") : null;
+            const minutes = whenEl ? inputValueToMinutes(whenEl.value) : null;
+            if (s && minutes !== null) {
+                s.startsInMinutes = minutes;
+                if (durEl && Number(durEl.value) > 0) s.durationMin = Number(durEl.value);
+                spaceSave(db);
+                spaceToast("Session updated", "good");
+                renderSessionsEditor(db, session, classId, hostId);
+            }
+            return;
+        }
+
+        /* delete */
+        const del = event.target.closest("[data-ses-del]");
+        if (del) {
+            spaceConfirm({
+                title: "Delete this session?",
+                text: "It disappears from every student's schedule.",
+                okLabel: "Delete session",
+                danger: true
+            }).then(ok => {
+                if (!ok) return;
+                db.schedule = db.schedule.filter(x => x.id !== del.dataset.sesDel);
+                spaceSave(db);
+                spaceToast("Session deleted", "bad");
+                renderSessionsEditor(db, session, classId, hostId);
+            });
+            return;
+        }
+
+        /* close */
+        if (event.target.closest("[data-ses-close]")) {
+            host.hidden = true;
+            host.innerHTML = "";
+        }
+    });
+}
+
+/* ============ STUDENT BILLING (receipts) ============
+   Read-only for the student: their orders and payment history,
+   straight from the demo store the checkout writes to. */
+function renderStudentBilling(db, session) {
+    const box = document.getElementById("stu-billing");
+    if (!box) return;
+
+    const orders = (db.orders || []).filter(o => o.student === session.id)
+        .sort((a, b) => a.minutesAgo - b.minutesAgo);
+    const payments = db.payments.filter(p => p.student === session.id)
+        .sort((a, b) => a.daysAgo - b.daysAgo);
+    const paid = payments.filter(p => p.status === "paid")
+        .reduce((sum, p) => sum + p.amount, 0);
+
+    box.innerHTML = `
+    <div class="space-stat-row">
+        <div class="space-stat"><strong>$${paid.toLocaleString()}</strong>
+            <span>Total paid</span></div>
+        <div class="space-stat"><strong>${orders.length}</strong>
+            <span>Orders</span></div>
+        <div class="space-stat"><strong>${payments.filter(p => p.status === "pending").length}</strong>
+            <span>Pending</span></div>
+        <div class="space-stat"><strong>${payments.filter(p => p.status === "failed").length}</strong>
+            <span>Not completed</span></div>
+    </div>
+
+    <h3 class="space-subhead">Orders &amp; receipts</h3>
+    ${orders.length ? orders.map(o => `
+        <div class="receipt-row">
+            <div class="receipt-main">
+                <p class="space-next-course">${spaceEsc(o.product)}</p>
+                <p class="space-next-meta">Ref <strong>${spaceEsc(o.ref)}</strong> &middot;
+                   ${spaceAgo(o.minutesAgo)} &middot; paid with ${spaceEsc(o.method)}</p>
+            </div>
+            <span class="receipt-total">$${o.total}</span>
+            <span class="status-chip is-graded">Paid</span>
+        </div>`).join("")
+    : '<p class="space-empty-inline">No orders yet — enroll from any course or plan and the receipt appears here.</p>'}
+
+    <h3 class="space-subhead">Payment history</h3>
+    ${payments.length ? payments.map(p => `
+        <div class="receipt-row">
+            <div class="receipt-main">
+                <p class="space-next-course">${PLAN_LABEL[p.plan] || p.plan}</p>
+                <p class="space-next-meta">${spaceAgo(p.daysAgo * 24 * 60)} &middot;
+                   ${spaceEsc(p.method)}</p>
+            </div>
+            <span class="receipt-total">$${p.amount}</span>
+            <span class="status-chip is-${p.status === "paid" ? "graded"
+                : p.status === "pending" ? "todo" : "overdue"}">${PAY_STATUS_LABEL[p.status]}</span>
+        </div>`).join("")
+    : '<p class="space-empty-inline">No payments recorded.</p>'}
+    <p class="space-hint">Demo receipts — real invoices come from the
+       payment provider in the live build.</p>`;
+}
+
+/* ============ ADMIN: WEBSITE MESSAGES (contact form inbox) ============
+   Every contact.html submission lands here (a copy also opens in the
+   visitor's email app). Unread ones light up the notification bell. */
+function renderAdminMessages(db, session) {
+    const box = document.getElementById("adm-messages");
+    if (!box) return;
+
+    const unread = db.contactMessages.filter(m => !m.read).length;
+    const count = document.getElementById("adm-cm-count");
+    if (count) count.textContent = unread ? unread + " unread" : "all read";
+
+    /* the nav shows a dot too, like the inbox badge */
+    const navBadge = document.getElementById("adm-cm-nav");
+    if (navBadge) {
+        navBadge.textContent = unread;
+        navBadge.hidden = unread === 0;
+    }
+
+    box.innerHTML = db.contactMessages.length ? db.contactMessages.map(m => `
+        <div class="today-row">
+            <span class="msg-avatar" style="background:${m.read ? "#64748b" : "#2563eb"}">${spaceEsc(m.name.trim().charAt(0).toUpperCase())}</span>
+            <div class="today-row-main">
+                <p class="space-next-course">${spaceEsc(m.subject || "(no subject)")}
+                    ${m.read ? "" : '<span class="unread-dot">new</span>'}</p>
+                <p class="space-next-meta">${spaceEsc(m.name)} &middot;
+                   ${spaceEsc(m.email)} &middot; ${spaceAgo(m.minutesAgo)}</p>
+                <p class="admin-cm-text" dir="auto">${spaceEsc(m.text)}</p>
+            </div>
+            <div class="admin-actions-cell">
+                <a class="btn btn-ghost btn-small"
+                   href="mailto:${spaceEsc(m.email)}?subject=${encodeURIComponent("Re: " + (m.subject || "your message"))}">
+                   Reply</a>
+                <button type="button" class="btn btn-ghost btn-small"
+                        data-cm-toggle="${spaceEsc(m.id)}">${m.read ? "Mark unread" : "Mark read"}</button>
+                <button type="button" class="admin-kick" data-cm-del="${spaceEsc(m.id)}"
+                        title="Delete message">&times;</button>
+            </div>
+        </div>`).join("")
+    : '<p class="space-empty-inline">No website messages yet.</p>';
 }
 
 /* ============ TEACHER SPACE ====================================
@@ -1821,6 +2102,8 @@ function renderTeacherClasses(db, session) {
                     <a class="btn btn-primary btn-small" href="class-teacher.html">Open room</a>
                     <button type="button" class="btn btn-ghost btn-small"
                             data-gb-class="${spaceEsc(c.id)}">Gradebook</button>
+                    <button type="button" class="btn btn-ghost btn-small"
+                            data-sessions="${spaceEsc(c.id)}">Sessions</button>
                 </div>
             </div>`).join("")
             : '<p class="space-empty-inline">No classes yet — create your first one below.</p>';
@@ -2523,11 +2806,23 @@ function wireTeacherPanels(db, session) {
     if (classBox) {
         classBox.addEventListener("click", (event) => {
             const btn = event.target.closest("[data-gb-class]");
-            if (!btn) return;
-            gbClassId = btn.dataset.gbClass;
-            renderGradebook(db, session);
-            const navBtn = document.querySelector('.space-nav-btn[data-panel="gradebook"]');
-            if (navBtn) navBtn.click();
+            if (btn) {
+                gbClassId = btn.dataset.gbClass;
+                renderGradebook(db, session);
+                const navBtn = document.querySelector('.space-nav-btn[data-panel="gradebook"]');
+                if (navBtn) navBtn.click();
+                return;
+            }
+            const ses = event.target.closest("[data-sessions]");
+            if (ses) {
+                const host = document.getElementById("tch-sessions-editor");
+                if (host) {
+                    renderSessionsEditor(db, session, ses.dataset.sessions, "tch-sessions-editor");
+                    if (host.scrollIntoView) {
+                        host.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                }
+            }
         });
     }
 
@@ -2771,6 +3066,7 @@ function startAdminSpace(db, session) {
     renderAdminMedia(db, session);
     renderAdminClasses(db, session);
     renderAdminContent(db, session);
+    renderAdminMessages(db, session);
     renderAdminBadges(db, session);
     renderProfile(db, session);
     wireProfilePanel(db, session);
@@ -3479,6 +3775,8 @@ function openAdminClass(db, session, id) {
     </div>
     <div class="space-submit-row">
         <button type="button" class="btn btn-primary" id="adm-cl-save">Save class</button>
+        <button type="button" class="btn btn-ghost"
+                data-adm-sessions="${spaceEsc(cls.id)}">Manage sessions</button>
         <button type="button" class="btn admin-danger" id="adm-cl-delete">Delete class</button>
     </div>`;
     box.hidden = false;
@@ -3495,8 +3793,28 @@ function renderAdminContent(db, session) {
     set("adm-set-tagline", db.settings.tagline);
     set("adm-set-email", db.settings.contactEmail);
     set("adm-set-phone", db.settings.contactPhone);
+    set("adm-set-whatsapp", db.settings.whatsapp || "");
     set("adm-set-address", db.settings.address);
     set("adm-set-banner", db.settings.homeBanner);
+
+    /* newsletter signups live in their own storage key (site.js
+       writes it); show them read-only with a remove button */
+    const nlBox = document.getElementById("adm-newsletter");
+    if (nlBox) {
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem("academyNewsletter")) || []; } catch {}
+        nlBox.innerHTML = list.length ? list.map((n, i) => `
+            <div class="today-row">
+                <span class="activity-dot"></span>
+                <div class="today-row-main">
+                    <p class="space-next-meta">${spaceEsc(n.email)} &middot;
+                       ${spaceAgo(n.minutesAgo || 0)}</p>
+                </div>
+                <button type="button" class="admin-kick" data-nl-del="${i}"
+                        title="Remove">&times;</button>
+            </div>`).join("")
+        : '<p class="space-empty-inline">No newsletter signups yet.</p>';
+    }
 
     const list = document.getElementById("adm-announcements");
     if (list) {
@@ -3915,6 +4233,47 @@ function wireAdminPanels(db, session) {
         });
     }
 
+    /* --- website messages (contact form inbox) --- */
+    const msgBox = document.getElementById("adm-messages");
+    if (msgBox) {
+        msgBox.addEventListener("click", (e) => {
+            const toggle = e.target.closest("[data-cm-toggle]");
+            if (toggle) {
+                const m = db.contactMessages.find(x => x.id === toggle.dataset.cmToggle);
+                if (m) {
+                    m.read = !m.read;
+                    spaceSave(db);
+                    renderAdminMessages(db, session);
+                    if (window.spaceBellRefresh) window.spaceBellRefresh();
+                }
+                return;
+            }
+            const del = e.target.closest("[data-cm-del]");
+            if (del) {
+                db.contactMessages = db.contactMessages
+                    .filter(x => x.id !== del.dataset.cmDel);
+                spaceSave(db);
+                adminLog(db, "Deleted a website message");
+                renderAdminMessages(db, session);
+                if (window.spaceBellRefresh) window.spaceBellRefresh();
+            }
+        });
+    }
+
+    /* --- newsletter list (footer signups, own storage key) --- */
+    const nlBox = document.getElementById("adm-newsletter");
+    if (nlBox) {
+        nlBox.addEventListener("click", (e) => {
+            const del = e.target.closest("[data-nl-del]");
+            if (!del) return;
+            let list = [];
+            try { list = JSON.parse(localStorage.getItem("academyNewsletter")) || []; } catch {}
+            list.splice(Number(del.dataset.nlDel), 1);
+            try { localStorage.setItem("academyNewsletter", JSON.stringify(list)); } catch {}
+            renderAdminContent(db, session);
+        });
+    }
+
     /* --- media --- */
     const mediaBox = document.getElementById("adm-media");
     if (mediaBox) {
@@ -3965,6 +4324,12 @@ function wireAdminPanels(db, session) {
             if (e.target.closest("#adm-class-close")) {
                 classEditor.hidden = true;
                 adminClassOpen = null;
+                return;
+            }
+            const sesBtn = e.target.closest("[data-adm-sessions]");
+            if (sesBtn) {
+                renderSessionsEditor(db, session, sesBtn.dataset.admSessions,
+                    "adm-sessions-editor");
                 return;
             }
             if (e.target.closest("#adm-cl-save") && adminClassOpen) {
@@ -4026,6 +4391,7 @@ function wireAdminPanels(db, session) {
             db.settings.tagline = read("adm-set-tagline");
             db.settings.contactEmail = read("adm-set-email");
             db.settings.contactPhone = read("adm-set-phone");
+            db.settings.whatsapp = read("adm-set-whatsapp");
             db.settings.address = read("adm-set-address");
             db.settings.homeBanner = read("adm-set-banner");
             spaceSave(db);

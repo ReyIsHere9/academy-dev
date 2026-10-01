@@ -6430,6 +6430,17 @@ html[data-theme="dark"] .quiz-result.is-wrong { color: #fca5a5; }
         gap: 8px;
     }
 
+    /* chips + mode buttons need to wrap on narrow screens instead
+       of pushing off the edge (class-room mobile audit) */
+    .stage-status {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .stage-modes {
+        margin-left: 0;
+    }
+
     .ctrl-btn {
         padding: 9px 12px;
         font-size: 0.82rem;
@@ -7343,4 +7354,142 @@ html[data-theme="dark"] .rich-content mark {
     margin-left: auto;
     flex: none;
     max-width: 220px;
+}
+
+/* ================= BILLING / SESSIONS / SOCIAL FURNITURE ================= */
+.receipt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.receipt-row:last-of-type {
+    border-bottom: none;
+}
+
+.receipt-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.receipt-total {
+    font-weight: bold;
+}
+
+/* class sessions editor rows */
+.ses-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.ses-row .ses-when {
+    flex: 1;
+    min-width: 200px;
+}
+
+.ses-row .ses-dur {
+    width: 92px;
+    flex: none;
+}
+
+/* trial-booking hint on the contact form */
+.trial-note {
+    margin: 10px 0 0;
+    font-size: 0.86rem;
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    background-color: rgba(37, 99, 235, 0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+html[data-theme="dark"] .trial-note {
+    border-color: rgba(110, 168, 254, 0.4);
+    background-color: rgba(110, 168, 254, 0.12);
+}
+
+/* admin website-message body */
+.admin-cm-text {
+    margin-top: 6px;
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+    max-width: 720px;
+}
+
+/* floating WhatsApp button (public pages) */
+.wa-float {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 85;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: #25d366;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.3);
+    transition: transform 0.15s;
+}
+
+.wa-float:hover {
+    transform: scale(1.08);
+}
+
+.wa-float svg {
+    width: 26px;
+    height: 26px;
+}
+
+/* footer newsletter signup */
+.newsletter-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.newsletter-form input {
+    font-family: inherit;
+    font-size: 0.82rem;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--color-footer-link);
+    background: transparent;
+    color: var(--color-footer-text);
+    width: 168px;
+}
+
+.newsletter-form input::placeholder {
+    color: var(--color-footer-text);
+    opacity: 0.7;
+}
+
+.newsletter-form .btn {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .wa-float {
+        right: 12px;
+        bottom: 12px;
+        width: 46px;
+        height: 46px;
+    }
+
+    .receipt-row {
+        flex-wrap: wrap;
+    }
+
+    .ses-row .ses-when {
+        min-width: 100%;
+    }
 }

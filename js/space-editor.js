@@ -252,7 +252,7 @@ function createRichEditor(host, options) {
         </div>
     </div>
 
-    <div class="rich-surface" contenteditable="true"
+    <div class="rich-surface" contenteditable="true" dir="auto"
          data-placeholder="${String(options.placeholder || "Write here…").replace(/"/g, "&quot;")}"
          style="min-height:${Number(options.minHeight) || 140}px"></div>
 

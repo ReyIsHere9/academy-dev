@@ -127,6 +127,27 @@ form.addEventListener("submit", (event) => {
     const subject = data.get("subject");
     const message = data.get("message").trim();
 
+    /* ----- keep a copy in the demo store -----
+       The mailto handoff depends on the visitor's email app; if
+       that fails, nothing is recorded anywhere. So we ALSO push
+       the message into the store, where the admin console has a
+       "Website messages" inbox (with unread badges).
+       ⚠️ demo: localStorage only; a real build POSTs to a server
+       which ALSO sends the email. */
+    if (typeof spaceLoad === "function") {
+        const db = spaceLoad();
+        if (!db.contactMessages) db.contactMessages = [];
+        db.contactMessages.unshift({
+            id: "cm-" + Date.now(),
+            name, email,
+            subject: subject || "(no subject)",
+            text: message,
+            minutesAgo: 0,
+            read: false
+        });
+        spaceSave(db);
+    }
+
     /* ----- build the pre-filled email -----
        encodeURIComponent = makes ANY text URL-safe.
        %0A%0A = two newlines (blank line between parts). */
@@ -144,3 +165,24 @@ form.addEventListener("submit", (event) => {
     form.classList.add("form-sent");   // fades the form a little
     window.location.href = mailto;
 });
+
+/* ============ TOPIC PRE-FILL (trial bookings etc.) ============
+   Links like contact.html?topic=trial arrive from the "Book a free
+   trial" buttons; pre-select the subject and say hello properly. */
+const contactTopic = new URLSearchParams(location.search).get("topic");
+if (contactTopic) {
+    const subjectSelect = document.getElementById("f-subject");
+    const presets = {
+        trial: "Free trial lesson",
+        enroll: "Course enquiry",
+        guidance: "Level guidance"
+    };
+    if (subjectSelect && presets[contactTopic]) {
+        subjectSelect.value = presets[contactTopic];
+    }
+    /* leave a visible hint that this is a trial request */
+    const intro = document.getElementById("contact-topic-note");
+    if (intro && contactTopic === "trial") {
+        intro.hidden = false;
+    }
+}

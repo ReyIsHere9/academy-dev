@@ -142,6 +142,8 @@
                             data-panel="messages">Messages
                         <span class="nav-badge" id="stu-inbox-badge" hidden></span></button>
                     <button type="button" class="space-nav-btn"
+                            data-panel="billing">Billing</button>
+                    <button type="button" class="space-nav-btn"
                             data-panel="profile">Profile</button>
                 </aside>
 
@@ -314,6 +316,14 @@
                         </div>
                     </section>
 
+                    <!-- ---- BILLING (orders + receipts) ---- -->
+                    <section class="space-panel" data-panel="billing">
+                        <div class="space-card">
+                            <h2>Billing</h2>
+                            <div id="stu-billing"></div>
+                        </div>
+                    </section>
+
                     <!-- ---- PROFILE ---- -->
                     <section class="space-panel" data-panel="profile">
                         <div class="space-grid-2">
@@ -370,6 +380,10 @@
         <div class="container footer-inner">
             <p class="logo">The English Academy</p>
             <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <form class="newsletter-form" novalidate>
+                <input type="email" placeholder="Your email" aria-label="Email for the newsletter" required>
+                <button type="submit" class="btn btn-small">Subscribe</button>
+            </form>
             <nav class="footer-nav">
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>
@@ -384,6 +398,8 @@
     <script src="js/pricing-data.js"></script>
     <script src="js/pricing.js"></script>
     <script src="js/auth-data.js"></script>
+    <script src="js/levels-data.js"></script>
+    <script src="js/catalog.js"></script>
     <script src="js/space-data.js"></script>
     <script src="js/space-editor.js"></script>
     <script src="js/space.js"></script>

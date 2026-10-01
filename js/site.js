@@ -52,11 +52,69 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     } catch { /* storage blocked: skip the notice */ }
 
+    /* ---- newsletter signup (footer form on every page) ----
+       Structural demo: emails land in their own localStorage list
+       (academyNewsletter) that the admin console can read.
+       This runs even before/without the demo store. */
+    document.querySelectorAll(".newsletter-form").forEach(formEl => {
+        formEl.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const input = formEl.querySelector("input[type=email]");
+            const email = input ? input.value.trim() : "";
+            if (!email || !email.includes("@")) {
+                if (typeof spaceToast === "function") {
+                    spaceToast("That email doesn't look right", "bad");
+                }
+                return;
+            }
+            let list = [];
+            try {
+                list = JSON.parse(localStorage.getItem("academyNewsletter")) || [];
+            } catch { /* fresh list */ }
+            if (!list.some(x => x.email.toLowerCase() === email.toLowerCase())) {
+                list.unshift({ email, minutesAgo: 0 });
+                try {
+                    localStorage.setItem("academyNewsletter", JSON.stringify(list));
+                } catch { /* storage blocked */ }
+            }
+            if (input) input.value = "";
+            const btn = formEl.querySelector("button");
+            if (btn) {
+                btn.textContent = "Subscribed ✓";
+                setTimeout(() => { btn.textContent = "Subscribe"; }, 2200);
+            }
+        });
+    });
+
     const db = siteStore();
     if (!db) return;
 
     const settings = db.settings || {};
     const media = db.media || {};
+
+    /* ---- floating WhatsApp button (public pages only) ----
+       The standard academy furniture: one tap to chat. Skipped on
+       the account spaces and class rooms — it's a visitor thing. */
+    const isAppPage = document.body.classList.contains("role-student") ||
+        document.body.classList.contains("role-teacher") ||
+        document.body.classList.contains("role-admin") ||
+        document.body.classList.contains("popup-mode");
+    if (!isAppPage && settings.whatsapp) {
+        const digits = String(settings.whatsapp).replace(/\D/g, "");
+        if (digits) {
+            const wa = document.createElement("a");
+            wa.className = "wa-float";
+            wa.href = "https://wa.me/" + digits;
+            wa.target = "_blank";
+            wa.rel = "noopener noreferrer";
+            wa.title = "Chat with us on WhatsApp";
+            wa.setAttribute("aria-label", "Chat on WhatsApp");
+            wa.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`;
+            document.body.appendChild(wa);
+        }
+    }
 
     /* text slots: <p class="info-value" data-site="contactEmail"> */
     document.querySelectorAll("[data-site]").forEach(el => {

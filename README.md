@@ -18,12 +18,12 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `courses.html` | A1–C2 level showcase carousel + skills grid |
 | `course.html` | Course detail — reads `?level=A2&skill=Writing` from the URL |
 | `about.html` | About page built as a "writer's note" template |
-| `contact.html` | Contact form (mailto engine), hours, socials, map slot |
+| `contact.html` | Contact form (mailto engine + stored admin inbox), trial-booking topic link, hours, socials, map slot |
 | `pricing.html` | Billing toggle, OpenAI-style comparison matrix, lifetime offer |
 | `login.html` / `recovery.html` | Auth entry UI (demo) |
-| `dashboard.html` | Student space — stats + continue learning, courses with progress, classes + join by code, assignments (drag-&-drop submit with naming rules + comments + grades), materials, badges, inbox with teachers, profile & personalization |
+| `dashboard.html` | Student space — stats + continue-learning deep links, courses with progress, classes + join by code, assignments (drag-&-drop submit with naming rules + comments + grades), materials, badges, inbox with teachers, billing/receipts, profile & personalization |
 | `dashboard-teacher.html` | Teacher studio — today overview, class instances, interactive gradebook, assignment creation + templates, grading tools, student inbox, badge awards + notes, materials, profile |
-| `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart + manual records, course catalog editor (add/delete levels & skills), photo/media manager, classes (create/edit/delete), site settings + broadcasts, badge catalog, danger zone |
+| `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart + manual records, course catalog editor (add/delete levels & skills), photo/media manager, classes + **dated sessions**, website-messages inbox, site settings + broadcasts + newsletter readout, badge catalog, danger zone |
 | `profile.html` | Public profile (`?id=Stu-2001`) — safe fields only: name, avatar, bio, badges |
 | `lesson.html` | Lesson player — video slot, objectives, vocabulary, sections, quiz, unit sidebar with progress (authored lessons + generated outlines for every unit) |
 | `checkout.html` | Demo checkout — subscriptions, lifetime one-course offer, single courses, coupons; orders become admin billing records |
@@ -113,8 +113,15 @@ local server (clipboard, some media APIs are stricter on `file://`).
   robots.txt + sitemap, legal stubs, skip-link, focus rings,
   reduced-motion support, print styles and a cookie/honesty notice.
 - **Notifications + certificates** — a derived bell (unread messages,
-  due work, grading queue, payment attention) on every dashboard, and
-  a printable certificate issued when a course's units are complete.
+  due work, grading queue, payment attention, website messages) on every
+  dashboard, and a printable certificate issued when a course's units are
+  complete.
+- **Website messages & billing** — contact-form submissions land in the
+  admin console's inbox (with unread bell rows), students see their orders
+  and receipts under Billing, and checkout ends with a receipt pointer.
+- **Schedule & social furniture** — teachers/admins manage dated class
+  sessions; a floating WhatsApp button (admin-editable number), footer
+  newsletter signups and a trial-booking path round out the site.
 
 ## Demo vs. real
 

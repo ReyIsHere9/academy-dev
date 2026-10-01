@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 7;   /* v7: rich messages (html + attachments) */
+const SPACE_DB_VERSION = 8;   /* v8: contact inbox, billing, sessions */
 
 const SPACE_SEED = {
-    version: 7,
+    version: 8,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -96,17 +96,17 @@ const SPACE_SEED = {
        "join by code" if they lose the link. */
     schedule: [
         {
-            id: "ses-1", course: "B1 · Conversation", skill: "Speaking",
+            id: "ses-1", classId: "cls-1", course: "B1 · Conversation", skill: "Speaking",
             teacher: "Tch-1001", students: ["Stu-2001", "Stu-2002", "Stu-2003"],
             startsInMinutes: 42, durationMin: 60, code: "B1-SPEAK"
         },
         {
-            id: "ses-2", course: "B1 · Grammar", skill: "Grammar",
+            id: "ses-2", classId: "cls-2", course: "B1 · Grammar", skill: "Grammar",
             teacher: "Tch-1001", students: ["Stu-2001", "Stu-2004"],
             startsInMinutes: 26 * 60, durationMin: 60, code: "B1-GRAM"
         },
         {
-            id: "ses-3", course: "A2 · Writing", skill: "Writing",
+            id: "ses-3", classId: "cls-3", course: "A2 · Writing", skill: "Writing",
             teacher: "Tch-2002", students: ["Stu-2001", "Stu-2003"],
             startsInMinutes: -20 * 60, durationMin: 60, code: "A2-WRIT"
         }
@@ -489,6 +489,25 @@ const SPACE_SEED = {
        Written on the FIRST certificate view so the date is stable. */
     certificates: {},
 
+    /* ============ WEBSITE MESSAGES (contact form) ============
+       What visitors send through contact.html lands here so the
+       admin console has a real inbox instead of relying on the
+       visitor's email app. read = "has the admin seen it". */
+    contactMessages: [
+        {
+            id: "cm-1", name: "Mina R.", email: "mina@example.com",
+            subject: "Group class for two sisters?",
+            text: "Hi! My sister and I want to join the B1 conversation class together. Is there a discount for two enrollments?",
+            minutesAgo: 55, read: false
+        },
+        {
+            id: "cm-2", name: "Daniel K.", email: "daniel.k@example.com",
+            subject: "Weekend schedule",
+            text: "Do you run any classes on Saturday mornings? I work full time during the week.",
+            minutesAgo: 26 * 60, read: true
+        }
+    ],
+
     /* ============ ACTIVITY LOG (admin / teacher overview) ============ */
     activity: [
         { id: "act-1", kind: "join",   text: "Demo Student joined the B1 · Conversation room", minutesAgo: 12 },
@@ -506,6 +525,7 @@ const SPACE_SEED = {
         tagline: "Learn English with live teachers and small classes.",
         contactEmail: "hello@example-academy.com",
         contactPhone: "+1 (555) 010-3456",
+        whatsapp: "+1 (555) 010-3456",
         address: "123 Grammar Lane, Englishville, EV 45000",
         homeBanner: "",
         lifetimeOffer: true

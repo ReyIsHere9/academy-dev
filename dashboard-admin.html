@@ -138,6 +138,9 @@
                     <button type="button" class="space-nav-btn"
                             data-panel="content">Content</button>
                     <button type="button" class="space-nav-btn"
+                            data-panel="messages">Messages
+                        <span class="nav-badge" id="adm-cm-nav" hidden></span></button>
+                    <button type="button" class="space-nav-btn"
                             data-panel="badges">Badges</button>
                     <button type="button" class="space-nav-btn"
                             data-panel="danger">Danger zone</button>
@@ -446,6 +449,10 @@
                                 <div id="adm-class-editor-card"></div>
                             </div>
 
+                            <!-- sessions editor opens here from a class's
+                                 "Manage sessions" button -->
+                            <div class="space-card" id="adm-sessions-editor" hidden></div>
+
                             <div class="space-card">
                                 <h2>Create a class</h2>
                                 <div class="form-grid-2">
@@ -507,6 +514,12 @@
                                         <label class="space-label" for="adm-set-phone">Contact phone</label>
                                         <input type="text" class="chat-input" id="adm-set-phone">
                                     </div>
+                                    <div class="field">
+                                        <label class="space-label" for="adm-set-whatsapp">
+                                            WhatsApp number (floating button)</label>
+                                        <input type="text" class="chat-input" id="adm-set-whatsapp"
+                                               placeholder="+1 (555) 010-3456">
+                                    </div>
                                 </div>
                                 <div class="field">
                                     <label class="space-label" for="adm-set-address">Address</label>
@@ -553,6 +566,27 @@
                                             id="adm-backup-import">Restore from file&hellip;</button>
                                 </div>
                             </div>
+
+                            <div class="space-card">
+                                <h2>Newsletter signups</h2>
+                                <p class="space-hint">Every footer signup, newest first
+                                   (structural demo — a real build syncs these to the
+                                   mailing service).</p>
+                                <div id="adm-newsletter"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- MESSAGES (website contact form inbox) ---- -->
+                    <section class="space-panel" data-panel="messages">
+                        <div class="space-card">
+                            <div class="gb-head">
+                                <h2>Website messages</h2>
+                                <span class="space-hint" id="adm-cm-count"></span>
+                            </div>
+                            <p class="space-hint">Sent through contact.html — including the
+                               "Book a free trial" path. Unread ones ring the bell.</p>
+                            <div id="adm-messages"></div>
                         </div>
                     </section>
 
@@ -663,6 +697,10 @@
         <div class="container footer-inner">
             <p class="logo">The English Academy</p>
             <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <form class="newsletter-form" novalidate>
+                <input type="email" placeholder="Your email" aria-label="Email for the newsletter" required>
+                <button type="submit" class="btn btn-small">Subscribe</button>
+            </form>
             <nav class="footer-nav">
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>

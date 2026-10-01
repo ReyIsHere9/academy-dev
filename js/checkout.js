@@ -149,7 +149,10 @@ if (!checkoutRoot) {
                             <strong>${spaceEsc(me ? me.name + " (" + me.id + ")" : "Guest purchase")}</strong></div>
                     </div>
                     <p class="space-hint">The order is saved in the demo store — the admin
-                       console's Payments panel shows it immediately.</p>
+                       console's Payments panel shows it immediately.
+                       ${me && me.role === "student"
+                           ? "Your receipt is waiting under <strong>Billing</strong> on your dashboard."
+                           : ""}</p>
                     <div class="space-submit-row">
                         ${me ? `<a class="btn btn-primary" href="${dashboardFor(me.role)}">Go to my dashboard</a>` : ""}
                         <a class="btn btn-ghost" href="courses.html">Browse more courses</a>
@@ -256,6 +259,15 @@ if (!checkoutRoot) {
                             <p class="space-hint">Demo only — the digits are validated for
                                shape and never stored (a real build uses a payment provider).</p>
                         </div>
+                    </div>
+
+                    <div class="checkout-block">
+                        <label class="switch-row">
+                            <input type="checkbox" id="checkout-terms">
+                            I agree to the <a href="terms.html" target="_blank"
+                            rel="noopener">terms</a> and <a href="privacy.html"
+                            target="_blank" rel="noopener">privacy policy</a>.
+                        </label>
                     </div>
 
                     <div class="checkout-block">
@@ -373,6 +385,12 @@ if (!checkoutRoot) {
                     if (!name.trim()) return fail("Add the name on the card.");
                     if (!/^\d{2}\s*\/\s*\d{2}$/.test(exp.trim())) return fail("Expiry should look like 12/28.");
                     if (!/^\d{3,4}$/.test(cvc.trim())) return fail("CVC is 3 or 4 digits.");
+                }
+
+                /* terms gate — structural: real checkouts need consent */
+                const termsBox = document.getElementById("checkout-terms");
+                if (!termsBox || !termsBox.checked) {
+                    return fail("Please accept the terms and privacy policy to continue.");
                 }
 
                 /* build the order */

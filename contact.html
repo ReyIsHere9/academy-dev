@@ -146,6 +146,7 @@
                     <div class="field">
                         <label for="f-subject">Subject</label>
                         <select id="f-subject" name="subject">
+                            <option value="Free trial lesson">Free trial lesson</option>
                             <option value="General question">General question</option>
                             <option value="Course enquiry">Course enquiry</option>
                             <option value="Level guidance">Help me choose a level</option>
@@ -162,6 +163,9 @@
                     </div>
 
                     <button type="submit" class="btn btn-primary">Send Message</button>
+                    <p class="trial-note" id="contact-topic-note" hidden>
+                        Booking a <strong>free trial lesson</strong> — tell us your
+                        level and the times that suit you.</p>
                     <p class="form-hint">Prefer email? We're at
                         hello@example-academy.com — replies within one working day.</p>
                 </form>
@@ -169,9 +173,9 @@
                 <!-- invisible success note: contact.js reveals it -->
                 <div class="form-success" id="form-success" hidden>
                     <h3>Thank you!</h3>
-                    <p>Your email app should have opened with your
-                       message ready to send. If it didn't, write to us
-                       at hello@example-academy.com.</p>
+                    <p>Your message is saved for our team, and your email app
+                       should have opened with it ready to send. If it didn't,
+                       write to us at hello@example-academy.com.</p>
                 </div>
             </div>
 
@@ -235,14 +239,14 @@
                     <!-- Socials: four code-drawn brand-ish icons.
                          Generic placeholders until real links exist. -->
                     <div class="socials-row">
-                        <a href="#" class="social-btn" aria-label="Facebook">
+                        <a href="https://facebook.com/exampleacademy" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Facebook">
                             <svg class="icon" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2"
                                  stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                             </svg>
                         </a>
-                        <a href="#" class="social-btn" aria-label="Instagram">
+                        <a href="https://instagram.com/exampleacademy" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram">
                             <svg class="icon" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2"
                                  stroke-linecap="round" stroke-linejoin="round">
@@ -251,7 +255,7 @@
                                 <line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line>
                             </svg>
                         </a>
-                        <a href="#" class="social-btn" aria-label="YouTube">
+                        <a href="https://youtube.com/@exampleacademy" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="YouTube">
                             <svg class="icon" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2"
                                  stroke-linecap="round" stroke-linejoin="round">
@@ -259,7 +263,7 @@
                                 <path d="m10 15 5-3-5-3z"></path>
                             </svg>
                         </a>
-                        <a href="#" class="social-btn" aria-label="Telegram">
+                        <a href="https://t.me/exampleacademy" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Telegram">
                             <svg class="icon" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2"
                                  stroke-linecap="round" stroke-linejoin="round">
@@ -397,6 +401,10 @@
         <div class="container footer-inner">
             <p class="logo">The English Academy</p>
             <p>&copy; 2026 The English Academy. All rights reserved.</p>
+            <form class="newsletter-form" novalidate>
+                <input type="email" placeholder="Your email" aria-label="Email for the newsletter" required>
+                <button type="submit" class="btn btn-small">Subscribe</button>
+            </form>
             <nav class="footer-nav">
                 <a href="blog.html">Blog</a>
                 <a href="about.html">About</a>
@@ -408,7 +416,11 @@
     </footer>
 
     <!-- ================= SCRIPTS =================
-         Contact needs no data file — its logic is self-contained. -->
+         contact.js keeps a copy of every message in the demo store,
+         so the admin console has a real "Website messages" inbox. -->
+    <script src="js/space-data.js"></script>
+    <script src="js/space-editor.js"></script>
+    <script src="js/space.js"></script>
     <script src="js/contact.js"></script>
     <!-- pricing scripts power the header Pricing dropdown -->
     <script src="js/pricing-data.js"></script>
