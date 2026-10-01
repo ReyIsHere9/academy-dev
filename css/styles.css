@@ -7732,3 +7732,77 @@ body.is-controls-open .controls {
     color: var(--color-text-muted);
     margin-top: 8px;
 }
+
+/* ================= ATTENDANCE PANEL (teacher's first-class tab) =================
+   Session rows that expand into their roster. Same .att-* pills the
+   sessions editor uses. */
+.att-ses {
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    margin-top: 10px;
+    overflow: hidden;
+    background-color: var(--color-card-bg);
+}
+
+.att-ses.is-open {
+    border-color: var(--color-primary);
+}
+
+.att-ses-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    background: none;
+    border: none;
+    padding: 12px 14px;
+    cursor: pointer;
+    flex-wrap: wrap;
+}
+
+.att-ses-head:hover {
+    background-color: var(--color-bg-alt);
+}
+
+.att-ses-when {
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.att-ses-meta {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    flex: 1;
+    min-width: 80px;
+}
+
+.att-caret {
+    flex: none;
+    color: var(--color-text-muted);
+    transition: transform 0.15s;
+}
+
+.att-ses.is-open .att-caret {
+    transform: rotate(180deg);
+}
+
+.att-ses-roster {
+    padding: 0 14px 14px;
+}
+
+.att-ses-roster .att-panel {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .att-ses-head {
+        gap: 6px;
+    }
+
+    .att-ses-meta {
+        flex-basis: 100%;
+        order: 4;
+    }
+}

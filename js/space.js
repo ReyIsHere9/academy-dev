@@ -1784,6 +1784,62 @@ function refreshSessionHosts(db, session) {
     if (SPACE_ROLE === "teacher") renderTeacherToday(db, session);
 }
 
+/* ---------- ATTENDANCE: shared bits ----------
+   The roster rows are used in TWO places — the Attendance panel and
+   the sessions editor — so the markup and the marking logic live
+   here once. A missing status simply means "not marked yet". */
+function attendanceRosterHTML(db, s, cls) {
+    s.attendance = s.attendance || {};
+    /* prefer the CLASS's current roster — sessions keep a snapshot
+       of who was enrolled when they were created, which can go
+       stale after a roster change */
+    const roster = (cls && cls.students && cls.students.length)
+        ? cls.students
+        : (s.students || []);
+
+    return roster.map(stuId => {
+        const person = spaceProfile(db, stuId);
+        const status = s.attendance[stuId] || "";
+        const btn = (st, label) => `
+            <button type="button"
+                    class="att-btn ${status === st ? "is-on is-" + st : ""}"
+                    data-att="${spaceEsc(s.id)}|${spaceEsc(stuId)}|${st}">${label}</button>`;
+        return `
+        <div class="att-row">
+            <span class="msg-avatar" style="background:${person.avatarColor}">${spaceEsc(person.name.trim().charAt(0).toUpperCase())}</span>
+            <span class="att-name">${spaceEsc(person.name)}</span>
+            <span class="att-btns">
+                ${btn("present", "Present")}
+                ${btn("late", "Late")}
+                ${btn("absent", "Absent")}
+            </span>
+        </div>`;
+    }).join("");
+}
+
+/* toggle a status (clicking the active one clears it) */
+function applyAttendanceMark(db, sesId, stuId, status) {
+    const s = db.schedule.find(x => x.id === sesId);
+    if (!s) return null;
+    s.attendance = s.attendance || {};
+    if (s.attendance[stuId] === status) {
+        delete s.attendance[stuId];
+    } else {
+        s.attendance[stuId] = status;
+    }
+    spaceSave(db);
+    return s;
+}
+
+/* "2/4 marked" chip text for a session */
+function attendanceSummary(s, cls) {
+    const marked = s.attendance ? Object.keys(s.attendance).length : 0;
+    const total = (cls && cls.students && cls.students.length)
+        ? cls.students.length
+        : (s.students ? s.students.length : 0);
+    return marked ? marked + "/" + total + " marked" : "Not marked";
+}
+
 function renderSessionsEditor(db, session, classId, hostId) {
     const host = document.getElementById(hostId);
     if (!host) return;
@@ -1845,7 +1901,9 @@ function renderSessionsEditor(db, session, classId, hostId) {
         const s = db.schedule.find(x => x.id === attSessionId);
         if (!s) { attSessionId = null; box.innerHTML = ""; return; }
         s.attendance = s.attendance || {};
-        const roster = (s.students && s.students.length) ? s.students : cls.students;
+        const roster = (cls && cls.students && cls.students.length)
+            ? cls.students
+            : (s.students || []);
 
         box.innerHTML = `
         <div class="att-panel">
@@ -1863,24 +1921,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
                             data-att-done="1">Done</button>
                 </div>
             </div>
-            ${roster.map(stuId => {
-                const person = spaceProfile(db, stuId);
-                const status = s.attendance[stuId] || "";
-                const btn = (st, label) => `
-                    <button type="button"
-                            class="att-btn ${status === st ? "is-on is-" + st : ""}"
-                            data-att="${spaceEsc(s.id)}|${spaceEsc(stuId)}|${st}">${label}</button>`;
-                return `
-                <div class="att-row">
-                    <span class="msg-avatar" style="background:${person.avatarColor}">${spaceEsc(person.name.trim().charAt(0).toUpperCase())}</span>
-                    <span class="att-name">${spaceEsc(person.name)}</span>
-                    <span class="att-btns">
-                        ${btn("present", "Present")}
-                        ${btn("late", "Late")}
-                        ${btn("absent", "Absent")}
-                    </span>
-                </div>`;
-            }).join("")}
+            ${attendanceRosterHTML(db, s, cls)}
         </div>`;
     }
 
@@ -1907,15 +1948,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
         const attMark = event.target.closest("[data-att]");
         if (attMark) {
             const [sesId, stuId, status] = attMark.dataset.att.split("|");
-            const s = db.schedule.find(x => x.id === sesId);
-            if (s) {
-                s.attendance = s.attendance || {};
-                if (s.attendance[stuId] === status) {
-                    delete s.attendance[stuId];   // clicking again clears it
-                } else {
-                    s.attendance[stuId] = status;
-                }
-                spaceSave(db);
+            if (applyAttendanceMark(db, sesId, stuId, status)) {
                 renderAttendanceArea();
                 refreshAttRow(sesId);
             }
@@ -1927,7 +1960,7 @@ function renderSessionsEditor(db, session, classId, hostId) {
             const s = db.schedule.find(x => x.id === attAll.dataset.attAll);
             if (s) {
                 s.attendance = s.attendance || {};
-                (s.students && s.students.length ? s.students : cls.students)
+                ((cls && cls.students && cls.students.length) ? cls.students : (s.students || []))
                     .forEach(stuId => { s.attendance[stuId] = "present"; });
                 spaceSave(db);
                 adminLog(db, "Marked everyone present for " + cls.title);
@@ -2022,6 +2055,155 @@ function renderSessionsEditor(db, session, classId, hostId) {
         if (event.target.closest("[data-ses-close]")) {
             host.hidden = true;
             host.innerHTML = "";
+        }
+    });
+}
+
+/* ============ TEACHER: ATTENDANCE PANEL ============
+   The obvious door: a first-class "Attendance" tab in the teacher
+   studio. Pick a class -> sessions list (next one on top) -> tap a
+   session to expand its roster inline and mark. Shares the roster
+   markup + marking logic with the sessions editor. */
+let attClassId = null;        // which class the panel is showing
+let attOpenSessionId = null;  // which session row is expanded
+
+function renderAttendancePanel(db, session) {
+    const sel = document.getElementById("att-class");
+    const list = document.getElementById("att-sessions");
+    if (!sel || !list) return;
+
+    const mine = teacherClasses(db, session);
+    sel.innerHTML = mine.map(c =>
+        `<option value="${spaceEsc(c.id)}">${spaceEsc(c.title)}</option>`).join("");
+    if (!attClassId || !mine.some(c => c.id === attClassId)) {
+        attClassId = mine.length ? mine[0].id : null;
+    }
+    if (attClassId) sel.value = attClassId;
+
+    if (!attClassId) {
+        list.innerHTML = '<p class="space-empty-inline">No classes yet — create one in My classes.</p>';
+        return;
+    }
+    const cls = mine.find(c => c.id === attClassId);
+
+    /* friendly ordering: the NEXT session first, then later ones,
+       then the past (most recent first) */
+    const sessions = db.schedule.filter(s => s.classId === attClassId);
+    const upcoming = sessions.filter(s => s.startsInMinutes >= 0)
+        .sort((a, b) => a.startsInMinutes - b.startsInMinutes);
+    const past = sessions.filter(s => s.startsInMinutes < 0)
+        .sort((a, b) => b.startsInMinutes - a.startsInMinutes);
+    const ordered = upcoming.concat(past);
+
+    if (!ordered.length) {
+        list.innerHTML = '<p class="space-empty-inline">No sessions for this class yet — ' +
+            'add one under My classes &rarr; Sessions.</p>';
+        return;
+    }
+
+    list.innerHTML = ordered.map(s => {
+        const open = s.id === attOpenSessionId;
+        const when = s.startsInMinutes >= 0
+            ? spaceWhen(s.startsInMinutes) + " (" + spaceClock(s.startsInMinutes) + ")"
+            : spaceAgo(-s.startsInMinutes) + " (" + spaceClock(s.startsInMinutes) + ")";
+        const total = (cls && cls.students && cls.students.length)
+            ? cls.students.length : (s.students ? s.students.length : 0);
+        const marked = s.attendance ? Object.keys(s.attendance).length : 0;
+
+        return `
+        <div class="att-ses ${open ? "is-open" : ""}">
+            <button type="button" class="att-ses-head" data-att-toggle="${spaceEsc(s.id)}">
+                <span class="att-ses-when">${spaceEsc(when)}</span>
+                <span class="att-ses-meta">${s.durationMin} min &middot; ${spaceEsc(s.code)}</span>
+                <span class="status-chip is-${s.startsInMinutes >= 0 ? "submitted" : "done"}">
+                    ${s.startsInMinutes >= 0 ? "upcoming" : "past"}</span>
+                <span class="status-chip is-${marked && marked >= total ? "graded" : "todo"}">
+                    ${attendanceSummary(s, cls)}</span>
+                <span class="att-caret">&#9662;</span>
+            </button>
+            <div class="att-ses-roster" ${open ? "" : "hidden"}>
+                <div class="att-panel">
+                    ${attendanceRosterHTML(db, s, cls)}
+                    <div class="space-submit-row">
+                        <button type="button" class="btn btn-ghost btn-small"
+                                data-att-all="${spaceEsc(s.id)}">All present</button>
+                        <button type="button" class="btn btn-primary btn-small"
+                                data-att-close="1">Done</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function wireAttendancePanel(db, session) {
+    const sel = document.getElementById("att-class");
+    if (sel) {
+        sel.addEventListener("change", () => {
+            attClassId = sel.value;
+            attOpenSessionId = null;
+            renderAttendancePanel(db, session);
+        });
+    }
+
+    const list = document.getElementById("att-sessions");
+    if (!list) return;
+    list.addEventListener("click", (event) => {
+        /* expand / collapse one session */
+        const toggle = event.target.closest("[data-att-toggle]");
+        if (toggle) {
+            attOpenSessionId = attOpenSessionId === toggle.dataset.attToggle
+                ? null : toggle.dataset.attToggle;
+            renderAttendancePanel(db, session);
+            return;
+        }
+
+        /* mark one student */
+        const mark = event.target.closest("[data-att]");
+        if (mark) {
+            const [sesId, stuId, status] = mark.dataset.att.split("|");
+            if (applyAttendanceMark(db, sesId, stuId, status)) {
+                renderAttendancePanel(db, session);
+            }
+            return;
+        }
+
+        /* everyone present */
+        const all = event.target.closest("[data-att-all]");
+        if (all) {
+            const s = db.schedule.find(x => x.id === all.dataset.attAll);
+            if (s) {
+                s.attendance = s.attendance || {};
+                const cls = db.courseInstances.find(c => c.id === s.classId);
+                ((cls && cls.students && cls.students.length) ? cls.students
+                    : (s.students || []))
+                    .forEach(stuId => { s.attendance[stuId] = "present"; });
+                spaceSave(db);
+                adminLog(db, "Marked everyone present for " + (cls ? cls.title : "class"));
+                spaceToast("Everyone marked present", "good");
+                renderAttendancePanel(db, session);
+                renderTeacherToday(db, session);
+            }
+            return;
+        }
+
+        /* done: log the summary and collapse */
+        const done = event.target.closest("[data-att-close]");
+        if (done) {
+            const s = db.schedule.find(x => x.id === attOpenSessionId);
+            if (s && s.attendance) {
+                const counts = Object.values(s.attendance);
+                const present = counts.filter(c => c === "present").length;
+                const late = counts.filter(c => c === "late").length;
+                const absent = counts.filter(c => c === "absent").length;
+                const cls = db.courseInstances.find(c => c.id === s.classId);
+                adminLog(db, "Attendance for " + (cls ? cls.title : "class") + ": " +
+                    present + " present, " + late + " late, " + absent + " absent");
+            }
+            attOpenSessionId = null;
+            renderAttendancePanel(db, session);
+            renderTeacherToday(db, session);
+            spaceToast("Attendance saved — students see it on past classes", "good");
         }
     });
 }
@@ -2177,12 +2359,14 @@ function startTeacherSpace(db, session) {
     renderTeacherStudents(db, session);
     renderTeacherMaterials(db, session);
     renderTeacherAnnouncements(db, session);
+    renderAttendancePanel(db, session);
     renderProfile(db, session);
     wireProfilePanel(db, session);
     setupBell(db, session);
     setupInbox(db, session.id, "tch", teacherStudents(db, session));
     setupTeacherAnnounceBox(db, session);
     wireTeacherPanels(db, session);
+    wireAttendancePanel(db, session);
 }
 
 /* ---------- teacher: TODAY ---------- */
@@ -2255,6 +2439,48 @@ function renderTeacherToday(db, session) {
                     <p class="space-next-meta muted">${spaceAgo(act.minutesAgo)}</p>
                 </div>
             </div>`).join("");
+    }
+
+    /* attendance shortcut: the session that most needs marking —
+       the most recent PAST session that isn't fully marked, or else
+       the next upcoming one */
+    const quick = document.getElementById("tch-att-quick");
+    if (quick) {
+        const myCls = teacherClasses(db, session);
+        const mineIds = myCls.map(c => c.id);
+        const mySessions = db.schedule.filter(s => mineIds.includes(s.classId));
+        const notFull = s => {
+            const cls = myCls.find(c => c.id === s.classId);
+            const total = (cls && cls.students && cls.students.length)
+                ? cls.students.length : (s.students ? s.students.length : 0);
+            const marked = s.attendance ? Object.keys(s.attendance).length : 0;
+            return marked < total;
+        };
+        const needsMarking = mySessions
+            .filter(s => s.startsInMinutes < 0)
+            .sort((a, b) => b.startsInMinutes - a.startsInMinutes)
+            .find(notFull);
+        const next = mySessions
+            .filter(s => s.startsInMinutes >= 0)
+            .sort((a, b) => a.startsInMinutes - b.startsInMinutes)[0];
+        const target = needsMarking || next;
+
+        quick.innerHTML = target ? `
+            <div class="space-next">
+                <div>
+                    <p class="space-next-course">${needsMarking
+                        ? "Past session waiting to be marked" : "Next session"}</p>
+                    <p class="space-next-meta">${spaceEsc(
+                        (myCls.find(c => c.id === target.classId) || {}).title || "")}
+                        &middot; ${target.startsInMinutes >= 0
+                            ? spaceWhen(target.startsInMinutes)
+                            : spaceAgo(-target.startsInMinutes)}</p>
+                </div>
+                <button type="button" class="btn btn-primary"
+                        data-att-quick="${spaceEsc(target.classId)}|${spaceEsc(target.id)}">
+                    Mark attendance</button>
+            </div>`
+        : '<p class="space-empty-inline">Nothing to mark right now.</p>';
     }
 }
 
@@ -3186,6 +3412,22 @@ function wireTeacherPanels(db, session) {
             const navBtn = document.querySelector('.space-nav-btn[data-panel="gradebook"]');
             if (navBtn) navBtn.click();
             openGrader(db, session, stuId, asgId);
+        });
+    }
+
+    /* attendance shortcut on Today: jump straight into the panel
+       with that session's roster already expanded */
+    const attQuick = document.getElementById("tch-att-quick");
+    if (attQuick) {
+        attQuick.addEventListener("click", (event) => {
+            const btn = event.target.closest("[data-att-quick]");
+            if (!btn) return;
+            const [classId, sesId] = btn.dataset.attQuick.split("|");
+            attClassId = classId;
+            attOpenSessionId = sesId;
+            const navBtn = document.querySelector('.space-nav-btn[data-panel="attendance"]');
+            if (navBtn) navBtn.click();
+            renderAttendancePanel(db, session);
         });
     }
 

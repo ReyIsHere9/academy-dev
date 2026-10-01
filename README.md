@@ -22,7 +22,7 @@ HTML, CSS and JavaScript, built and documented module by module.
 | `pricing.html` | Billing toggle, OpenAI-style comparison matrix, lifetime offer |
 | `login.html` / `recovery.html` | Auth entry UI (demo) |
 | `dashboard.html` | Student space — stats + continue-learning deep links, courses with progress, classes + join by code, assignments (drag-&-drop submit with naming rules + comments + grades), materials, badges, inbox with teachers, billing/receipts, profile & personalization |
-| `dashboard-teacher.html` | Teacher studio — today overview, class instances, interactive gradebook, assignment creation + templates, grading tools, student inbox, badge awards + notes, materials, profile |
+| `dashboard-teacher.html` | Teacher studio — today overview, class instances, interactive gradebook, **attendance tab with inline rosters**, assignment creation + templates + editing, grading tools, class announcements, student inbox, badge awards + notes, materials, profile |
 | `dashboard-admin.html` | Admin console — users (rename/reset passwords/suspend/view-as), payments chart + manual records, course catalog editor (add/delete levels & skills), photo/media manager, classes + **dated sessions**, website-messages inbox, site settings + broadcasts + newsletter readout, badge catalog, danger zone |
 | `profile.html` | Public profile (`?id=Stu-2001`) — safe fields only: name, avatar, bio, badges |
 | `lesson.html` | Lesson player — video slot, objectives, vocabulary, sections, quiz, unit sidebar with progress (authored lessons + generated outlines for every unit) |

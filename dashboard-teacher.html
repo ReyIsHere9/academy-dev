@@ -127,6 +127,8 @@
                     <button type="button" class="space-nav-btn"
                             data-panel="gradebook">Gradebook</button>
                     <button type="button" class="space-nav-btn"
+                            data-panel="attendance">Attendance</button>
+                    <button type="button" class="space-nav-btn"
                             data-panel="assignments">Assignments</button>
                     <button type="button" class="space-nav-btn"
                             data-panel="inbox">Inbox
@@ -201,6 +203,11 @@
                             <div class="space-card">
                                 <h2>Recent activity</h2>
                                 <div id="tch-activity"></div>
+                            </div>
+
+                            <div class="space-card">
+                                <h2>Attendance</h2>
+                                <div id="tch-att-quick"></div>
                             </div>
                         </div>
                     </section>
@@ -281,6 +288,19 @@
                             <div class="space-card" id="gb-grader" hidden>
                                 <div id="gb-grader-card"></div>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- ---- ATTENDANCE ---- -->
+                    <section class="space-panel" data-panel="attendance">
+                        <div class="space-card">
+                            <div class="gb-head">
+                                <h2>Attendance</h2>
+                                <select class="mini-select" id="att-class"></select>
+                            </div>
+                            <p class="space-hint">Tap a session to open its roster and mark
+                               who showed up. Students see their status on past classes.</p>
+                            <div id="att-sessions"></div>
                         </div>
                     </section>
 
