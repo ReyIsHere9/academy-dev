@@ -5157,19 +5157,6 @@ html[data-theme="dark"] .gb-key.is-missing   { color: #fca5a5; }
     min-width: 0;
 }
 
-.inbox-compose {
-    display: flex;
-    gap: 8px;
-}
-
-.inbox-new-bar {
-    margin-top: 10px;
-}
-
-.inbox-compose .chat-input {
-    flex: 1;
-}
-
 /* ---- phase 2: student management ---- */
 .student-grid {
     display: grid;
@@ -6235,10 +6222,6 @@ html[data-theme="dark"] .quiz-result.is-wrong { color: #fca5a5; }
         border-bottom: 1px solid var(--color-border);
         padding: 0 0 10px;
         max-height: 200px;
-    }
-
-    .inbox-compose {
-        flex-direction: column;
     }
 
     .gb-head {

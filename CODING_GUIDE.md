@@ -193,8 +193,8 @@ Style rules:
 7. If you touched any JS, verify it: `node --check js/<file>.js`
    plus the DOM-stub smoke harnesses kept OUTSIDE the repo in the
    sibling folder `../test-harness/` (space-smoke / space-flows /
-   editor-smoke / dup-id-check at handoff time; rebuild others as
-   needed with the same pattern).
+   classroom-smoke / editor-smoke / verify-smoke / dup-id-check
+   at final handoff; rebuild others as needed with the same pattern).
    ⚠️ These harnesses deliberately live OUTSIDE the repo —
    they are development tools, never committed to git.
 8. Run the duplicate-id scanner (`../test-harness/dup-id-check.js`)

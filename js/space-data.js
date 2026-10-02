@@ -21,10 +21,10 @@
    ============================================================ */
 
 const SPACE_DB_KEY = "academySpaceDB";
-const SPACE_DB_VERSION = 9;   /* v9: attendance, seeded certificate, class announcements */
+const SPACE_DB_VERSION = 10;  /* v10: coherent student seeds (completed lessons match the certificate) */
 
 const SPACE_SEED = {
-    version: 9,
+    version: 10,
 
     /* ============ PROFILES ============
        One per demo user. `accent` is the personal highlight
@@ -473,7 +473,9 @@ const SPACE_SEED = {
        enrollment's progress % in sync. */
     completedLessons: {
         "Stu-2001": ["A1|Speaking|0", "A1|Writing|0", "A2|Writing|0", "A2|Writing|2"],
-        "Stu-2003": ["A2|Writing|0"]
+        /* Stu-2003 finished the whole A2 Writing course — which is why
+           their seeded certificate (below) is a coherent demo */
+        "Stu-2003": ["A2|Writing|0", "A2|Writing|1", "A2|Writing|2", "A2|Writing|3"]
     },
 
     /* ============ RECORDINGS (the replay library) ============

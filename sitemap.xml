@@ -12,6 +12,8 @@
     <url><loc>https://example-academy.com/test.html</loc></url>
     <url><loc>https://example-academy.com/register.html</loc></url>
     <url><loc>https://example-academy.com/lesson.html</loc></url>
+    <url><loc>https://example-academy.com/recordings.html</loc></url>
+    <url><loc>https://example-academy.com/verify.html</loc></url>
     <url><loc>https://example-academy.com/privacy.html</loc></url>
     <url><loc>https://example-academy.com/terms.html</loc></url>
 </urlset>
